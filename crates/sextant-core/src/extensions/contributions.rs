@@ -911,6 +911,42 @@ pub(crate) fn check_kinds(manifest: &ExtensionManifest) -> Result<(), ManifestEr
                 manifest.sextant_api,
             )?;
         }
+        if let Some(ids) = &entry.problem_rules {
+            let at_rules = here.key("problemRules");
+            if manifest.sextant_api < super::problems::PARITY_API {
+                return Err(at(
+                    &at_rules,
+                    format!("needs sextantApi {} or later", super::problems::PARITY_API),
+                ));
+            }
+            if entry.problem_when.is_some() {
+                return Err(at(
+                    &at_rules,
+                    "goes without `problemWhen`: \"Only problems\" shows one or the other",
+                ));
+            }
+            if ids.is_empty() || ids.len() > super::problems::MAX_RULES_5 {
+                return Err(at(
+                    &at_rules,
+                    format!("names 1 to {} rules", super::problems::MAX_RULES_5),
+                ));
+            }
+            let this = KindPattern::new(&entry.group, &entry.kind);
+            for (j, id) in ids.iter().enumerate() {
+                if ids[..j].contains(id) {
+                    return Err(at(&at_rules.index(j), "names a rule twice"));
+                }
+                let judges = manifest.contributes.problems.iter().any(|rule| {
+                    &rule.id == id && rule.kinds_from.is_none() && same_kind(&rule.kind, &this)
+                });
+                if !judges {
+                    return Err(at(
+                        &at_rules.index(j),
+                        "is not the id of one of the extension's rules of this kind",
+                    ));
+                }
+            }
+        }
         for (j, alias) in entry.aliases.iter().enumerate() {
             let ok = (1..=20).contains(&alias.len())
                 && alias

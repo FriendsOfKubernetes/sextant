@@ -28,7 +28,20 @@ import {
   type RuleSource,
 } from "../../api";
 import { compileRules, kindKeyOf, type Lookup, type RuleContext } from "../../extensions/problemRules";
-import { comparedPaths, factsOf, judgeAcross, judgedAcross, judgesOf, lookedUp, referrersOf, rowOf, selectedKinds, type AcrossTarget, type ReferrerRule } from "../../extensions/problemsAcross";
+import {
+  comparedPaths,
+  factsOf,
+  judgeAcross,
+  judgedAcross,
+  judgesOf,
+  lookedUp,
+  referrersOf,
+  rowOf,
+  selectedKinds,
+  selectingPaths,
+  type AcrossTarget,
+  type ReferrerRule,
+} from "../../extensions/problemsAcross";
 import { judgedFact, judgedFacts, judgeReads, NOT_SERVED_ROWS, observeJudge, type JudgeInput } from "../../extensions/problemJudges";
 import { setExtensionDetector, setExtensionOptIn, type Detected, type ExtensionCategory, type ProblemCategory } from "./model";
 import { MAX_SOURCE_OBJECTS, sourceKey, type JudgedRows, type SourceDef } from "./sources";
@@ -52,6 +65,8 @@ interface Entry {
   sources: ReadonlyMap<string, RuleSource>;
   /** `group/kind` of the kinds a `selectsNone` selects from: their rows keep every label (#404). */
   selected: ReadonlySet<string>;
+  /** `group/kind` → the selectors its objects select others by (ADR-0169): its rows keep them, so it is listed whole. */
+  selecting: ReadonlyMap<string, readonly { selector: string; namespaceSelector: string }[]>;
   /** `group/kind` → the paths a `relatedBy` compares on it: its rows keep their texts (#404). */
   compared: ReadonlyMap<string, readonly string[]>;
   /** `group/kind` → how its rules' objects are named by others of the kind: its rows keep those names (#404). */
@@ -95,7 +110,10 @@ function noteLookups(key: string, narrowed: ReadonlySet<string>, problems: reado
       // A `missing` with `alsoKinds` (ADR-0169) names the same place in each of its kinds.
       for (const kind of [lookup, ...(lookup.also ?? [])].map(kindKeyOf)) {
         if (!narrowed.has(kind) || found.get(kind) === null) continue;
-        const namespaces = lookup.selects ? lookup.selects.namespaces : [lookup.namespace ?? p.object.namespace ?? ""];
+        const selects = lookup.selects;
+        // The objects that select it may make it look in its own namespace too (ADR-0169).
+        const own = selects?.by && selects.own !== undefined ? [selects.own] : [];
+        const namespaces = selects ? (selects.namespaces === null ? (selects.namedOnly === true ? own : null) : [...selects.namespaces, ...own]) : [lookup.namespace ?? p.object.namespace ?? ""];
         if (namespaces === null) {
           found.set(kind, null);
           continue;
@@ -220,6 +238,7 @@ export function registerExtensionProblems(
     newestLabels,
     facts: factsOf(rules, kindKeyOf),
     selected: selectedKinds(rules, kindKeyOf),
+    selecting: selectingPaths(rules, kindKeyOf),
     compared: comparedPaths(rules, kindKeyOf),
     newestBy: new Map(rules.flatMap((r) => (r.newestBy !== undefined ? [[kindKeyOf(r.kind), r.newestBy] as const] : []))),
     referrers: referrersOf(rules, kindKeyOf),
@@ -494,6 +513,7 @@ export function extensionSourcesFor(
         (!entry.detectors.has(key) &&
           !entry.facts.has(key) &&
           !entry.compared.has(key) &&
+          !entry.selecting.has(key) &&
           !(entry.judgedPaths.get(key) ?? []).some((p) => !underMetadata(p)) &&
           !(entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key && ![entry.kindsFrom.groupPath, ...entry.kindsFrom.kindPaths].every(underMetadata)))
           ? { metadataOnly: true }
@@ -546,6 +566,7 @@ export function extensionSourcesFor(
             entry.newestBy.get(key),
             entry.judgedPaths.get(key) ?? [],
             entry.kindsFrom && kindKeyOf(entry.kindsFrom.kind) === key ? entry.kindsFrom : undefined,
+            entry.selecting.get(key) ?? [],
           ),
           max: def.maxObjects ?? MAX_SOURCE_OBJECTS,
         },

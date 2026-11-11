@@ -647,6 +647,13 @@
               "problemWhen": {
                 "description": "What the table's \"Only problems\" shows for the kind instead of the objects with an active problem of the rules: those this holds for, a condition without `missing` (sextantApi 4).",
                 "$ref": "#/$defs/problemCondition"
+              },
+              "problemRules": {
+                "description": "\"Only problems\" shows the objects with an active problem of these rules only: ids of the extension's rules of the kind (sextantApi 5; not with `problemWhen`).",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 100,
+                "items": { "type": "string", "minLength": 1 }
               }
             }
           }
@@ -1366,7 +1373,37 @@
             "kind": { "$ref": "#/$defs/kind" },
             "selector": { "$ref": "#/$defs/fieldPath" },
             "anyNamespacesPath": { "$ref": "#/$defs/fieldPath" },
-            "namespacesPath": { "$ref": "#/$defs/fieldPath" }
+            "namespacesPath": { "$ref": "#/$defs/fieldPath" },
+            "selectedBy": {
+              "description": "The objects that select the judged one decide where its selector looks (sextantApi 5), as Prometheus Operator's `ignoreNamespaceSelectors`: where `ownNamespaceWhen` holds for every one of them, its own namespace only; for some, its own too.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "selector", "namespaceSelector", "ownNamespaceWhen"],
+              "properties": {
+                "kind": { "$ref": "#/$defs/kind" },
+                "alsoKinds": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/kind" } },
+                "selector": { "$ref": "#/$defs/fieldPath" },
+                "namespaceSelector": { "$ref": "#/$defs/fieldPath" },
+                "ownNamespaceWhen": { "$ref": "#/$defs/problemCondition" }
+              }
+            },
+            "namedOnly": {
+              "description": "Judged only where the selector looks in named namespaces: one of every namespace is not judged (sextantApi 5).",
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "description": "No object of `kind` (nor of `alsoKinds`) has a label selector at `selector` matching the judged object's labels with a namespace selector at `namespaceSelector` covering its namespace, read as Prometheus Operator reads them: a null selector selects nothing, an empty one everything; a null namespace selector covers the selecting object's own namespace, an empty one every namespace (Namespaces' labels looked up). With no such object at all it does not hold; unknown while a list is not read in full. sextantApi 5; not inside `any` or `not`.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "kind", "selector", "namespaceSelector"],
+          "properties": {
+            "type": { "const": "selectedByNone" },
+            "kind": { "$ref": "#/$defs/kind" },
+            "alsoKinds": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/kind" } },
+            "selector": { "$ref": "#/$defs/fieldPath" },
+            "namespaceSelector": { "$ref": "#/$defs/fieldPath" }
           }
         },
         {

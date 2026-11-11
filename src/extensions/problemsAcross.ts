@@ -11,7 +11,24 @@
 //
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { JudgedNeed, KubeObject, ProblemCondition, ProblemContribution } from "../api";
-import { evaluate, FACT_MARK, factKey, FOUND_MARK, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
+import {
+  evaluate,
+  FACT_MARK,
+  factKey,
+  FOUND_MARK,
+  labelSelectorOf,
+  MAX_MESSAGE_CHARS,
+  MAX_VALUE_CHARS,
+  MISSING_MARK,
+  numberOf,
+  SELECTS_IN_MARK,
+  selectingKey,
+  selectorMatches,
+  valueAt,
+  type LabelSelector,
+  type Lookup,
+  type SelectingLookup,
+} from "./problemRules";
 
 /** The extension API whose additions the window applies only to manifests that name it (ADR-0169). */
 export const PARITY_API = 5;
@@ -39,6 +56,11 @@ export interface AcrossRow {
   refs?: string[];
   /** Every label, for a kind a `selectsNone` selects from (#404); at most `MAX_ROW_LABELS`. */
   allLabels?: Record<string, string>;
+  /**
+   * For a kind whose objects select others (`selectedByNone`, `selectsNone.selectedBy`, ADR-0169): its selectors by
+   * `selectingKey` — `selector` `null` selecting nothing; `namespaces` `null` its own namespace, `false` none.
+   */
+  selectors?: Record<string, SelectorPair>;
   /** For a kind a problem judge reads (ADR-0168): its apiVersion, creation time and the judges' declared paths. */
   judged?: JudgedRowPart;
   /**
@@ -47,6 +69,26 @@ export interface AcrossRow {
    */
   defines?: string[];
 }
+
+/** A selecting object's selectors, as Prometheus Operator reads them (ADR-0169). */
+export interface SelectorPair {
+  selector: LabelSelector | null;
+  namespaces: LabelSelector | null | false;
+}
+
+/** The selectors at `selector` and `namespaceSelector` of an object (ADR-0169): a null or missing one as the operator reads it. */
+export function selectorPairOf(obj: unknown, selector: string, namespaceSelector: string): SelectorPair {
+  const sel = valueAt(obj, selector);
+  const ns = valueAt(obj, namespaceSelector);
+  return {
+    // Null or missing selects nothing; anything but an object nothing too.
+    selector: sel === undefined || sel === null ? null : (labelSelectorOf(sel) ?? null),
+    // Null or missing: the object's own namespace; anything but an object no namespace.
+    namespaces: ns === undefined || ns === null ? null : (labelSelectorOf(ns) ?? false),
+  };
+}
+
+const isEmptySelector = (s: LabelSelector) => Object.keys(s.matchLabels).length === 0 && s.matchExpressions.length === 0;
 
 /** How a rule names others of its kind (`toldThroughReferrer`, #404). */
 export type ReferrerRule = NonNullable<ProblemContribution["toldThroughReferrer"]>;
@@ -67,6 +109,7 @@ export function rowOf(
   rankPath?: string,
   judgedPaths: readonly string[] = [],
   defines?: { groupPath: string; kindPaths: readonly string[] },
+  selecting: readonly { selector: string; namespaceSelector: string }[] = [],
 ): (obj: KubeObject) => AcrossRow {
   return (obj) => {
     const meta = (obj.metadata ?? {}) as { name?: string; namespace?: string; creationTimestamp?: string; labels?: Record<string, unknown> };
@@ -127,6 +170,9 @@ export function rowOf(
         const kind = valueAt(obj, path);
         return `${typeof group === "string" ? group : ""}/${typeof kind === "string" ? kind : ""}`;
       });
+    }
+    if (selecting.length > 0) {
+      row.selectors = Object.fromEntries(selecting.map(({ selector, namespaceSelector }) => [selectingKey(selector, namespaceSelector), selectorPairOf(obj, selector, namespaceSelector)]));
     }
     if (keepLabels) {
       row.allLabels = Object.fromEntries(
@@ -196,6 +242,75 @@ export function judgeAcross(
     }
     return names.get(target)!;
   };
+  /** The labels of a Namespace by its rows (ADR-0169); `undefined` when they cannot tell. */
+  const namespaceLabels = (name: string): Record<string, string> | undefined => {
+    if (served !== undefined && !served({ group: "", kind: "Namespace" })) return undefined;
+    const target = targets.find((t) => sameKind(t, { group: "", kind: "Namespace" }));
+    const known = target ? namesOf(target) : null;
+    return known?.get(`/${name}`)?.allLabels;
+  };
+  /**
+   * The rows of the objects that select a judged object (`selectedByNone`, `selectsNone.selectedBy`, ADR-0169), and how
+   * many objects of their kinds there are; `undefined` when the rows cannot tell — a list not read in full or not of
+   * every namespace, a selector not kept, a Namespace's labels needed and unknown — and none was found selecting it.
+   */
+  const selecting = (by: SelectingLookup): { rows: AcrossRow[]; total: number } | undefined => {
+    let unknown = false;
+    let total = 0;
+    const rows: AcrossRow[] = [];
+    const key = selectingKey(by.selector, by.namespaceSelector);
+    for (const kind of by.kinds) {
+      // Not served: no objects of it.
+      if (served !== undefined && !served(kind)) continue;
+      const target = targets.find((t) => sameKind(t, kind));
+      const known = target ? namesOf(target) : null;
+      // Every namespace: an object anywhere may select it.
+      if (!target || !known || (target.namespaced && context.target(target.def)?.namespaces !== null)) {
+        unknown = true;
+        continue;
+      }
+      for (const row of known.values()) {
+        total += 1;
+        const pair = row.selectors?.[key];
+        if (pair === undefined) {
+          unknown = true;
+          continue;
+        }
+        if (pair.selector === null || !selectorMatches(pair.selector, by.labels)) continue;
+        if (pair.namespaces === false) continue;
+        if (pair.namespaces === null) {
+          // Its own namespace only.
+          if (row.namespace !== by.namespace) continue;
+        } else if (!isEmptySelector(pair.namespaces)) {
+          const labels = namespaceLabels(by.namespace);
+          if (labels === undefined) {
+            unknown = true;
+            continue;
+          }
+          if (!selectorMatches(pair.namespaces, labels)) continue;
+        }
+        rows.push(row);
+      }
+    }
+    if (rows.length > 0) return { rows, total };
+    return unknown ? undefined : { rows, total };
+  };
+  /**
+   * Where a `selectsNone` looks (ADR-0169): as written, unless the objects that select it (`by`, all of them known)
+   * narrow it — every one with `ownNamespaceWhen` holding: its own namespace only; some: its own too.
+   */
+  const lookedIn = (selects: NonNullable<Lookup["selects"]>): string[] | null => {
+    const sorted = (names: Iterable<string>) => [...new Set(names)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    const written = selects.namespaces === null ? null : sorted(selects.namespaces);
+    if (!selects.by || selects.own === undefined) return written;
+    const found = selecting(selects.by);
+    if (!found || found.rows.length === 0) return written;
+    const fact = selects.by.fact;
+    const narrowing = found.rows.filter((row) => fact !== undefined && row.facts?.[fact] === true).length;
+    if (narrowing === found.rows.length) return [selects.own];
+    if (narrowing === 0 || written === null) return written;
+    return sorted([...written, selects.own]);
+  };
   /** Whether one lookup holds: `missing` not there, `related` there with its fact, … (`false`: cannot tell, or not). */
   const holds = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean => tell(p, lookup) === true;
   /**
@@ -224,6 +339,12 @@ export function judgeAcross(
   const tell = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean | undefined => {
     // `judged` (ADR-0168) is told apart, by `factsOf`.
     if (lookup.judged) return true;
+    // `selectedByNone` (ADR-0169): some object of the kinds exists and none selects it.
+    if (lookup.selectedBy) {
+      const found = selecting(lookup.selectedBy);
+      if (!found) return undefined;
+      return found.rows.length === 0 && found.total > 0;
+    }
     if (lookup.also !== undefined) return missingInAll(p, lookup);
     {
       const target = targets.find((t) => sameKind(t, lookup));
@@ -234,7 +355,11 @@ export function judgeAcross(
       // `selectsNone` (#404): no row in the namespaces it covers has labels its selector picks; a source that does not
       // watch all of them cannot tell.
       if (lookup.selects) {
-        const { selector, namespaces } = lookup.selects;
+        const { selector } = lookup.selects;
+        // Where the objects that select it make it look (ADR-0169), else as written.
+        const namespaces = lookup.selects.by ? lookedIn(lookup.selects) : lookup.selects.namespaces;
+        // Every namespace and judged only where named (`namedOnly`): not judged.
+        if (namespaces === null && lookup.selects.namedOnly === true) return false;
         if (target.namespaced && watched !== null && (namespaces === null || namespaces.some((ns) => !watched?.includes(ns)))) return undefined;
         for (const row of known.values()) {
           if (target.namespaced && namespaces !== null && !namespaces.includes(row.namespace)) continue;
@@ -300,7 +425,7 @@ export function judgeAcross(
         if (told === undefined) untold?.add(p.uid);
         if (told !== true) return null;
         // From sextantApi 5 `{{missing}}` names it too, with its namespace (ADR-0169).
-        if ((api ?? 0) >= PARITY_API && lookup.fact === undefined && !lookup.by && !lookup.selects && !lookup.judged) plain.push(shown(lookup));
+        if ((api ?? 0) >= PARITY_API && lookup.fact === undefined && !lookup.by && !lookup.selects && !lookup.selectedBy && !lookup.judged) plain.push(shown(lookup));
         continue;
       }
       const found = lists.get(lookup.anyOf) ?? [];
@@ -400,6 +525,11 @@ export function judgeAcross(
     let out = p;
     // `{{missing}}` (#404): the names a `missing` of a list did not find, in the UI language's list.
     if (out.message?.includes(MISSING_MARK)) out = { ...out, message: out.message.split(MISSING_MARK).join(formatList(names)) };
+    // `{{selectsNone:namespaces}}` (ADR-0169): where its `selectsNone` looked, sorted, in the UI language's list.
+    if (out.message?.includes(SELECTS_IN_MARK)) {
+      const selects = (p.lookups ?? []).find((l) => l.selects)?.selects;
+      out = { ...out, message: out.message.split(SELECTS_IN_MARK).join(formatList(selects ? (lookedIn(selects) ?? []) : [])) };
+    }
     // `{{found}}` (ADR-0167 amendment): the objects a `related` or `relatedBy` found, an HPA fighting a VPA.
     if (out.message?.includes(FOUND_MARK)) out = { ...out, message: out.message.split(FOUND_MARK).join(formatList(foundNames(out))) };
     if (facts.judged) out = { ...out, lookups: facts.lookups, ...(out.message !== undefined ? { message: withFacts(out.message, facts.values) } : {}) };
@@ -533,16 +663,31 @@ export function judgesOf(condition: ProblemCondition): string[] {
 /** The kinds a condition looks up (`missing`, with its `alsoKinds`). */
 export function lookedUp(condition: ProblemContribution["when"]): { group: string; kind: string }[] {
   if (condition.type === "missing") return [condition.kind, ...(condition.alsoKinds ?? [])];
-  if (condition.type === "related" || condition.type === "relatedBy" || condition.type === "selectsNone") return [condition.kind];
+  if (condition.type === "related" || condition.type === "relatedBy") return [condition.kind];
+  // The objects that select, and the Namespaces whose labels their namespace selectors match (ADR-0169).
+  if (condition.type === "selectsNone") {
+    const by = condition.selectedBy;
+    return by === undefined ? [condition.kind] : [condition.kind, by.kind, ...(by.alsoKinds ?? []), NAMESPACE];
+  }
+  if (condition.type === "selectedByNone") return [condition.kind, ...(condition.alsoKinds ?? []), NAMESPACE];
   if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUp);
   return [];
 }
 
-/** The `group/kind` keys (by `keyOf`) a `selectsNone` of `rules` selects from: their rows keep every label (#404). */
+/** The Namespaces, looked up for their labels (ADR-0169). */
+const NAMESPACE = { group: "", kind: "Namespace" };
+
+/**
+ * The `group/kind` keys (by `keyOf`) a `selectsNone` of `rules` selects from, and the Namespaces a namespace selector
+ * matches (ADR-0169): their rows keep every label (#404).
+ */
 export function selectedKinds(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Set<string> {
   const out = new Set<string>();
   const visit = (condition: ProblemCondition) => {
-    if (condition.type === "selectsNone") out.add(keyOf(condition.kind));
+    if (condition.type === "selectsNone") {
+      out.add(keyOf(condition.kind));
+      if (condition.selectedBy) out.add(keyOf(NAMESPACE));
+    } else if (condition.type === "selectedByNone") out.add(keyOf(NAMESPACE));
     else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
   };
   for (const rule of rules) visit(rule.when);
@@ -562,15 +707,23 @@ export function comparedPaths(rules: readonly ProblemContribution[], keyOf: (kin
   return out;
 }
 
-/** The `related` conditions' own `when`s of `rules`, by the `group/kind` (lower case) they name (#409). */
+/**
+ * The `related` conditions' own `when`s of `rules`, and a `selectsNone.selectedBy`'s `ownNamespaceWhen` (ADR-0169), by
+ * the `group/kind` (lower case) they name (#409).
+ */
 export function factsOf(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Map<string, ProblemCondition[]> {
   const out = new Map<string, ProblemCondition[]>();
+  const add = (kind: { group: string; kind: string }, when: ProblemCondition) => {
+    const key = keyOf(kind);
+    const list = out.get(key) ?? [];
+    if (!list.some((c) => factKey(c) === factKey(when))) list.push(when);
+    out.set(key, list);
+  };
   const visit = (condition: ProblemCondition) => {
-    if (condition.type === "related" || condition.type === "relatedBy") {
-      const key = keyOf(condition.kind);
-      const list = out.get(key) ?? [];
-      if (!list.some((c) => factKey(c) === factKey(condition.when))) list.push(condition.when);
-      out.set(key, list);
+    if (condition.type === "related" || condition.type === "relatedBy") add(condition.kind, condition.when);
+    else if (condition.type === "selectsNone" && condition.selectedBy) {
+      const by = condition.selectedBy;
+      for (const kind of [by.kind, ...(by.alsoKinds ?? [])]) add(kind, by.ownNamespaceWhen);
     } else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
   };
   for (const rule of rules) {
@@ -584,6 +737,34 @@ export function factsOf(rules: readonly ProblemContribution[], keyOf: (kind: { g
       out.set(key, list);
     }
   }
+  return out;
+}
+
+/**
+ * The selector paths the objects of each kind select others by (`selectedByNone`, `selectsNone.selectedBy`, ADR-0169),
+ * by the `group/kind` key (`keyOf`): their rows keep those selectors.
+ */
+export function selectingPaths(
+  rules: readonly ProblemContribution[],
+  keyOf: (kind: { group: string; kind: string }) => string,
+): Map<string, { selector: string; namespaceSelector: string }[]> {
+  const out = new Map<string, { selector: string; namespaceSelector: string }[]>();
+  const add = (kinds: readonly { group: string; kind: string }[], selector: string, namespaceSelector: string) => {
+    for (const kind of kinds) {
+      const key = keyOf(kind);
+      const list = out.get(key) ?? [];
+      if (!list.some((p) => p.selector === selector && p.namespaceSelector === namespaceSelector)) list.push({ selector, namespaceSelector });
+      out.set(key, list);
+    }
+  };
+  const visit = (condition: ProblemCondition) => {
+    if (condition.type === "selectedByNone") add([condition.kind, ...(condition.alsoKinds ?? [])], condition.selector, condition.namespaceSelector);
+    else if (condition.type === "selectsNone" && condition.selectedBy) {
+      const by = condition.selectedBy;
+      add([by.kind, ...(by.alsoKinds ?? [])], by.selector, by.namespaceSelector);
+    } else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
+  };
+  for (const rule of rules) visit(rule.when);
   return out;
 }
 

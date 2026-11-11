@@ -90,11 +90,21 @@ export function lookupRefs(p: Pick<Problem, "lookups" | "object">, kinds: Resour
         namespaces === null ? [{ group, kind, namespace: null }] : namespaces.map((namespace) => ({ group, kind, namespace })),
       );
     }
+    // Who selects it (`selectedByNone`, `selectsNone.selectedBy`, ADR-0169): every object of their kinds, in every
+    // namespace, and the Namespaces' labels.
+    const selecting = lookup.selectedBy ?? lookup.selects?.by;
+    const everywhere: ListRef[] = selecting
+      ? [...selecting.kinds, { group: "", kind: "Namespace" }].map(({ group, kind }): ListRef => ({ group, kind, namespace: null }))
+      : [];
+    if (lookup.selectedBy) return everywhere;
     // A `missing` with `alsoKinds` (ADR-0169) rests on each of its kinds.
-    return [lookup, ...(lookup.also ?? [])].map(({ group, kind }): ListRef => {
-      const namespaced = kinds ? findKind(kinds, { group, kind })?.namespaced !== false : true;
-      return { group, kind, namespace: namespaced ? (p.object.namespace ?? null) : null };
-    });
+    return [
+      ...[lookup, ...(lookup.also ?? [])].map(({ group, kind }): ListRef => {
+        const namespaced = kinds ? findKind(kinds, { group, kind })?.namespaced !== false : true;
+        return { group, kind, namespace: namespaced ? (p.object.namespace ?? null) : null };
+      }),
+      ...everywhere,
+    ];
   });
 }
 

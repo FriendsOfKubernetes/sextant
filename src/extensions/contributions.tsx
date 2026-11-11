@@ -263,7 +263,8 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
         problem:
           entry.problemWhen !== undefined
             ? ((when) => (obj: KubeObject) => holdsNow(when, obj))(entry.problemWhen)
-            : problemOf(extensionId, entry, contributes.problems),
+            : // Only the rules it names (ADR-0169), else every rule of the kind.
+              problemOf(extensionId, entry, entry.problemRules === undefined ? contributes.problems : contributes.problems.filter((rule) => entry.problemRules!.includes(rule.id))),
         aliases: entry.aliases ?? [],
         searchByDefault: entry.searchByDefault,
         printerColumns: entry.printerColumns,

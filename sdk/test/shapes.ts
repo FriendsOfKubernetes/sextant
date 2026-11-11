@@ -259,6 +259,7 @@ export const MANIFEST_SHAPES = {
     searchByDefault: "optional",
     printerColumns: "optional",
     problemWhen: "optional",
+    problemRules: "optional",
   }),
   ManifestSection: described<ManifestSection>(`${CONTRIBUTION}/sections/items`, {
     section: "required",

@@ -91,6 +91,58 @@ From `sextantApi` 5 a rule's `{{missing}}` names what a `missing` of one name di
 namespace where it is not the object's own (a TLS option of another namespace), before the names of its lists. Below
 5 it keeps naming lists only.
 
+### Who selects an object (`selectedByNone`, `selectsNone.selectedBy`, `namedOnly`)
+
+The built-in Prometheus Operator category warned of a ServiceMonitor or PodMonitor no Prometheus picks up
+(`NotPickedUp`) and judged "selects nothing" where the Prometheuses that pick a monitor up make it look. A rule could
+ask only the reverse (`selectsNone`: the judged object's selector picks nothing), and `relatedBy` joins equal texts in
+the judged object's namespace. Two additions, read as Prometheus Operator reads its selectors — the field documentation
+of `CommonPrometheusFields` (`pkg/apis/monitoring/v1/prometheus_types.go`): a null `serviceMonitorSelector` selects
+nothing and an empty one everything; a null `serviceMonitorNamespaceSelector` (the default) covers the Prometheus' own
+namespace only, an empty one every namespace, any other the namespaces whose labels it matches; and
+`ignoreNamespaceSelectors` makes the selected monitors look in their own namespace only
+(`getNamespacesFromNamespaceSelector`, `pkg/prometheus/promcfg.go`). The same null/empty reading is
+`metav1.LabelSelectorAsSelector`'s for any Kubernetes label selector, so nothing in them is the operator's own.
+
+- **`selectedByNone`** `{kind, alsoKinds?, selector, namespaceSelector}`: no object of `kind` (or of the 1 to 3
+  `alsoKinds`; a kind the cluster does not serve has no objects) has a label selector at `selector` matching the judged
+  object's labels with a namespace selector at `namespaceSelector` covering its namespace. With no object of those
+  kinds at all it does not hold: the built-in did not judge then (the monitor may be meant for another collector).
+  Cannot tell — so no problem, and `untold` for a `problem` case — while a list of those kinds is not read in full or
+  not of every namespace (an object anywhere may select), or a namespace selector with terms needs the Namespaces'
+  labels and their list cannot tell; one object that selects is enough to say no.
+- **`selectsNone.selectedBy`** `{kind, alsoKinds?, selector, namespaceSelector, ownNamespaceWhen}`: the objects that
+  select the judged one, read alike, narrow where its selector looks — where `ownNamespaceWhen` (reading only that
+  object, no time) holds for every one of them, in its own namespace only; for some, in its own too; when they cannot
+  tell or none selects it, as written — as the built-in `targetNamespaces(monitor, pickedBy)`.
+- **`selectsNone.namedOnly`**: a selector that (after `selectedBy`) still looks in every namespace is not judged and
+  widens no `narrowLookups` list, as the built-in never judged a monitor of every namespace; before, an API-4 rule could
+  only leave such a monitor out by its own fields (`not any`), which also left out one its Prometheuses narrow.
+
+Both are problem rules' conditions only, never inside `any` or `not`. The selecting kinds and the Namespaces (metadata
+only, for their labels) are looked-up kinds: they count among the rules' kinds, are agreed to (`problem_kinds`), get
+sources (the selecting kinds whole, their rows keeping the selectors by path, `AcrossRow.selectors`, and the
+`ownNamespaceWhen` fact), and are what an agent must be able to read everywhere (`lookupRefs`). A narrowed lookup kind's
+list also covers the judged object's own namespace when `selectedBy` may make it look there.
+
+### `{{selectsNone:namespaces}}`
+
+A rule message's placeholder for the namespaces its `selectsNone` looked in, sorted, in the UI language's list: after
+`selectedBy` they are not what the object's fields say, and the built-in message named them. Only in a rule with a
+`selectsNone`. No field path reads like it (`:` is no name character), so it meant nothing in an API-4 manifest.
+
+### A kind's "Only problems" from some of its rules (`problemRules`)
+
+A listed kind's `problemRules` (1 to 100 ids of the extension's rules of that kind; not with `problemWhen`): its table's
+"Only problems" shows the objects with an active problem of those rules only. The built-in monitor tables showed the
+monitors that select nothing, not those no Prometheus picks up. (The section counter already takes `rules`.)
+
+### `|uniqueKey`
+
+A placeholder filter for a sort key: a list's texts each once, empty ones left out, sorted by code point, joined with
+`,` in every language, as a built-in view keyed a list of names (the monitors' Namespaces column sorted and filtered by
+`names.join(",")`); `|unique` writes the shown text in the UI language's list, which sorts otherwise.
+
 ## Consequences
 
 - Sextant's own extensions that use these additions need Sextant 0.30.1; on 0.30.0 they stay at their API-4 releases.
@@ -103,3 +155,9 @@ namespace where it is not the object's own (a TLS option of another namespace), 
   without a new permission action.
 - A table column of an extension can now make the window hold its problem sources while it is shown, even with an
   opt-in category off: the sources are bounded as the category's own (ADR-0144) and released 5 s after the table.
+- Prometheus Operator 1.1.0 (`sextantApi` 5) uses `selectedByNone`, `selectsNone.selectedBy`/`namedOnly`,
+  `{{selectsNone:namespaces}}`, `problemRules` and `|uniqueKey`: monitors not picked up are a listed, not notified,
+  problem again, "selects nothing" is judged where the Prometheuses make a monitor look, and the Rules and Namespaces
+  columns count and sort as the built-in (the Rules count needed no addition: `[alert!="",*].alert` reads only a
+  present name). What stays different is in its README: past 40 namespaces it lists the Services or Pods everywhere
+  the extension may read (the built-in judged nothing then), and an endpoint without any port leaves no empty item.

@@ -30,4 +30,10 @@ printerColumns: boolean,
  * What the table's "Only problems" shows for the kind instead of the objects with an active problem of the rules:
  * those this holds for (#396); `sextantApi` 4.
  */
-problemWhen?: ProblemCondition, };
+problemWhen?: ProblemCondition, 
+/**
+ * The table's "Only problems" shows the objects with an active problem of these rules only (ADR-0169), as the
+ * built-in Prometheus Operator tables left out the monitors no Prometheus picks up; ids of the extension's rules
+ * of the kind, 1 to 100. `sextantApi` 5; not with `problemWhen`.
+ */
+problemRules?: Array<string>, };

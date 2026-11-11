@@ -654,6 +654,12 @@ pub struct KindContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub problem_when: Option<super::problems::ProblemCondition>,
+    /// The table's "Only problems" shows the objects with an active problem of these rules only (ADR-0169), as the
+    /// built-in Prometheus Operator tables left out the monitors no Prometheus picks up; ids of the extension's rules
+    /// of the kind, 1 to 100. `sextantApi` 5; not with `problemWhen`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub problem_rules: Option<Vec<String>>,
 }
 
 /// A dock button that opens a dock tab (`view=dock`).

@@ -626,6 +626,39 @@ pub enum ProblemCondition {
         )]
         #[ts(optional)]
         namespaces_path: Option<String>,
+        /// The objects that select the judged one decide where its selector looks (ADR-0169), as Prometheus Operator's
+        /// `ignoreNamespaceSelectors`: when `ownNamespaceWhen` holds for every one of them, in its own namespace
+        /// only; for some, in its own too. Unknown or none of them: as written. `sextantApi` 5.
+        #[serde(
+            default,
+            rename = "selectedBy",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        selected_by: Option<SelectingObjects>,
+        /// Judged only where the selector looks in named namespaces (ADR-0169): one of every namespace (after
+        /// `selectedBy`) is not judged and widens no `narrowLookups` list, as the built-in view never judged a monitor
+        /// of every namespace. `sextantApi` 5.
+        #[serde(default, rename = "namedOnly", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        named_only: Option<bool>,
+    },
+    /// No object of `kind` (nor of `alsoKinds`) selects the judged object (ADR-0169): none has a label selector at
+    /// `selector` that matches its labels with a namespace selector at `namespaceSelector` that covers its namespace —
+    /// a ServiceMonitor no Prometheus picks up. Read as Prometheus Operator reads its selectors: a null or missing
+    /// `selector` selects nothing, an empty one everything; a null or missing `namespaceSelector` covers the
+    /// selecting object's own namespace, an empty one every namespace, any other the namespaces whose labels it
+    /// matches (Namespaces are looked up, metadata only). With no object of those kinds at all it does not hold.
+    /// `sextantApi` 5; unknown (not holding) while a list is not read in full or does not cover every namespace; not
+    /// inside `any` or `not`.
+    SelectedByNone {
+        kind: KindPattern,
+        #[serde(default, rename = "alsoKinds", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        also_kinds: Option<Vec<KindPattern>>,
+        selector: String,
+        #[serde(rename = "namespaceSelector")]
+        namespace_selector: String,
     },
     /// An object of `kind` in the judged object's namespace has, for every pair, the text at `theirs` equal to the
     /// judged object's at `ours`, and `when` holds for it (#404): an HPA on the VPA's target. `sextantApi` 4; unknown
@@ -667,6 +700,25 @@ pub enum ProblemCondition {
         #[ts(optional)]
         state: Option<ProblemState>,
     },
+}
+
+/// The objects that select a `selectsNone`'s judged object and may narrow where it looks (ADR-0169).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SelectingObjects {
+    pub kind: KindPattern,
+    /// 1 to 3 more kinds; a kind the cluster does not serve has no objects.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub also_kinds: Option<Vec<KindPattern>>,
+    /// Their label selector of the judged object's kind, read as `selectedByNone` reads it.
+    pub selector: String,
+    /// Their namespace selector of it, read as `selectedByNone` reads it.
+    pub namespace_selector: String,
+    /// Holds for one of them that makes the selector look in the judged object's own namespace; reads only that
+    /// object, no time.
+    pub own_namespace_when: Box<ProblemCondition>,
 }
 
 /// What a `problem` case asks of the extension's rules (ADR-0169).
@@ -1062,7 +1114,26 @@ fn check_rule_message(
         let after = &tail[start + 2..];
         let Some(end) = after.find("}}") else { break };
         let inner = &after[..end];
-        if let Some(name) = super::problem_judges::fact_placeholder(inner) {
+        if inner.trim() == SELECTS_NONE_NAMESPACES {
+            // The namespaces the rule's `selectsNone` looked in (ADR-0169), filled by the window.
+            if manifest.sextant_api < PARITY_API {
+                return Err(at(
+                    path,
+                    format!(
+                        "`{{{{{SELECTS_NONE_NAMESPACES}}}}}` needs sextantApi {PARITY_API} or later"
+                    ),
+                ));
+            }
+            if !has_selects_none(&rule.when) {
+                return Err(at(
+                    path,
+                    format!(
+                        "has `{{{{{SELECTS_NONE_NAMESPACES}}}}}`, which only a rule with `selectsNone` fills"
+                    ),
+                ));
+            }
+            rest.push_str(&tail[..start]);
+        } else if let Some(name) = super::problem_judges::fact_placeholder(inner) {
             if !allowed.contains(&name) {
                 return Err(at(
                     path,
@@ -1079,6 +1150,22 @@ fn check_rule_message(
     }
     rest.push_str(tail);
     check_message(&rest, &rule.kind, path, metadata_only)
+}
+
+/// A rule message's placeholder of the namespaces its `selectsNone` looked in (ADR-0169): `{{selectsNone:namespaces}}`,
+/// sorted, in the UI language's list. No field path reads like it, so it meant nothing before `sextantApi` 5.
+pub const SELECTS_NONE_NAMESPACES: &str = "selectsNone:namespaces";
+
+/// Whether a condition has a `selectsNone`.
+fn has_selects_none(condition: &ProblemCondition) -> bool {
+    match condition {
+        ProblemCondition::SelectsNone { .. } => true,
+        ProblemCondition::All { of } | ProblemCondition::Any { of } => {
+            of.iter().any(has_selects_none)
+        }
+        ProblemCondition::Not { of } => has_selects_none(of),
+        _ => false,
+    }
 }
 
 /// A rule's `source`: written only from `sextantApi` 4, with at least one field, a label selector Kubernetes reads,
@@ -1463,6 +1550,8 @@ fn check_condition<'k>(
             selector,
             any_namespaces_path,
             namespaces_path,
+            selected_by,
+            named_only,
         } => {
             if checks.single {
                 return Err(at(
@@ -1485,6 +1574,43 @@ fn check_condition<'k>(
             if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
                 return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
             }
+            for (key, set) in [
+                ("selectedBy", selected_by.is_some()),
+                ("namedOnly", named_only.is_some()),
+            ] {
+                if set && checks.api < PARITY_API {
+                    return Err(at(
+                        &path.key(key),
+                        format!("needs sextantApi {PARITY_API} or later"),
+                    ));
+                }
+            }
+            if let Some(by) = selected_by {
+                let by_at = path.key("selectedBy");
+                check_selecting(
+                    &by.kind,
+                    by.also_kinds.as_deref(),
+                    &by.selector,
+                    &by.namespace_selector,
+                    by.also_kinds.is_some(),
+                    &by_at,
+                    checks,
+                )?;
+                let mut selecting = vec![by.kind.clone()];
+                selecting.extend(by.also_kinds.iter().flatten().cloned());
+                check_object_condition(
+                    &by.own_namespace_when,
+                    &selecting,
+                    &by_at.key("ownNamespaceWhen"),
+                    checks.api,
+                )?;
+                if uses_time(&by.own_namespace_when) {
+                    return Err(at(
+                        &by_at.key("ownNamespaceWhen"),
+                        "reads no time (`olderThan`): it is judged when that object changes",
+                    ));
+                }
+            }
             check_rule_path(selector, kind, &path.key("selector"), checks.metadata_only)?;
             for (key, field) in [
                 ("anyNamespacesPath", any_namespaces_path),
@@ -1505,6 +1631,40 @@ fn check_condition<'k>(
                 }
             }
             Ok(())
+        }
+        ProblemCondition::SelectedByNone {
+            kind: target,
+            also_kinds,
+            selector,
+            namespace_selector,
+        } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`selectedByNone` judges across objects: only problem rules may use it",
+                ));
+            }
+            if checks.api < PARITY_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`selectedByNone` needs sextantApi {PARITY_API} or later"),
+                ));
+            }
+            if !matches!(inside, Inside::Top) {
+                return Err(at(
+                    &path.key("type"),
+                    "`selectedByNone` cannot be inside `any` or `not`: a list not read would make it unknown",
+                ));
+            }
+            check_selecting(
+                target,
+                also_kinds.as_deref(),
+                selector,
+                namespace_selector,
+                also_kinds.is_some(),
+                path,
+                checks,
+            )
         }
         ProblemCondition::Related {
             path: field,
@@ -1932,11 +2092,36 @@ fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>
                 }
             }
         }
-        ProblemCondition::Related { kind, .. }
-        | ProblemCondition::RelatedBy { kind, .. }
-        | ProblemCondition::SelectsNone { kind, .. } => {
+        ProblemCondition::Related { kind, .. } | ProblemCondition::RelatedBy { kind, .. } => {
             if !out.iter().any(|k| same_kind(k, kind)) {
                 out.push(kind);
+            }
+        }
+        // The objects that select, and the Namespaces whose labels their namespace selectors match (ADR-0169).
+        ProblemCondition::SelectsNone {
+            kind, selected_by, ..
+        } => {
+            let selecting = selected_by.iter().flat_map(|by| {
+                std::iter::once(&by.kind)
+                    .chain(by.also_kinds.iter().flatten())
+                    .chain(std::iter::once(namespace_kind()))
+            });
+            for kind in std::iter::once(kind).chain(selecting) {
+                if !out.iter().any(|k| same_kind(k, kind)) {
+                    out.push(kind);
+                }
+            }
+        }
+        ProblemCondition::SelectedByNone {
+            kind, also_kinds, ..
+        } => {
+            for kind in std::iter::once(kind)
+                .chain(also_kinds.iter().flatten())
+                .chain(std::iter::once(namespace_kind()))
+            {
+                if !out.iter().any(|k| same_kind(k, kind)) {
+                    out.push(kind);
+                }
             }
         }
         ProblemCondition::All { of } | ProblemCondition::Any { of } => {
@@ -2206,7 +2391,8 @@ fn lists_matches(text: &str) -> bool {
 }
 
 /// Below `sextantApi` 5, no path or placeholder of `contributes` (the raw manifest, before defaults) uses what came
-/// with it (ADR-0169): lists three deep, a match field compared trimmed (`[field~="…"]`), `|positions`. An older
+/// with it (ADR-0169): lists three deep, a match field compared trimmed (`[field~="…"]`), `|positions`, `|uniqueKey`,
+/// `{{selectsNone:namespaces}}`. An older
 /// Sextant refuses them, so a manifest that names an older API must not use them (#420). Strings are visited in key
 /// order, as the SDK's `checkParitySyntax`.
 pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), ManifestError> {
@@ -2232,8 +2418,15 @@ pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), M
                 for inner in placeholders(text).unwrap_or_default() {
                     let mut parts = inner.split('|');
                     let field = parts.next().unwrap_or_default();
-                    if parts.any(|f| f.trim() == "positions") {
+                    let filters: Vec<&str> = parts.map(str::trim).collect();
+                    if filters.contains(&"positions") {
                         found = found.or(Some("`|positions`"));
+                    }
+                    if filters.contains(&"uniqueKey") {
+                        found = found.or(Some("`|uniqueKey`"));
+                    }
+                    if inner.trim() == SELECTS_NONE_NAMESPACES {
+                        found = found.or(Some("`{{selectsNone:namespaces}}`"));
                     }
                     for one in split_outside_quotes(field, "??")
                         .into_iter()
@@ -2460,7 +2653,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404); `lower` writes a text in lower case.
-pub const PLACEHOLDER_FILTERS: [&str; 17] = [
+pub const PLACEHOLDER_FILTERS: [&str; 18] = [
     "lower",
     "firstLine",
     "lastSegment",
@@ -2482,6 +2675,9 @@ pub const PLACEHOLDER_FILTERS: [&str; 17] = [
     // The 1-based places of a `[…,*]` step's matches in its list, each once, in order, in the UI language's list
     // (ADR-0169): the routes Traefik skips. Paths joined with `+` give every one's places. `sextantApi` 5.
     "positions",
+    // A sort key of a list's texts (ADR-0169): each once, empty ones left out, sorted by code point, joined with `,`
+    // in every language — as a built-in view keyed a list of names. `sextantApi` 5.
+    "uniqueKey",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
@@ -2495,6 +2691,84 @@ pub fn placeholders(text: &str) -> Option<Vec<&str>> {
         rest = &after[end + 2..];
     }
     Some(out)
+}
+
+/// The kind `selectedByNone` and `selectsNone.selectedBy` look Namespaces up as (their labels, metadata only).
+fn namespace_kind() -> &'static KindPattern {
+    static NAMESPACE: std::sync::LazyLock<KindPattern> =
+        std::sync::LazyLock::new(|| KindPattern::new("", "Namespace"));
+    &NAMESPACE
+}
+
+/// The objects that select (`selectedByNone`, `selectsNone.selectedBy`, ADR-0169): kinds that are no Secret, each
+/// once, 1 to 3 more; their selector paths read no secret of theirs; they and the Namespaces count among the rules'
+/// kinds, in that order.
+fn check_selecting<'k>(
+    target: &'k KindPattern,
+    also: Option<&'k [KindPattern]>,
+    selector: &str,
+    namespace_selector: &str,
+    also_written: bool,
+    path: &JsonPath,
+    checks: &mut ConditionChecks<'_, 'k>,
+) -> Result<(), ManifestError> {
+    let also = also.unwrap_or_default();
+    if target.group.is_empty() && target.kind.eq_ignore_ascii_case("Secret") {
+        return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
+    }
+    if also_written && (also.is_empty() || also.len() > 3) {
+        return Err(at(&path.key("alsoKinds"), "has 1 to 3 kinds"));
+    }
+    for (i, other) in also.iter().enumerate() {
+        if same_kind(other, target) || also[..i].iter().any(|k| same_kind(k, other)) {
+            return Err(at(
+                &path.key("alsoKinds").index(i),
+                "names a kind already looked up",
+            ));
+        }
+        if other.group.is_empty() && other.kind.eq_ignore_ascii_case("Secret") {
+            return Err(at(
+                &path.key("alsoKinds").index(i),
+                "Secrets are never listed for rules",
+            ));
+        }
+    }
+    for (i, kind) in std::iter::once(target).chain(also).enumerate() {
+        let place = |key: &str| {
+            if i == 0 {
+                path.key(key)
+            } else {
+                path.key("alsoKinds").index(i - 1)
+            }
+        };
+        check_rule_path(selector, kind, &place("selector"), false)?;
+        check_rule_path(namespace_selector, kind, &place("namespaceSelector"), false)?;
+    }
+    let max_kinds = rule_limits(checks.api).1;
+    for (i, kind) in std::iter::once(target)
+        .chain(also)
+        .chain(std::iter::once(namespace_kind()))
+        .enumerate()
+    {
+        if checks.kinds.iter().any(|k| same_kind(k, kind)) {
+            continue;
+        }
+        checks.kinds.push(kind);
+        if checks.kinds.len() > max_kinds {
+            let place = if i == 0 {
+                path.key("kind")
+            } else if i <= also.len() {
+                path.key("alsoKinds").index(i - 1)
+            } else {
+                path.key("namespaceSelector")
+            };
+            return Err(at(
+                &place,
+                format!("the rules judge at most {max_kinds} kinds"),
+            ));
+        }
+    }
+    Ok(())
 }
 
 /// Whether a field path of an object of `kind` reads a core Secret's values or is, holds or lies under an inline
@@ -2734,6 +3008,47 @@ mod tests {
             )
             .is_ok()
         );
+    }
+
+    #[test]
+    fn who_selects_an_object_is_looked_up_with_the_namespaces_and_api_5_syntax_is_refused_below() {
+        let mut m = manifest(json!([]));
+        m.sextant_api = PARITY_API;
+        let prometheus = json!({ "group": "monitoring.coreos.com", "kind": "Prometheus" });
+        let agent = json!({ "group": "monitoring.coreos.com", "kind": "PrometheusAgent" });
+        m.contributes.problems = serde_json::from_value(json!([{
+            "id": "np", "title": "Not picked up", "kind": { "group": "monitoring.coreos.com", "kind": "ServiceMonitor" },
+            "when": { "type": "selectedByNone", "kind": prometheus, "alsoKinds": [agent],
+                      "selector": ".spec.serviceMonitorSelector",
+                      "namespaceSelector": ".spec.serviceMonitorNamespaceSelector" },
+            "message": "x"
+        }, {
+            "id": "sn", "title": "Selects nothing", "kind": { "group": "monitoring.coreos.com", "kind": "PodMonitor" },
+            "when": { "type": "selectsNone", "kind": { "group": "", "kind": "Pod" }, "selector": ".spec.selector",
+                      "selectedBy": { "kind": prometheus, "selector": ".spec.podMonitorSelector",
+                                      "namespaceSelector": ".spec.podMonitorNamespaceSelector",
+                                      "ownNamespaceWhen": { "type": "equals", "path": ".spec.ignoreNamespaceSelectors", "value": true } } },
+            "message": "in {{selectsNone:namespaces}}"
+        }]))
+        .unwrap();
+        assert_eq!(
+            problem_kinds(&m),
+            vec![
+                kind("monitoring.coreos.com", "ServiceMonitor"),
+                kind("monitoring.coreos.com", "Prometheus"),
+                kind("monitoring.coreos.com", "PrometheusAgent"),
+                kind("", "Namespace"),
+                kind("monitoring.coreos.com", "PodMonitor"),
+                kind("", "Pod"),
+            ]
+        );
+        assert!(looks_across(&m.contributes.problems[0].when));
+        for text in ["{{.spec.names|uniqueKey}}", "in {{selectsNone:namespaces}}"] {
+            let found = json!({ "problems": [{ "message": text }] });
+            assert!(check_parity_syntax(PARITY_API, &found).is_ok());
+            let refused = check_parity_syntax(SOURCES_API, &found).unwrap_err();
+            assert!(refused.message.contains("needs sextantApi 5"), "{text}");
+        }
     }
 
     #[test]

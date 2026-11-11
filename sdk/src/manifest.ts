@@ -251,6 +251,11 @@ export interface ManifestKind {
    * those this holds for (a condition without `missing`; since Sextant 0.30).
    */
   problemWhen?: ProblemCondition;
+  /**
+   * "Only problems" shows the objects with an active problem of these rules only: ids of the extension's rules of the
+   * kind, not with `problemWhen` (`sextantApi` 5, Sextant 0.30.1).
+   */
+  problemRules?: string[];
 }
 
 export interface ManifestDockAction {

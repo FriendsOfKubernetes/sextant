@@ -783,6 +783,16 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`selectsNone\` needs sextantApi ${SOURCES_API} or later`);
     if (inside !== "top") fail([...segments, "type"], "`selectsNone` cannot be inside `any` or `not`: a list not read would make it unknown");
     if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
+    for (const key of ["selectedBy", "namedOnly"]) {
+      if (condition[key] !== undefined && counter.api < PARITY_API) fail([...segments, key], `needs sextantApi ${PARITY_API} or later`);
+    }
+    if (condition.selectedBy !== undefined) {
+      // The objects that select it decide where it looks (ADR-0169).
+      const by = condition.selectedBy;
+      checkSelecting(by, [...segments, "selectedBy"], counter);
+      checkObjectCondition(by.ownNamespaceWhen, [by.kind, ...(by.alsoKinds ?? [])], [...segments, "selectedBy", "ownNamespaceWhen"], counter.api);
+      if (usesTime(by.ownNamespaceWhen)) fail([...segments, "selectedBy", "ownNamespaceWhen"], "reads no time (`olderThan`): it is judged when that object changes");
+    }
     checkRulePath(condition.selector, kind, [...segments, "selector"], counter.metadataOnly);
     for (const field of ["anyNamespacesPath", "namespacesPath"]) {
       if (condition[field] !== undefined) checkRulePath(condition[field], kind, [...segments, field], counter.metadataOnly);
@@ -792,6 +802,14 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
       const maxKinds = ruleLimits(counter.api)[1];
       if (counter.kinds.length > maxKinds) fail([...segments, "kind"], `the rules judge at most ${maxKinds} kinds`);
     }
+    return;
+  }
+  if (condition.type === "selectedByNone") {
+    // No object of the kinds selects it (ADR-0169): a ServiceMonitor no Prometheus picks up.
+    if (counter.single) fail([...segments, "type"], "`selectedByNone` judges across objects: only problem rules may use it");
+    if (counter.api < PARITY_API) fail([...segments, "type"], `\`selectedByNone\` needs sextantApi ${PARITY_API} or later`);
+    if (inside !== "top") fail([...segments, "type"], "`selectedByNone` cannot be inside `any` or `not`: a list not read would make it unknown");
+    checkSelecting(condition, segments, counter);
     return;
   }
   if (condition.type === "related") {
@@ -868,6 +886,37 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     return;
   }
   checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+}
+
+/** The kind Namespaces are looked up as for their labels (`namespace_kind`, ADR-0169). */
+const NAMESPACE_KIND = { group: "", kind: "Namespace" };
+
+/**
+ * `check_selecting` (ADR-0169): the kinds that select (no Secret, each once, 1 to 3 more), their selector paths reading
+ * no secret of theirs; they and the Namespaces count among the rules' kinds, in that order.
+ */
+function checkSelecting(by, segments, counter) {
+  const also = by.alsoKinds ?? [];
+  if (by.kind.group === "" && by.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
+  if (by.alsoKinds !== undefined && (also.length === 0 || also.length > 3)) fail([...segments, "alsoKinds"], "has 1 to 3 kinds");
+  also.forEach((other, i) => {
+    if (sameKind(other, by.kind) || also.slice(0, i).some((k) => sameKind(k, other))) fail([...segments, "alsoKinds", i], "names a kind already looked up");
+    if (other.group === "" && other.kind.toLowerCase() === "secret") fail([...segments, "alsoKinds", i], "Secrets are never listed for rules");
+  });
+  [by.kind, ...also].forEach((target, i) => {
+    const place = (key) => (i === 0 ? [...segments, key] : [...segments, "alsoKinds", i - 1]);
+    checkRulePath(by.selector, target, place("selector"), false);
+    checkRulePath(by.namespaceSelector, target, place("namespaceSelector"), false);
+  });
+  const maxKinds = ruleLimits(counter.api)[1];
+  [by.kind, ...also, NAMESPACE_KIND].forEach((target, i) => {
+    if (counter.kinds.some((k) => sameKind(k, target))) return;
+    counter.kinds.push(target);
+    if (counter.kinds.length > maxKinds) {
+      const place = i === 0 ? [...segments, "kind"] : i <= also.length ? [...segments, "alsoKinds", i - 1] : [...segments, "namespaceSelector"];
+      fail(place, `the rules judge at most ${maxKinds} kinds`);
+    }
+  });
 }
 
 /** A Kubernetes label selector (`is_set_selector` in Rust): `key`, `!key`, `key=value`, `key==value`, `key!=value`,
@@ -982,7 +1031,13 @@ const looksAcross = (condition) => lookedUpKinds(condition).length > 0 || judged
 
 function lookedUpKinds(condition) {
   if (condition.type === "missing") return [condition.kind, ...(condition.alsoKinds ?? [])];
-  if (["related", "relatedBy", "selectsNone"].includes(condition.type)) return [condition.kind];
+  if (["related", "relatedBy"].includes(condition.type)) return [condition.kind];
+  // The objects that select, and the Namespaces (ADR-0169).
+  if (condition.type === "selectsNone") {
+    const by = condition.selectedBy;
+    return by === undefined ? [condition.kind] : [condition.kind, by.kind, ...(by.alsoKinds ?? []), NAMESPACE_KIND];
+  }
+  if (condition.type === "selectedByNone") return [condition.kind, ...(condition.alsoKinds ?? []), NAMESPACE_KIND];
   if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUpKinds);
   if (condition.type === "not") return lookedUpKinds(condition.of);
   return [];
@@ -1160,6 +1215,15 @@ function judgedIn(condition) {
 const factPlaceholder = (inner) => (inner.trim().startsWith("fact:") ? inner.trim().slice(5).trim() : undefined);
 
 /** A rule's message (`check_rule_message`): `{{fact:<name>}}` names a value of a fact its `judged` conditions name. */
+/** `SELECTS_NONE_NAMESPACES` (ADR-0169): the placeholder of the namespaces a rule's `selectsNone` looked in. */
+const SELECTS_NONE_NAMESPACES = "selectsNone:namespaces";
+
+/** `has_selects_none`. */
+const hasSelectsNone = (condition) =>
+  condition.type === "selectsNone" ||
+  ((condition.type === "all" || condition.type === "any") && condition.of.some(hasSelectsNone)) ||
+  (condition.type === "not" && hasSelectsNone(condition.of));
+
 function checkRuleMessage(text, rule, manifest, segments, metadataOnly) {
   const found = placeholders(text);
   if (found === null) fail(segments, "has a `{{` without its `}}`");
@@ -1177,7 +1241,12 @@ function checkRuleMessage(text, rule, manifest, segments, metadataOnly) {
     const end = after.indexOf("}}");
     if (end < 0) break;
     const name = factPlaceholder(after.slice(0, end));
-    if (name !== undefined) {
+    if (after.slice(0, end).trim() === SELECTS_NONE_NAMESPACES) {
+      // The namespaces the rule's `selectsNone` looked in (ADR-0169), filled by the window.
+      if (manifest.sextantApi < PARITY_API) fail(segments, `\`{{${SELECTS_NONE_NAMESPACES}}}\` needs sextantApi ${PARITY_API} or later`);
+      if (!hasSelectsNone(rule.when)) fail(segments, `has \`{{${SELECTS_NONE_NAMESPACES}}}\`, which only a rule with \`selectsNone\` fills`);
+      rest += tail.slice(0, start);
+    } else if (name !== undefined) {
       if (!allowed.has(name)) fail(segments, `has \`{{fact:${name}}}\`, which no fact of the rule's \`judged\` conditions gives`);
       rest += tail.slice(0, start);
     } else {
@@ -1344,7 +1413,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts", "positions"];
+const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts", "positions", "uniqueKey"];
 
 /** `lists_matches`: a path whose last step, and no other, lists the matches (`|positions`, ADR-0169). */
 function listsMatches(text) {
@@ -1355,7 +1424,8 @@ function listsMatches(text) {
 
 /**
  * `check_parity_syntax` (ADR-0169): below sextantApi 5, no path or placeholder of `contributes` uses lists three deep,
- * a match field compared trimmed or `|positions`; strings visited in key order, as Rust does.
+ * a match field compared trimmed, `|positions`, `|uniqueKey` or `{{selectsNone:namespaces}}`; strings visited in key
+ * order, as Rust does.
  */
 function checkParitySyntax(manifest) {
   if (!(manifest.sextantApi < PARITY_API) || !isObject(manifest.contributes)) return;
@@ -1374,6 +1444,8 @@ function checkParitySyntax(manifest) {
       for (const inner of placeholders(value) ?? []) {
         const [field, ...filters] = inner.split("|");
         if (filters.some((f) => f.trim() === "positions")) found ??= "`|positions`";
+        if (filters.some((f) => f.trim() === "uniqueKey")) found ??= "`|uniqueKey`";
+        if (inner.trim() === SELECTS_NONE_NAMESPACES) found ??= "`{{selectsNone:namespaces}}`";
         for (const one of splitOutsideQuotes(field, "??").flatMap((p) => splitOutsideQuotes(p, "+")).flatMap((p) => splitOutsideQuotes(p, " * "))) found ??= newIn(one);
       }
       if (found !== undefined) fail(here, `${found} needs sextantApi ${PARITY_API} or later`);
@@ -2366,6 +2438,20 @@ function checkKinds(manifest) {
     }
     if (entry.problemWhen !== undefined) {
       checkObjectCondition(entry.problemWhen, [{ group: entry.group, kind: entry.kind }], [...here, "problemWhen"], manifest.sextantApi);
+    }
+    if (entry.problemRules !== undefined) {
+      // "Only problems" from these rules only (ADR-0169).
+      const at = [...here, "problemRules"];
+      if (manifest.sextantApi < PARITY_API) fail(at, `needs sextantApi ${PARITY_API} or later`);
+      if (entry.problemWhen !== undefined) fail(at, 'goes without `problemWhen`: "Only problems" shows one or the other');
+      if (entry.problemRules.length === 0 || entry.problemRules.length > 100) fail(at, "names 1 to 100 rules");
+      entry.problemRules.forEach((id, j) => {
+        if (entry.problemRules.slice(0, j).includes(id)) fail([...at, j], "names a rule twice");
+        const rules = manifest.contributes?.problems ?? [];
+        if (!rules.some((rule) => rule.id === id && rule.kindsFrom === undefined && sameKind(rule.kind, entry))) {
+          fail([...at, j], "is not the id of one of the extension's rules of this kind");
+        }
+      });
     }
     (entry.aliases ?? []).forEach((alias, j) => {
       if (!(alias.length >= 1 && alias.length <= 20 && /^[a-z0-9-]+$/.test(alias))) {

@@ -3,6 +3,7 @@ import type { FieldPair } from "./FieldPair";
 import type { KindPattern } from "./KindPattern";
 import type { ProblemScalar } from "./ProblemScalar";
 import type { ProblemState } from "./ProblemState";
+import type { SelectingObjects } from "./SelectingObjects";
 
 /**
  * A condition of a rule, tagged by `type`.
@@ -68,7 +69,19 @@ enclosingNamespacePath?: string,
  * `enclosingNamespacePath` counts only where this holds of the holding object (ADR-0169). Reads only that
  * object, no time. `sextantApi` 5.
  */
-enclosingNamespaceWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
+enclosingNamespaceWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, 
+/**
+ * The objects that select the judged one decide where its selector looks (ADR-0169), as Prometheus Operator's
+ * `ignoreNamespaceSelectors`: when `ownNamespaceWhen` holds for every one of them, in its own namespace
+ * only; for some, in its own too. Unknown or none of them: as written. `sextantApi` 5.
+ */
+selectedBy?: SelectingObjects, 
+/**
+ * Judged only where the selector looks in named namespaces (ADR-0169): one of every namespace (after
+ * `selectedBy`) is not judged and widens no `narrowLookups` list, as the built-in view never judged a monitor
+ * of every namespace. `sextantApi` 5.
+ */
+namedOnly?: boolean, } | { "type": "selectedByNone", kind: KindPattern, alsoKinds?: Array<KindPattern>, selector: string, namespaceSelector: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
 /**
  * One problem for each time the answer gives the fact for the object, each with its own texts and an
  * identity of them (notifications, "Only new since"), not one for the first; only as a rule's whole `when`.

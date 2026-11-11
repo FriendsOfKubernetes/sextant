@@ -146,8 +146,17 @@ export interface Lookup {
    * cluster serves has it, a kind it does not serve having no objects.
    */
   also?: { group: string; kind: string }[];
-  /** `selectsNone` (#404): no object of the kind in `namespaces` (`null`: every one) has labels `selector` matches. */
-  selects?: { selector: LabelSelector; namespaces: string[] | null };
+  /**
+   * `selectsNone` (#404): no object of the kind in `namespaces` (`null`: every one) has labels `selector` matches. With
+   * `by` (ADR-0169) the objects that select the judged one (in `own`, with `labels`) narrow where it looks; `namedOnly`:
+   * a selector that still looks in every namespace is not judged.
+   */
+  selects?: { selector: LabelSelector; namespaces: string[] | null; own?: string; namedOnly?: boolean; by?: SelectingLookup };
+  /**
+   * `selectedByNone` (ADR-0169): no object of the kind (and `also`) selects the judged object, which has `labels` and
+   * is in `namespace`; at least one such object exists.
+   */
+  selectedBy?: SelectingLookup;
   /**
    * `judged` (ADR-0168): the judge's latest answer must give this fact for the object (`group`, `kind` and `name` are
    * empty). `judgeAcross` adds what the judge read (`reads`: each kind and the namespaces its source watched,
@@ -163,6 +172,27 @@ export interface Lookup {
      */
     needs?: { group: string; kind: string; namespace?: string; name?: string }[];
   };
+}
+
+/** Who may select a judged object (`selectedByNone`, `selectsNone.selectedBy`, ADR-0169), and what it is. */
+export interface SelectingLookup {
+  kinds: { group: string; kind: string }[];
+  /** The paths of their selector and namespace selector: the key their rows keep them under (`selectingKey`). */
+  selector: string;
+  namespaceSelector: string;
+  /** `ownNamespaceWhen`'s `factKey`, when the selectors narrow where a `selectsNone` looks. */
+  fact?: string;
+  labels: Record<string, string>;
+  namespace: string;
+}
+
+/** The key a selecting object's row keeps the selectors at these paths under (ADR-0169). */
+export const selectingKey = (selector: string, namespaceSelector: string): string => `${selector}|${namespaceSelector}`;
+
+/** The labels of an object, its string values only. */
+function labelsOf(obj: KubeObject): Record<string, string> {
+  const raw = (obj.metadata?.labels ?? {}) as Record<string, unknown>;
+  return Object.fromEntries(Object.entries(raw).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 }
 
 /** A Kubernetes label selector, as `selectsNone` reads it (#404). */
@@ -388,7 +418,34 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const every = condition.anyNamespacesPath !== undefined && valueAt(obj, condition.anyNamespacesPath) === true;
       const own = obj.metadata?.namespace ?? "";
       const namespaces = every ? null : listed.length > 0 ? listed : [own];
-      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", selects: { selector, namespaces } }] };
+      const by = condition.selectedBy;
+      // A selector of every namespace that nothing can narrow is not judged (`namedOnly`, ADR-0169).
+      if (condition.namedOnly === true && namespaces === null && by === undefined) return NO;
+      const selects: NonNullable<Lookup["selects"]> = { selector, namespaces };
+      if (condition.namedOnly === true) selects.namedOnly = true;
+      if (by !== undefined) {
+        selects.own = own;
+        selects.by = {
+          kinds: [by.kind, ...(by.alsoKinds ?? [])].map(({ group, kind }) => ({ group, kind })),
+          selector: by.selector,
+          namespaceSelector: by.namespaceSelector,
+          fact: factKey(by.ownNamespaceWhen),
+          labels: labelsOf(obj),
+          namespace: own,
+        };
+      }
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", selects }] };
+    }
+    case "selectedByNone": {
+      // The rows of the selecting kinds tell whether any picks the object up (ADR-0169).
+      const selectedBy: SelectingLookup = {
+        kinds: [condition.kind, ...(condition.alsoKinds ?? [])].map(({ group, kind }) => ({ group, kind })),
+        selector: condition.selector,
+        namespaceSelector: condition.namespaceSelector,
+        labels: labelsOf(obj),
+        namespace: obj.metadata?.namespace ?? "",
+      };
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", selectedBy }] };
     }
     case "judged":
       // The judge's latest answer tells (ADR-0168): `judgeAcross` keeps the problem only where it gives the fact.
@@ -757,6 +814,13 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     const unique = [...new Set(items)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     return unique.length === 0 ? undefined : formatList(unique);
   }
+  if (filter === "uniqueKey") {
+    // A sort key of a list's texts (ADR-0169): each once, empty ones left out, by code point, joined with `,` — as the
+    // built-in Prometheus Operator table keyed a monitor's namespaces.
+    const items = (Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : []).filter((v) => v !== "");
+    const unique = [...new Set(items)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    return unique.length === 0 ? undefined : unique.join(",");
+  }
   if (filter === "list" || filter === "join") {
     const items = Array.isArray(value) ? value.filter(isScalar).map(String) : isScalar(value) ? [String(value)] : [];
     if (items.length === 0) return undefined;
@@ -794,6 +858,9 @@ export const MISSING_MARK = "{{missing}}";
 /** Where a message names the objects a `related` or `relatedBy` found (ADR-0167 amendment); `judgeAcross` fills it. */
 export const FOUND_MARK = "{{found}}";
 
+/** Where a message names the namespaces a `selectsNone` looked in (ADR-0169); `judgeAcross` fills it. */
+export const SELECTS_IN_MARK = "{{selectsNone:namespaces}}";
+
 /** Where a message shows a text of a judge's fact (`{{fact:<name>}}`, ADR-0168); `judgeAcross` fills it. */
 export const FACT_MARK = /\{\{\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*\}\}/g;
 
@@ -802,6 +869,7 @@ export function renderMessage(template: string, obj: KubeObject): string {
     // `{{missing}}` (#404) is filled once the rows say which named objects are not there (`judgeAcross`).
     if (inner.trim() === "missing") return MISSING_MARK;
     if (inner.trim() === "found") return FOUND_MARK;
+    if (inner.trim() === "selectsNone:namespaces") return SELECTS_IN_MARK;
     // `{{fact:<name>}}` (ADR-0168) once the judge's answer gives it.
     const fact = /^\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*$/.exec(inner);
     if (fact) return `{{fact:${fact[1]}}}`;
