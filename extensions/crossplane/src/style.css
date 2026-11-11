@@ -91,6 +91,13 @@ body.compact {
   font-size: 0.8125rem;
 }
 
+/* As the built-in page's `cm-table`: words stay whole (the kit's tables break them anywhere), names alone may break. */
+.xp-page .sx-table th,
+.xp-page .sx-table td {
+  padding: 4px 12px 4px 0;
+  overflow-wrap: normal;
+}
+
 .xp-table__names {
   overflow-wrap: anywhere;
 }
