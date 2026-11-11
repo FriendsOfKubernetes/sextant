@@ -2354,10 +2354,10 @@
       "message": "supports 1"
     },
     {
-      "name": "sextantApi 5 with an unknown field",
+      "name": "sextantApi 6 with an unknown field",
       "base": "minimal",
       "set": {
-        "/sextantApi": 5,
+        "/sextantApi": 6,
         "/futureField": true
       },
       "path": "sextantApi",

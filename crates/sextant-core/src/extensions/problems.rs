@@ -28,6 +28,8 @@ pub const PROBLEMS_API: u32 = 2;
 pub const ACROSS_API: u32 = 3;
 /// The extension API version that brought `not` and a rule's `source` (ADR-0152).
 pub const SOURCES_API: u32 = 4;
+/// The API of what the moved views still lacked after 0.30.0 (#417, ADR-0169): Sextant 0.30.1.
+pub const PARITY_API: u32 = 5;
 /// Longest label selector of a rule's source (the schema's `maxLength`).
 pub const MAX_SELECTOR_CHARS: usize = 1000;
 /// Rules per extension before `sextantApi` 4.

@@ -28,7 +28,7 @@ export const CATEGORIES: CatalogCategory[] = [
 /** The extension API versions this Sextant reads: `MIN_API` to `SUPPORTED_API`, as the core's `supports_api` (a Rust test
  * keeps them equal). */
 export const MIN_API = 1;
-export const SUPPORTED_API = 4;
+export const SUPPORTED_API = 5;
 
 /** Whether this Sextant installs an extension written for API version `api`. */
 export function supportsApi(api: number): boolean {

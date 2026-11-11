@@ -10,7 +10,7 @@ import { TextDecoder, TextEncoder } from "node:util";
 
 export const MANIFEST_FILE = "sextant-extension.json";
 /** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137), 3 `contributes.sectionBadges` (ADR-0143). */
-export const SUPPORTED_API = 4;
+export const SUPPORTED_API = 5;
 /** The oldest one it still reads: every extension once accepted keeps working (ADR-0142). */
 export const MIN_API = 1;
 export const MAX_MANIFEST_BYTES = 512 * 1024;
@@ -659,6 +659,8 @@ export function placeholders(text) {
 
 const ACROSS_API = 3;
 const SOURCES_API = 4;
+/** The API of what the moved views still lacked after 0.30.0 (`PARITY_API`, #417, ADR-0169): Sextant 0.30.1. */
+const PARITY_API = 5;
 const MAX_SELECTOR_CHARS = 1000;
 
 /** A rule's path: no secret, and under `.metadata` when its source watches metadata only (`check_rule_path`). */

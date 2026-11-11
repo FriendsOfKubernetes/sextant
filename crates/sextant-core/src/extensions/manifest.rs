@@ -30,7 +30,7 @@ pub const MANIFEST_FILE: &str = "sextant-extension.json";
 /// (ADR-0137), 3 `contributes.sectionBadges`, rules across objects and `contributes.commands` (ADR-0143, ADR-0144,
 /// ADR-0147), 4 sources and `not` in problem rules, computed columns, action conditions, kinds in a section of their
 /// own, status patches, port-forwards, cluster menu items, services and agent tools (ADR-0152 to ADR-0159).
-pub const SUPPORTED_API: u32 = 4;
+pub const SUPPORTED_API: u32 = 5;
 /// The oldest one it still reads: every extension once accepted keeps working (ADR-0142).
 pub const MIN_API: u32 = 1;
 
@@ -1425,7 +1425,7 @@ mod tests {
 
     #[test]
     fn an_unsupported_api_version_is_its_own_error() {
-        for api in [0, 5, 99] {
+        for api in [0, 6, 99] {
             // Even with fields this Sextant does not know: the version is the reason.
             let value = with(
                 with(minimal(), "/sextantApi", json!(api)),
@@ -1889,7 +1889,7 @@ mod tests {
         let rejected = [
             with(minimal(), "/extra", json!(1)),
             without(minimal(), "/entry"),
-            with(minimal(), "/sextantApi", json!(5)),
+            with(minimal(), "/sextantApi", json!(6)),
             with(minimal(), "/id", json!("Bad Id")),
             with(full(), "/permissions/rules/0/actions", json!(["exec"])),
             with(full(), "/contributes/columns/0/jsonPath", json!("nope")),

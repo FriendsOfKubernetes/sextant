@@ -40,9 +40,9 @@
       "pattern": "\\S"
     },
     "sextantApi": {
-      "description": "Major version of the extension API the extension is written for; Sextant supports 1 to 4 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`, 3 adds `contributes.sectionBadges` and `contributes.commands`, 4 adds sources and `not` in problem rules, computed columns, action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`, `contributes.services` and `contributes.agentTools`). A newer Sextant keeps reading every version it once read (ADR-0142).",
+      "description": "Major version of the extension API the extension is written for; Sextant supports 1 to 5 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`, 3 adds `contributes.sectionBadges` and `contributes.commands`, 4 adds sources and `not` in problem rules, computed columns, action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`, `contributes.services` and `contributes.agentTools`, 5 (Sextant 0.30.1) what the moved views still lacked, ADR-0169). A newer Sextant keeps reading every version it once read (ADR-0142).",
       "type": "integer",
-      "enum": [1, 2, 3, 4]
+      "enum": [1, 2, 3, 4, 5]
     },
     "entry": {
       "description": "The HTML file every view opens, relative to the package root, e.g. index.html or dist/index.html; no part may start with `.`, be `node_modules` (any case), end with `.` or a space, or be a Windows device name.",
