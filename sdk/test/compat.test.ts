@@ -14,6 +14,8 @@ import { unzip } from "../scripts/zip.mjs";
 
 const COMPAT = join(import.meta.dirname, "fixtures/compat");
 const ROOK_OBJECTS = join(import.meta.dirname, "../../extensions/rook-ceph/fixtures/objects.json");
+const EXTENSIONS = join(import.meta.dirname, "../../extensions");
+const fixture = (path: string): unknown => JSON.parse(readFileSync(join(EXTENSIONS, path), "utf8"));
 
 interface KubeObject {
   apiVersion: string;
@@ -213,6 +215,9 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
       "published/sextant.rook-ceph-1.0.0.sextant-ext",
       "published/sextant.rook-ceph-1.1.1.sextant-ext",
       "sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext",
+      "published/sextant.rook-ceph-1.2.0.sextant-ext",
+      "published/sextant.argo-rollouts-1.4.0.sextant-ext",
+      "published/sextant.cert-manager-1.0.0.sextant-ext",
     ];
     const found = readdirSync(COMPAT, { withFileTypes: true })
       .filter((e) => e.isDirectory())
@@ -278,7 +283,11 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
     expect(onFrameError).not.toHaveBeenCalled();
   });
 
-  for (const path of ["published/sextant.rook-ceph-1.0.0.sextant-ext", "published/sextant.rook-ceph-1.1.1.sextant-ext"]) {
+  for (const path of [
+    "published/sextant.rook-ceph-1.0.0.sextant-ext",
+    "published/sextant.rook-ceph-1.1.1.sextant-ext",
+    "published/sextant.rook-ceph-1.2.0.sextant-ext",
+  ]) {
     it(`${path}: the Rook Ceph page draws the fixtures' CephClusters`, async () => {
       serve(objectsIn(JSON.parse(readFileSync(ROOK_OBJECTS, "utf8"))));
       const doc = open(path, context("sextant.rook-ceph", { contribution: "overview" }));
@@ -287,6 +296,39 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
       expect(onFrameError).not.toHaveBeenCalled();
     });
   }
+});
+
+describe("extensions of API 4 (Sextant 0.30.0)", () => {
+  const refOf = (o: KubeObject) => ({
+    kind: { group: groupOf(o.apiVersion), version: o.apiVersion.split("/").pop()!, kind: o.kind },
+    namespace: o.metadata.namespace ?? null,
+    name: o.metadata.name,
+  });
+
+  it("published/sextant.argo-rollouts-1.4.0.sextant-ext: a Rollout's details section draws its steps and ReplicaSets", async () => {
+    const rollout = fixture("argo-rollouts/fixtures/rollout-canary-paused.json") as KubeObject;
+    serve([rollout, ...(fixture("argo-rollouts/fixtures/replicasets.json") as KubeObject[])]);
+    const doc = open(
+      "published/sextant.argo-rollouts-1.4.0.sextant-ext",
+      context("sextant.argo-rollouts", { view: "details", contribution: "rollout", selection: [refOf(rollout)], resourceVersion: "1" }),
+    );
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("rollout-canary-7d8c6f9b5"), { timeout: 4000 });
+    expect(doc.body.textContent).toContain("CanaryPauseStep");
+    expect(calls()).toEqual(expect.arrayContaining(["resources.get", "resources.watch"]));
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
+
+  it("published/sextant.cert-manager-1.0.0.sextant-ext: a Certificate's details section draws its names and issuer", async () => {
+    const certificate = fixture("cert-manager/fixtures/certificate.json") as KubeObject;
+    serve([certificate]);
+    const doc = open(
+      "published/sextant.cert-manager-1.0.0.sextant-ext",
+      context("sextant.cert-manager", { view: "details", contribution: "certmanager", selection: [refOf(certificate)], resourceVersion: "1" }),
+    );
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("shop.example.com"), { timeout: 4000 });
+    expect(doc.body.textContent).toContain("letsencrypt");
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
 });
 
 describe("old projects: today's SDK builds them unchanged", () => {

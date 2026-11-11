@@ -18,13 +18,17 @@ are what users have installed. Today's Sextant and SDK must keep running them, a
 | `published/sextant.rook-ceph-1.0.0.sextant-ext` | 2 | the release `rook-ceph-v1.0.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.28.0) | `fcb439336280c8fdd27823b3fcdeb714e445b50e505e1b67b0ef7fcbaf3f40ce` |
 | `published/sextant.rook-ceph-1.1.1.sextant-ext` | 2 | the release `rook-ceph-v1.1.1` of FriendsOfKubernetes/sextant-extensions (SDK 0.28.1) | `d7de956caa92f5e98cd08abc6dfff62c81f6add0a4518aa67832905f520182a2` |
 | `sdk-0.29.0/sextant.example.crd-view-1.1.0.sextant-ext` | 3 | the SDK of the release `v0.29.0` (`sdk:build` + `sdk:pack` of its `sdk/examples/crd-view`) | `3a9f2850323c4b3fc5c190a0c3bef3d17360da6b0ffc7d480f74345ebe322f23` |
+| `published/sextant.rook-ceph-1.2.0.sextant-ext` | 3 | the release `rook-ceph-v1.2.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.29) | `d525cc3d4f08a20eca5e32afd7005f064899f8867c8be694fade73419b5795db` |
+| `published/sextant.argo-rollouts-1.4.0.sextant-ext` | 4 | the release `argo-rollouts-v1.4.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.30.0) | `743912892cafa8daa97a84c91c3858eb4b48541d2fdc55ec25d10e495f2d0146` |
+| `published/sextant.cert-manager-1.0.0.sextant-ext` | 4 | the release `cert-manager-v1.0.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.30.0) | `78f0900c30151115436ffbbd24f152f0fce8a2391f480d8ed7ae34d833195b76` |
 
 The `published/` files equal the release assets: their SHA-256 is the `digest` GitHub shows for each.
 
 **`settings-<version>.json`.** These are the `extensions` entries of a `settings.json` as that Sextant wrote them at
 consent:
 - `granted` holds the manifest's permissions, with `confirm` written out;
-- `grantedBackend`, `grantedProblems` and `grantedMetricQueries` appear only in versions that had them.
+- `grantedBackend`, `grantedProblems`, `grantedMetricQueries` and `grantedCommands` appear only in versions that had them;
+- `settings-0.30.0.json` is written as 0.30.0's install from the catalog writes it, with the catalog source.
 
 Each entry names a package above by id and version.
 

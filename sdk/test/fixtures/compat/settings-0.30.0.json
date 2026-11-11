@@ -1,0 +1,802 @@
+{
+  "extensions": [
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephCluster"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephBlockPool"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephFilesystem"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStore"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStoreUser"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephNFS"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephClient"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephBlockPoolRadosNamespace"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephFilesystemSubVolumeGroup"
+                },
+                {
+                  "group": "objectbucket.io",
+                  "kind": "ObjectBucketClaim"
+                },
+                {
+                  "group": "objectbucket.io",
+                  "kind": "ObjectBucket"
+                },
+                {
+                  "group": "",
+                  "kind": "Pod"
+                },
+                {
+                  "group": "",
+                  "kind": "PersistentVolumeClaim"
+                },
+                {
+                  "group": "storage.k8s.io",
+                  "kind": "StorageClass"
+                },
+                {
+                  "group": "",
+                  "kind": "Node"
+                },
+                {
+                  "group": "apps",
+                  "kind": "Deployment"
+                },
+                {
+                  "group": "batch",
+                  "kind": "Job"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          },
+          {
+            "actions": [
+              "modify"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephCluster"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephBlockPool"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephFilesystem"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStore"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStoreUser"
+                },
+                {
+                  "group": "storage.k8s.io",
+                  "kind": "StorageClass"
+                },
+                {
+                  "group": "",
+                  "kind": "Node"
+                },
+                {
+                  "group": "apps",
+                  "kind": "Deployment"
+                },
+                {
+                  "group": "batch",
+                  "kind": "Job"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          },
+          {
+            "actions": [
+              "delete"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephBlockPool"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephFilesystem"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStore"
+                },
+                {
+                  "group": "ceph.rook.io",
+                  "kind": "CephObjectStoreUser"
+                },
+                {
+                  "group": "storage.k8s.io",
+                  "kind": "StorageClass"
+                },
+                {
+                  "group": "",
+                  "kind": "Pod"
+                },
+                {
+                  "group": "batch",
+                  "kind": "Job"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ]
+      },
+      "grantedCommands": [
+        {
+          "argv": [
+            "ceph",
+            "status"
+          ],
+          "changes": false,
+          "id": "status",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Ceph status"
+        },
+        {
+          "argv": [
+            "ceph",
+            "health",
+            "detail"
+          ],
+          "changes": false,
+          "id": "health-detail",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Health checks in detail"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "tree"
+          ],
+          "changes": false,
+          "id": "osd-tree",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "OSD tree"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "df",
+            "tree"
+          ],
+          "changes": false,
+          "id": "osd-df",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "OSD usage by CRUSH tree"
+        },
+        {
+          "argv": [
+            "ceph",
+            "df"
+          ],
+          "changes": false,
+          "id": "df",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Raw and pool usage"
+        },
+        {
+          "argv": [
+            "ceph",
+            "pg",
+            "stat"
+          ],
+          "changes": false,
+          "id": "pg-stat",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Placement groups in short"
+        },
+        {
+          "argv": [
+            "ceph",
+            "versions"
+          ],
+          "changes": false,
+          "id": "versions",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Versions of the daemons"
+        },
+        {
+          "argv": [
+            "ceph",
+            "crash",
+            "ls-new"
+          ],
+          "changes": false,
+          "id": "crash-ls-new",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Crashes not archived yet"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "dump",
+            "--format",
+            "json"
+          ],
+          "changes": false,
+          "id": "osd-dump",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "The OSD map, to read its flags"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "ok-to-stop",
+            "{{osd}}"
+          ],
+          "changes": false,
+          "id": "osd-ok-to-stop",
+          "params": [
+            {
+              "max": 100000,
+              "min": 0,
+              "name": "osd",
+              "type": "int"
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Whether an OSD can be stopped without making data unavailable"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "safe-to-destroy",
+            "{{osd}}"
+          ],
+          "changes": false,
+          "id": "osd-safe-to-destroy",
+          "params": [
+            {
+              "max": 100000,
+              "min": 0,
+              "name": "osd",
+              "type": "int"
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Whether an OSD can be destroyed without losing data"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "out",
+            "{{osd}}"
+          ],
+          "changes": true,
+          "id": "osd-out",
+          "params": [
+            {
+              "max": 100000,
+              "min": 0,
+              "name": "osd",
+              "type": "int"
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Mark an OSD out: Ceph moves its data to the other OSDs"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "in",
+            "{{osd}}"
+          ],
+          "changes": true,
+          "id": "osd-in",
+          "params": [
+            {
+              "max": 100000,
+              "min": 0,
+              "name": "osd",
+              "type": "int"
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Mark an OSD in: Ceph places data on it again"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "reweight",
+            "{{osd}}",
+            "{{weight}}"
+          ],
+          "changes": true,
+          "id": "osd-reweight",
+          "params": [
+            {
+              "max": 100000,
+              "min": 0,
+              "name": "osd",
+              "type": "int"
+            },
+            {
+              "name": "weight",
+              "type": "enum",
+              "values": [
+                "1.0",
+                "0.95",
+                "0.9",
+                "0.85",
+                "0.8",
+                "0.75",
+                "0.7",
+                "0.6",
+                "0.5",
+                "0.4",
+                "0.3",
+                "0.2",
+                "0.1"
+              ]
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Reweight an OSD: Ceph moves part of its data to the other OSDs"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "set",
+            "{{flag}}"
+          ],
+          "changes": true,
+          "id": "osd-set",
+          "params": [
+            {
+              "name": "flag",
+              "type": "enum",
+              "values": [
+                "noout",
+                "norebalance",
+                "nobackfill",
+                "norecover",
+                "noscrub",
+                "nodeep-scrub"
+              ]
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Set a cluster-wide OSD flag"
+        },
+        {
+          "argv": [
+            "ceph",
+            "osd",
+            "unset",
+            "{{flag}}"
+          ],
+          "changes": true,
+          "id": "osd-unset",
+          "params": [
+            {
+              "name": "flag",
+              "type": "enum",
+              "values": [
+                "noout",
+                "norebalance",
+                "nobackfill",
+                "norecover",
+                "noscrub",
+                "nodeep-scrub"
+              ]
+            }
+          ],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Unset a cluster-wide OSD flag"
+        },
+        {
+          "argv": [
+            "ceph",
+            "crash",
+            "archive-all"
+          ],
+          "changes": true,
+          "id": "crash-archive-all",
+          "params": [],
+          "target": {
+            "container": "rook-ceph-tools",
+            "labelSelector": "app=rook-ceph-tools"
+          },
+          "title": "Archive every crash report, which clears RECENT_CRASH"
+        }
+      ],
+      "grantedMetricQueries": [
+        {
+          "id": "health",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "query": "max(ceph_health_status{namespace=\"{{namespace}}\"})",
+          "range": {
+            "maxHours": 168
+          },
+          "title": "Ceph health (0 OK, 1 WARN, 2 ERR)"
+        },
+        {
+          "id": "capacity",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "query": "max by (__name__) ({__name__=~\"ceph_cluster_total_bytes|ceph_cluster_total_used_raw_bytes\",namespace=\"{{namespace}}\"})",
+          "range": {
+            "maxHours": 168
+          },
+          "title": "Raw capacity: total and used bytes"
+        },
+        {
+          "id": "osds",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "query": "label_replace(sum(max by (ceph_daemon) (ceph_osd_up{namespace=\"{{namespace}}\"})), \"state\", \"up\", \"\", \"\") or label_replace(sum(max by (ceph_daemon) (ceph_osd_in{namespace=\"{{namespace}}\"})), \"state\", \"in\", \"\", \"\") or label_replace(count(max by (ceph_daemon) (ceph_osd_up{namespace=\"{{namespace}}\"})), \"state\", \"total\", \"\", \"\")",
+          "range": {
+            "maxHours": 168
+          },
+          "title": "OSDs up, in and in all"
+        },
+        {
+          "id": "pgs",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "query": "sum by (__name__) (max by (__name__, pool_id) ({__name__=~\"ceph_pg_(total|active|clean|degraded|undersized|down|stale|peering|incomplete|inconsistent|recovering|backfilling|remapped)\",namespace=\"{{namespace}}\"}))",
+          "range": {
+            "maxHours": 168
+          },
+          "title": "Placement groups by state"
+        },
+        {
+          "id": "osd-usage",
+          "params": [
+            {
+              "name": "namespace",
+              "type": "namespace"
+            }
+          ],
+          "query": "max by (ceph_daemon, __name__) ({__name__=~\"ceph_osd_(up|in|weight|stat_bytes|stat_bytes_used)\",namespace=\"{{namespace}}\"})",
+          "title": "Each OSD: up, in, override weight, size and used bytes"
+        }
+      ],
+      "grantedProblems": [
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephCluster"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephBlockPool"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephFilesystem"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephObjectStore"
+        },
+        {
+          "group": "batch",
+          "kind": "Job"
+        },
+        {
+          "group": "apps",
+          "kind": "Deployment"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephObjectStoreUser"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephFilesystemSubVolumeGroup"
+        },
+        {
+          "group": "ceph.rook.io",
+          "kind": "CephBlockPoolRadosNamespace"
+        }
+      ],
+      "id": "sextant.rook-ceph",
+      "installedAt": 1762850000000,
+      "name": "Rook Ceph",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.2.0"
+    },
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "argoproj.io",
+                  "kind": "Rollout"
+                },
+                {
+                  "group": "argoproj.io",
+                  "kind": "AnalysisRun"
+                },
+                {
+                  "group": "argoproj.io",
+                  "kind": "AnalysisTemplate"
+                },
+                {
+                  "group": "argoproj.io",
+                  "kind": "ClusterAnalysisTemplate"
+                },
+                {
+                  "group": "argoproj.io",
+                  "kind": "Experiment"
+                },
+                {
+                  "group": "apps",
+                  "kind": "ReplicaSet"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          },
+          {
+            "actions": [
+              "modify"
+            ],
+            "confirm": false,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "argoproj.io",
+                  "kind": "Rollout"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ],
+        "statusPatches": [
+          {
+            "group": "argoproj.io",
+            "kind": "Rollout"
+          }
+        ]
+      },
+      "grantedProblems": [
+        {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        }
+      ],
+      "id": "sextant.argo-rollouts",
+      "installedAt": 1762850000000,
+      "name": "Argo Rollouts",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.4.0"
+    },
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "cert-manager.io",
+                  "kind": "Certificate"
+                },
+                {
+                  "group": "cert-manager.io",
+                  "kind": "CertificateRequest"
+                },
+                {
+                  "group": "cert-manager.io",
+                  "kind": "Issuer"
+                },
+                {
+                  "group": "cert-manager.io",
+                  "kind": "ClusterIssuer"
+                },
+                {
+                  "group": "acme.cert-manager.io",
+                  "kind": "Order"
+                },
+                {
+                  "group": "acme.cert-manager.io",
+                  "kind": "Challenge"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ]
+      },
+      "grantedProblems": [
+        {
+          "group": "cert-manager.io",
+          "kind": "Certificate"
+        }
+      ],
+      "id": "sextant.cert-manager",
+      "installedAt": 1762850000000,
+      "name": "cert-manager",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.0.0"
+    }
+  ]
+}
