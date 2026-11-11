@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{ready}} de {{desired}} prontos",
   "serviceLb.noAddress": "Ainda sem endereço",
   "serviceLb.serviceUnreadable": "Não é possível ler o Service",
-  "serviceLb.truncated": "Só os primeiros {{limit}} Services são listados.",
-  "values.contentHidden": "valuesContent está definido, mas o Sextant não o entrega a extensões: ele pode conter segredos. A seção YAML o mostra.",
-  "values.setHidden": "Os valores de set estão lá, mas o Sextant não os entrega a extensões: eles podem conter segredos. A seção YAML os mostra.",
-  "node.argsHidden": "Os argumentos do nó estão lá, mas o Sextant não os entrega a extensões: eles podem conter o token de entrada. A seção YAML os mostra."
+  "serviceLb.truncated": "Só os primeiros {{limit}} Services são listados."
 }

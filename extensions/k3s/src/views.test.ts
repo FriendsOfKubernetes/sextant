@@ -1,7 +1,10 @@
 // The details sections and the "Distribution" page, driven through the SDK's stand-in for Sextant's window, as the
-// built-in view's tests drove them. Objects reach the frame as Sextant gives them to an extension: a HelmChart's
-// `valuesContent` and `set` and a node's `node-args`/`node-env` blanked and named in `sextant.dev/values-hidden`
-// (`hide_inline_secrets`, mirrored by `asSextantGivesIt`).
+// built-in view's tests drove them. Objects reach the frame as Sextant gives them to this extension, which may have
+// their secret fields masked (`permissions.maskedSecrets`, ADR-0169; `mask_inline_secrets`, mirrored by
+// `asSextantGivesIt` and kept equal to Rust by `src/resources/masking-cases.json`): a node's `node-args` with every
+// secret value `********`, a HelmChart's `valuesContent` as masked JSON and its `set` masked, named in
+// `sextant.dev/values-masked`; a node's `node-env`, and what does not read, blanked and named in
+// `sextant.dev/values-hidden`.
 import type { KubeObject, WatchUpdate } from "@sextant/extension-sdk";
 import { startTestHost, type TestHost, type TestWatch } from "@sextant/extension-sdk/testing";
 import { afterEach, describe, expect, it } from "vitest";
@@ -10,6 +13,9 @@ import { MAX_CHART_JOBS, startDetails } from "./details";
 import { setLanguage } from "./i18n";
 import { MAX_ADDONS, MAX_KUBE_SYSTEM, MAX_NODES, startPage } from "./page";
 import { MAX_CHARTS, MAX_JOBS } from "./model";
+import { parse } from "yaml";
+import { HIDDEN, K3S_OMITTED, looksSecret, maskedValuesContent, maskValues, nodeArgs } from "./mask";
+import { cleanText } from "./uri";
 
 const f = fixtures as unknown as Record<string, KubeObject>;
 const fx = (name: string): KubeObject => structuredClone(f[name]!);
@@ -30,21 +36,54 @@ const INLINE: Record<string, string[][]> = {
   ],
 };
 
-/** An object as Sextant gives it to an extension (`hide_inline_secrets`): each value there `""`, the paths named. */
+/** The masked copy Sextant gives of one field (`masked_node_args`, `masked_values_content`, `masked_set`); none to blank it. */
+function maskedCopy(path: string[], value: unknown): unknown {
+  const last = path[path.length - 1]!;
+  if (last.endsWith("/node-args")) {
+    const args = typeof value === "string" ? nodeArgs(value) : null;
+    if (!args) return undefined;
+    return JSON.stringify(
+      args.map((a) => (a.flag === undefined ? (a.hidden ? K3S_OMITTED : (a.value ?? "")) : a.hidden ? `${a.flag}=${K3S_OMITTED}` : a.value === undefined ? a.flag : `${a.flag}=${a.value}`)),
+    );
+  }
+  if (last === "valuesContent") {
+    if (typeof value !== "string") return undefined;
+    const shown = maskedValuesContent(value);
+    if (shown === undefined || shown === "") return shown;
+    return JSON.stringify(maskValues(parse(value)));
+  }
+  if (last === "set") {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, k.split(".").some(looksSecret) ? HIDDEN : (cleanText(typeof v === "string" ? v : typeof v === "object" ? JSON.stringify(v) : String(v)) ?? "")]),
+    );
+  }
+  // `node-env`: never given.
+  return undefined;
+}
+
+/** An object as Sextant gives it to this extension (`mask_inline_secrets`): masked copies where it can, `""` else, the paths named. */
 function asSextantGivesIt(obj: KubeObject): KubeObject {
   const out = structuredClone(obj);
   const hidden: string[] = [];
+  const masked: string[] = [];
   for (const path of INLINE[out.kind ?? ""] ?? []) {
     let at = out as unknown as Record<string, unknown>;
     for (const key of path.slice(0, -1)) at = (at?.[key] ?? undefined) as Record<string, unknown>;
     const last = path[path.length - 1]!;
     const value = at?.[last];
     if (value === undefined || value === null || value === "") continue;
-    if (typeof value === "object") for (const k of Object.keys(value)) (value as Record<string, unknown>)[k] = "";
+    const shown = path.map((p, i) => (/^[A-Za-z0-9_]+$/.test(p) ? `${i > 0 ? "." : ""}${p}` : `[${JSON.stringify(p)}]`)).join("");
+    hidden.push(shown);
+    const copy = maskedCopy(path, value);
+    if (copy !== undefined) {
+      at[last] = copy;
+      masked.push(shown);
+    } else if (typeof value === "object") for (const k of Object.keys(value)) (value as Record<string, unknown>)[k] = "";
     else at[last] = "";
-    hidden.push(path.map((p, i) => (/^[A-Za-z0-9_]+$/.test(p) ? `${i > 0 ? "." : ""}${p}` : `[${JSON.stringify(p)}]`)).join(""));
   }
   if (hidden.length > 0) out.metadata.annotations = { ...(out.metadata.annotations ?? {}), "sextant.dev/values-hidden": hidden.join(", ") };
+  if (masked.length > 0) out.metadata.annotations = { ...(out.metadata.annotations ?? {}), "sextant.dev/values-masked": masked.join(", ") };
   return out;
 }
 
@@ -136,24 +175,45 @@ describe("a HelmChart", () => {
     });
     // The built-in button's icon.
     expect(host.calls.some((c) => c.method === "ui.icon" && (c.params as { name: string }).name === "logs")).toBe(true);
-    // Sextant keeps valuesContent and set from the extension: it says so instead of the masked values.
-    expect(text()).toContain("valuesContent is set, but Sextant does not give it to extensions");
-    expect(text()).toContain("The set values are there, but Sextant does not give them to extensions");
-    expect(text()).not.toContain("Show valuesContent");
+    // Sextant gives valuesContent and set masked: the masked values, folded, as the built-in view showed them.
+    expect([...root.querySelectorAll("details summary")].map((s) => s.textContent)).toEqual(["Show valuesContent", "Show the set values"]);
     for (const secret of SECRETS) expect(text()).not.toContain(secret);
   });
 
-  it("masks the values it is given as the built-in view did", async () => {
+  it("masks the values as the built-in view did, the same from Sextant's masked copy as from the values themselves", async () => {
     const chart = fx("chartFailed");
     (chart.spec as Record<string, unknown>).values = { token: "k3s-pass", replicas: 3 };
-    await open(chart, "k3s", { raw: true });
-    const shown = [...root.querySelectorAll("details summary")].map((s) => s.textContent);
-    expect(shown).toEqual(["Show valuesContent", "Show values", "Show the set values"]);
-    const pres = [...root.querySelectorAll("details pre")].map((p) => p.textContent ?? "");
-    expect(pres[0]).toContain("apiToken: <hidden>");
-    expect(pres[1]).toContain("token: <hidden>");
-    expect(pres[2]).toBe("auth.password=<hidden>\ningress.enabled=true");
-    for (const secret of SECRETS) expect(text()).not.toContain(secret);
+    const shownOf = async (raw: boolean) => {
+      await open(chart, "k3s", { raw });
+      const out = {
+        summaries: [...root.querySelectorAll("details summary")].map((s) => s.textContent),
+        pres: [...root.querySelectorAll("details pre")].map((p) => p.textContent ?? ""),
+        text: text(),
+      };
+      stop();
+      host.close();
+      root.remove();
+      return out;
+    };
+    const given = await shownOf(false);
+    const raw = await shownOf(true);
+    expect(given.summaries).toEqual(["Show valuesContent", "Show values", "Show the set values"]);
+    expect(given.pres[0]).toContain("apiToken: <hidden>");
+    expect(given.pres[1]).toContain("token: <hidden>");
+    expect(given.pres[2]).toBe("auth.password=<hidden>\ningress.enabled=true");
+    expect(given.pres).toEqual(raw.pres);
+    for (const secret of SECRETS) expect(given.text).not.toContain(secret);
+    await open(chart, "k3s");
+  });
+
+  it("says the values cannot be read where Sextant could not read them safely", async () => {
+    const chart = fx("chartFailed");
+    (chart.spec as Record<string, unknown>).valuesContent = "a: [1, 2\nb: c\n";
+    (chart.spec as Record<string, unknown>).set = "a=b";
+    await open(chart, "k3s");
+    expect(text()).toContain("The values are not shown: they cannot be read as YAML safely.");
+    expect(text()).not.toContain("Show valuesContent");
+    expect(text()).not.toContain("Show the set values");
   });
 
   it("a deployed one: its Job complete, the Addon that deployed it, its HelmChartConfig", async () => {
@@ -204,7 +264,7 @@ describe("a HelmChartConfig", () => {
     watchOf("HelmChart")!.emit(snapshot([fx("chartTraefik")]));
     await expect.poll(() => byLabel("Open HelmChart traefik")).toHaveLength(1);
     expect(text()).toContain("overrides the values of the HelmChart of the same name");
-    expect(text()).toContain("valuesContent is set, but Sextant does not give it to extensions");
+    expect([...root.querySelectorAll("details pre")][0]?.textContent).toContain("log.level=DEBUG");
     stop();
     host.close();
     root.remove();
@@ -256,7 +316,7 @@ describe("Addons and etcd snapshots", () => {
 });
 
 describe("a Node", () => {
-  it("a k3s server: role, version, what told it, and its arguments kept from the extension", async () => {
+  it("a k3s server: role, version, what told it, and its arguments as Sextant masks them", async () => {
     await open(fx("nodeK3sServer"), "k3s-node");
     expect(hiddenCalls).toEqual([false]);
     expect(root.querySelector('[data-block="distribution"]')?.getAttribute("aria-label")).toBe("k3s");
@@ -265,8 +325,26 @@ describe("a Node", () => {
     expect(text()).toContain("kubelet version");
     expect(text()).toContain("k3s-server-1-6d1f4a2b");
     expect(toggle("args").textContent).toBe("Arguments");
-    expect(text()).toContain("The node's arguments are there, but Sextant does not give them to extensions");
+    expect(rows().find((r) => r[0] === "--token")).toEqual(["--token", "hidden"]);
+    expect(rows().filter((r) => r[1] === "hidden")).toHaveLength(3);
     for (const secret of SECRETS) expect(text()).not.toContain(secret);
+  });
+
+  it("a node whose arguments Sextant could not read, and an agent whose role only its arguments tell", async () => {
+    const odd = fx("nodeK3sServer");
+    (odd.metadata.annotations as Record<string, string>)["k3s.io/node-args"] = "server --token x";
+    await open(odd, "k3s-node");
+    expect(text()).toContain("The arguments cannot be read.");
+    stop();
+    host.close();
+    root.remove();
+    // A server without the control-plane label: its first argument `server` tells it, as the built-in view read it.
+    const server = fx("nodeK3sServer");
+    delete (server.metadata.labels as Record<string, string>)["node-role.kubernetes.io/control-plane"];
+    delete (server.metadata.labels as Record<string, string>)["node-role.kubernetes.io/etcd"];
+    await open(server, "k3s-node");
+    expect(text()).toContain("Server");
+    expect(text()).not.toContain("Agent");
   });
 
   it("masks arguments it is given as the built-in view did", async () => {

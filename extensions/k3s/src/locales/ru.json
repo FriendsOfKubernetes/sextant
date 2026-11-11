@@ -167,8 +167,5 @@
   "serviceLb.ready": "Готово {{ready}} из {{desired}}",
   "serviceLb.noAddress": "Адреса пока нет",
   "serviceLb.serviceUnreadable": "Service не удаётся прочитать",
-  "serviceLb.truncated": "Показаны только первые {{limit}} Services.",
-  "values.contentHidden": "valuesContent задан, но Sextant не передаёт его расширениям: в нём могут быть секреты. Его показывает раздел YAML.",
-  "values.setHidden": "Значения set заданы, но Sextant не передаёт их расширениям: в них могут быть секреты. Их показывает раздел YAML.",
-  "node.argsHidden": "Аргументы узла есть, но Sextant не передаёт их расширениям: в них может быть токен присоединения. Их показывает раздел YAML."
+  "serviceLb.truncated": "Показаны только первые {{limit}} Services."
 }

@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{desired}} 中 {{ready}} が準備完了",
   "serviceLb.noAddress": "アドレスはまだありません",
   "serviceLb.serviceUnreadable": "Service を読み取れません",
-  "serviceLb.truncated": "最初の {{limit}} 個の Services だけを表示しています。",
-  "values.contentHidden": "valuesContent は設定されていますが、Sextant は拡張機能に渡しません。秘密情報が含まれることがあるためです。YAML セクションで確認できます。",
-  "values.setHidden": "set の値はありますが、Sextant は拡張機能に渡しません。秘密情報が含まれることがあるためです。YAML セクションで確認できます。",
-  "node.argsHidden": "ノードの引数はありますが、Sextant は拡張機能に渡しません。参加トークンが含まれることがあるためです。YAML セクションで確認できます。"
+  "serviceLb.truncated": "最初の {{limit}} 個の Services だけを表示しています。"
 }

@@ -167,8 +167,5 @@
   "serviceLb.ready": "Gotowe {{ready}} z {{desired}}",
   "serviceLb.noAddress": "Jeszcze bez adresu",
   "serviceLb.serviceUnreadable": "Nie można odczytać Service",
-  "serviceLb.truncated": "Wyświetlono tylko pierwsze {{limit}} Services.",
-  "values.contentHidden": "valuesContent jest ustawione, ale Sextant nie przekazuje go rozszerzeniom: może zawierać sekrety. Sekcja YAML je pokazuje.",
-  "values.setHidden": "Wartości set są ustawione, ale Sextant nie przekazuje ich rozszerzeniom: mogą zawierać sekrety. Sekcja YAML je pokazuje.",
-  "node.argsHidden": "Argumenty węzła są ustawione, ale Sextant nie przekazuje ich rozszerzeniom: mogą zawierać token dołączania. Sekcja YAML je pokazuje."
+  "serviceLb.truncated": "Wyświetlono tylko pierwsze {{limit}} Services."
 }

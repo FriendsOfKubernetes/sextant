@@ -15,9 +15,15 @@
 //   secret-looking key becomes `<hidden>`, every other string is cleaned; text that does not parse as one YAML mapping
 //   is not shown at all. `spec.set` is masked by the same rule.
 //   Ported unchanged from Sextant's former built-in view, with Sextant's one rule of secret-looking names
-//   (`src/resources/secretNames.ts`). The frame masks what it is given; Sextant itself gives an extension neither a
-//   node's `node-args` nor a HelmChart's `valuesContent` and `set` (`without_inline_secrets`, ADR-0123): those arrive
-//   as "" and are named by the annotation `sextant.dev/values-hidden` (`hiddenPaths`), so the views say so instead.
+//   (`src/resources/secretNames.ts`). Sextant gives an extension none of these fields as they are
+//   (`without_inline_secrets`, ADR-0123); this one asks for them masked (`permissions.maskedSecrets`, ADR-0169), and
+//   Sextant masks them in Rust by these same rules (`crates/sextant-core/src/resources/masked_secrets.rs`, the shared
+//   cases `src/resources/masking-cases.json`) before the object leaves it: a node's arguments as k3s writes them with
+//   every secret value `********`, a chart's `valuesContent` as JSON text with secret-looking keys `<hidden>`, its
+//   `set` with those values `<hidden>`, named by the annotation `sextant.dev/values-masked` (`maskedPaths`). The frame
+//   masks what it is given once more, so the views show exactly what the built-in view showed. What Sextant could not
+//   read safely arrives as "" and named only in `sextant.dev/values-hidden` (`hiddenPaths`): the views say it cannot
+//   be read, as the built-in view did. A node's environment (`node-env`) is never given.
 // Pure functions.
 import { parseDocument, stringify } from "yaml";
 import { cleanText } from "./uri";
@@ -44,10 +50,25 @@ export function looksSecret(name: string): boolean {
 /** The annotation Sextant names the fields it hid from the extension in (`sextant.dev/values-hidden`). */
 export const VALUES_HIDDEN_ANNOTATION = "sextant.dev/values-hidden";
 
-/** The paths Sextant hid in `obj` before giving it to the extension (`spec.valuesContent`, `metadata.annotations["k3s.io/node-args"]`). */
-export function hiddenPaths(obj: { metadata?: { annotations?: Record<string, string> | null } }): string[] {
-  const text = obj.metadata?.annotations?.[VALUES_HIDDEN_ANNOTATION];
+/** The annotation Sextant names the fields it gave masked in (`sextant.dev/values-masked`, ADR-0169). */
+export const VALUES_MASKED_ANNOTATION = "sextant.dev/values-masked";
+
+type Annotated = { metadata?: { annotations?: Record<string, string> | null } };
+const pathsIn = (obj: Annotated, annotation: string): string[] => {
+  const text = obj.metadata?.annotations?.[annotation];
   return typeof text === "string" && text !== "" ? text.split(", ") : [];
+};
+
+/** The paths Sextant gave masked in `obj` (`spec.valuesContent`, `metadata.annotations["k3s.io/node-args"]`). */
+export const maskedPaths = (obj: Annotated): string[] => pathsIn(obj, VALUES_MASKED_ANNOTATION);
+
+/**
+ * The paths Sextant blanked in `obj` before giving it to the extension, not those it gave masked: for this extension,
+ * which may have them masked, what Sextant could not read safely.
+ */
+export function hiddenPaths(obj: Annotated): string[] {
+  const masked = maskedPaths(obj);
+  return pathsIn(obj, VALUES_HIDDEN_ANNOTATION).filter((p) => !masked.includes(p));
 }
 
 /** k3s's own mask (`OmittedValue` in pkg/nodeconfig/nodeconfig.go). */

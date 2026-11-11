@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{desired}}개 중 {{ready}}개 준비됨",
   "serviceLb.noAddress": "아직 주소 없음",
   "serviceLb.serviceUnreadable": "Service를 읽을 수 없습니다",
-  "serviceLb.truncated": "처음 {{limit}}개 Services만 표시합니다.",
-  "values.contentHidden": "valuesContent가 설정되어 있지만 Sextant는 비밀이 들어 있을 수 있어 확장 프로그램에 전달하지 않습니다. YAML 섹션에서 볼 수 있습니다.",
-  "values.setHidden": "set 값이 있지만 Sextant는 비밀이 들어 있을 수 있어 확장 프로그램에 전달하지 않습니다. YAML 섹션에서 볼 수 있습니다.",
-  "node.argsHidden": "노드의 인수가 있지만 Sextant는 참여 토큰이 들어 있을 수 있어 확장 프로그램에 전달하지 않습니다. YAML 섹션에서 볼 수 있습니다."
+  "serviceLb.truncated": "처음 {{limit}}개 Services만 표시합니다."
 }

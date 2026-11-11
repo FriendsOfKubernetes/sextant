@@ -2,10 +2,10 @@
  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
  "id": "sextant.k3s",
  "name": "k3s / RKE2",
- "version": "1.0.0",
+ "version": "1.1.0",
  "description": "k3s and RKE2 clusters: a Distribution page with the nodes, the bundled components and ServiceLB, helm-controller's HelmCharts with their install Job and its logs, HelmChartConfigs, k3s Addons and etcd snapshots, and a k3s / RKE2 block on Nodes; problems of HelmCharts whose install failed or keeps failing and of bundled components not available. Read-only.",
  "author": "Sextant",
- "sextantApi": 4,
+ "sextantApi": 5,
  "entry": "index.html",
  "icon": "k3s",
  "permissions": {
@@ -95,6 +95,20 @@
      "logs"
     ]
    }
+  ],
+  "maskedSecrets": [
+   {
+    "group": "",
+    "kind": "Node"
+   },
+   {
+    "group": "helm.cattle.io",
+    "kind": "HelmChart"
+   },
+   {
+    "group": "helm.cattle.io",
+    "kind": "HelmChartConfig"
+   }
   ]
  },
  "contributes": {
@@ -173,15 +187,11 @@
    {
     "section": "helmController",
     "rules": [
-     "chart-failed-job-missing",
-     "chart-failed-job-missing-plain",
-     "chart-failed-job-not-failed",
-     "chart-failed-job-not-failed-plain",
-     "chart-failed-no-job",
-     "chart-failed-no-job-plain",
-     "job-failed",
-     "job-failed-plain",
-     "job-retrying"
+     "chart-failed",
+     "chart-failed-plain",
+     "chart-job-failed",
+     "chart-job-failed-plain",
+     "chart-retrying"
     ],
     "label": {
      "one": "{{count}} object needs attention",
@@ -240,17 +250,24 @@
      "type": "any",
      "of": [
       {
-       "type": "contains",
+       "type": "fits",
        "path": ".status.nodeInfo.kubeletVersion",
-       "values": [
-        "+k3s",
-        "+rke2r"
-       ],
-       "ignoreCase": false
+       "patterns": [
+        "*+k3s#",
+        "*+rke2r#"
+       ]
       },
       {
        "type": "any",
        "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.annotations[\"k3s.io/node-args\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".metadata.annotations[\"k3s.io/node-env\"]"
+        },
         {
          "type": "exists",
          "path": ".metadata.annotations[\"k3s.io/node-config-hash\"]"
@@ -266,6 +283,19 @@
         {
          "type": "exists",
          "path": ".metadata.annotations[\"k3s.io/external-ip\"]"
+        }
+       ]
+      },
+      {
+       "type": "any",
+       "of": [
+        {
+         "type": "exists",
+         "path": ".metadata.annotations[\"rke2.io/node-args\"]"
+        },
+        {
+         "type": "exists",
+         "path": ".metadata.annotations[\"rke2.io/node-env\"]"
         },
         {
          "type": "exists",
@@ -509,8 +539,8 @@
        "path": ".spec.checksum",
        "nonEmpty": true
       },
-      "text": "{{.spec.checksum|clip:12}}",
-      "value": "{{.spec.checksum|clip:12}}"
+      "text": "{{.spec.checksum|cut:12}}",
+      "value": "{{.spec.checksum|cut:12}}"
      }
     ]
    },
@@ -584,7 +614,16 @@
     "paths": [
      ".status.size"
     ],
-    "format": "bytes"
+    "cases": [
+     {
+      "when": {
+       "type": "above",
+       "path": ".status.size|quantity",
+       "value": -1
+      },
+      "text": "{{.status.size|bytes}}"
+     }
+    ]
    },
    {
     "kind": {
@@ -649,8 +688,8 @@
   ],
   "problems": [
    {
-    "id": "chart-failed-job-missing",
-    "title": "A HelmChart's install failed (its Job is gone)",
+    "id": "chart-failed",
+    "title": "A HelmChart's install failed",
     "kind": {
      "group": "helm.cattle.io",
      "kind": "HelmChart"
@@ -666,14 +705,6 @@
       {
        "type": "absent",
        "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "missing",
-       "path": ".status.jobName",
-       "kind": {
-        "group": "batch",
-        "kind": "Job"
-       }
       },
       {
        "type": "any",
@@ -689,119 +720,50 @@
          "nonEmpty": true
         }
        ]
-      }
-     ]
-    },
-    "message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-    "reasonOr": "HelmChartFailed",
-    "group": "helm-chart-failed",
-    "source": {
-     "maxObjects": 500
-    }
-   },
-   {
-    "id": "chart-failed-job-missing-plain",
-    "title": "A HelmChart's install failed (its Job is gone), without a message",
-    "kind": {
-     "group": "helm.cattle.io",
-     "kind": "HelmChart"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "condition",
-       "conditionType": "Failed",
-       "status": "True"
       },
       {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "missing",
-       "path": ".status.jobName",
-       "kind": {
-        "group": "batch",
-        "kind": "Job"
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"Failed\"].message",
-          "nonEmpty": true
-         },
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"Failed\"].reason",
-          "nonEmpty": true
-         }
-        ]
-       }
-      }
-     ]
-    },
-    "message": "The install Job {{.status.jobName}} of this HelmChart failed.",
-    "reasonOr": "HelmChartFailed",
-    "group": "helm-chart-failed",
-    "source": {
-     "maxObjects": 500
-    }
-   },
-   {
-    "id": "chart-failed-job-not-failed",
-    "title": "A HelmChart's install failed (its Job did not fail)",
-    "kind": {
-     "group": "helm.cattle.io",
-     "kind": "HelmChart"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "condition",
-       "conditionType": "Failed",
-       "status": "True"
-      },
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "related",
-       "path": ".status.jobName",
+       "type": "relatedBy",
        "kind": {
         "group": "batch",
         "kind": "Job"
        },
-       "when": {
-        "type": "not",
-        "of": {
-         "type": "condition",
-         "conditionType": "Failed",
-         "status": "True"
-        }
-       }
-      },
-      {
-       "type": "any",
-       "of": [
+       "pairs": [
         {
-         "type": "exists",
-         "path": ".status.conditions[type=\"Failed\"].message",
-         "nonEmpty": true
+         "theirs": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+         "ours": ".metadata.name"
+        }
+       ],
+       "when": {
+        "type": "all",
+        "of": [
+         {
+          "type": "condition",
+          "conditionType": "Failed",
+          "status": "True"
+         },
+         {
+          "type": "not",
+          "of": {
+           "type": "olderThan",
+           "path": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
+           "minutes": 1440
+          }
+         }
+        ]
+       },
+       "newest": true,
+       "prefer": [
+        {
+         "theirs": ".metadata.name",
+         "ours": ".status.jobName"
         },
         {
-         "type": "exists",
-         "path": ".status.conditions[type=\"Failed\"].reason",
-         "nonEmpty": true
+         "theirs": ".metadata.name",
+         "ours": "helm-install-{{.metadata.name}}"
         }
-       ]
+       ],
+       "optional": true,
+       "givesSince": true
       }
      ]
     },
@@ -813,8 +775,8 @@
     }
    },
    {
-    "id": "chart-failed-job-not-failed-plain",
-    "title": "A HelmChart's install failed (its Job did not fail), without a message",
+    "id": "chart-failed-plain",
+    "title": "A HelmChart's install failed, without a message",
     "kind": {
      "group": "helm.cattle.io",
      "kind": "HelmChart"
@@ -832,89 +794,99 @@
        "path": ".metadata.deletionTimestamp"
       },
       {
-       "type": "related",
-       "path": ".status.jobName",
+       "type": "not",
+       "of": {
+        "type": "any",
+        "of": [
+         {
+          "type": "exists",
+          "path": ".status.conditions[type=\"Failed\"].message",
+          "nonEmpty": true
+         },
+         {
+          "type": "exists",
+          "path": ".status.conditions[type=\"Failed\"].reason",
+          "nonEmpty": true
+         }
+        ]
+       }
+      },
+      {
+       "type": "relatedBy",
        "kind": {
         "group": "batch",
         "kind": "Job"
        },
-       "when": {
-        "type": "not",
-        "of": {
-         "type": "condition",
-         "conditionType": "Failed",
-         "status": "True"
+       "pairs": [
+        {
+         "theirs": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+         "ours": ".metadata.name"
         }
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
+       ],
+       "when": {
+        "type": "all",
         "of": [
          {
-          "type": "exists",
-          "path": ".status.conditions[type=\"Failed\"].message",
-          "nonEmpty": true
+          "type": "condition",
+          "conditionType": "Failed",
+          "status": "True"
          },
          {
-          "type": "exists",
-          "path": ".status.conditions[type=\"Failed\"].reason",
-          "nonEmpty": true
+          "type": "not",
+          "of": {
+           "type": "olderThan",
+           "path": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
+           "minutes": 1440
+          }
          }
         ]
-       }
-      }
-     ]
-    },
-    "message": "The install Job {{.status.jobName}} of this HelmChart failed.",
-    "reasonOr": "HelmChartFailed",
-    "group": "helm-chart-failed",
-    "source": {
-     "maxObjects": 500
-    }
-   },
-   {
-    "id": "chart-failed-no-job",
-    "title": "A HelmChart's install failed (no Job named)",
-    "kind": {
-     "group": "helm.cattle.io",
-     "kind": "HelmChart"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "condition",
-       "conditionType": "Failed",
-       "status": "True"
-      },
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "absent",
-       "path": ".status.jobName"
-      },
-      {
-       "type": "any",
-       "of": [
+       },
+       "newest": true,
+       "prefer": [
         {
-         "type": "exists",
-         "path": ".status.conditions[type=\"Failed\"].message",
-         "nonEmpty": true
+         "theirs": ".metadata.name",
+         "ours": ".status.jobName"
         },
         {
-         "type": "exists",
-         "path": ".status.conditions[type=\"Failed\"].reason",
-         "nonEmpty": true
+         "theirs": ".metadata.name",
+         "ours": "helm-install-{{.metadata.name}}"
         }
-       ]
+       ],
+       "optional": true,
+       "givesSince": true
+      },
+      {
+       "type": "relatedBy",
+       "kind": {
+        "group": "batch",
+        "kind": "Job"
+       },
+       "pairs": [
+        {
+         "theirs": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+         "ours": ".metadata.name"
+        }
+       ],
+       "when": {
+        "type": "exists",
+        "path": ".metadata.name"
+       },
+       "newest": true,
+       "prefer": [
+        {
+         "theirs": ".metadata.name",
+         "ours": ".status.jobName"
+        },
+        {
+         "theirs": ".metadata.name",
+         "ours": "helm-install-{{.metadata.name}}"
+        }
+       ],
+       "optional": true
       }
      ]
     },
-    "message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+    "message": "The install Job {{related:.metadata.name}} of this HelmChart failed.",
     "reasonOr": "HelmChartFailed",
     "group": "helm-chart-failed",
     "source": {
@@ -922,244 +894,11 @@
     }
    },
    {
-    "id": "chart-failed-no-job-plain",
-    "title": "A HelmChart's install failed (no Job named), without a message",
-    "kind": {
-     "group": "helm.cattle.io",
-     "kind": "HelmChart"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "condition",
-       "conditionType": "Failed",
-       "status": "True"
-      },
-      {
-       "type": "absent",
-       "path": ".metadata.deletionTimestamp"
-      },
-      {
-       "type": "absent",
-       "path": ".status.jobName"
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "any",
-        "of": [
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"Failed\"].message",
-          "nonEmpty": true
-         },
-         {
-          "type": "exists",
-          "path": ".status.conditions[type=\"Failed\"].reason",
-          "nonEmpty": true
-         }
-        ]
-       }
-      }
-     ]
-    },
-    "message": "The install Job {{.status.jobName}} of this HelmChart failed.",
-    "reasonOr": "HelmChartFailed",
-    "group": "helm-chart-failed",
-    "source": {
-     "maxObjects": 500
-    }
-   },
-   {
-    "id": "job-failed",
+    "id": "chart-job-failed",
     "title": "A HelmChart's install Job failed",
     "kind": {
-     "group": "batch",
-     "kind": "Job"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "condition",
-       "conditionType": "Failed",
-       "status": "True"
-      },
-      {
-       "type": "startsWith",
-       "path": ".metadata.name",
-       "values": [
-        "helm-install-"
-       ],
-       "ignoreCase": false
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "olderThan",
-        "path": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
-        "minutes": 1440
-       }
-      },
-      {
-       "type": "exists",
-       "path": ".status.conditions[type=\"Failed\",status=\"True\"].message",
-       "nonEmpty": true
-      },
-      {
-       "type": "related",
-       "path": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
-       "kind": {
-        "group": "helm.cattle.io",
-        "kind": "HelmChart"
-       },
-       "when": {
-        "type": "all",
-        "of": [
-         {
-          "type": "absent",
-          "path": ".metadata.deletionTimestamp"
-         },
-         {
-          "type": "any",
-          "of": [
-           {
-            "type": "not",
-            "of": {
-             "type": "condition",
-             "conditionType": "Failed",
-             "status": "True"
-            }
-           },
-           {
-            "type": "exists",
-            "path": ".status.jobName",
-            "nonEmpty": true
-           }
-          ]
-         }
-        ]
-       }
-      }
-     ]
-    },
-    "message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-    "since": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
-    "reasonOr": "HelmChartFailed",
-    "group": "helm-chart-failed",
-    "about": {
-     "kind": {
-      "group": "helm.cattle.io",
-      "version": "v1",
-      "kind": "HelmChart"
-     },
-     "namePath": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]"
-    },
-    "source": {
-     "labelSelector": "helmcharts.helm.cattle.io/chart",
-     "maxObjects": 1000
-    }
-   },
-   {
-    "id": "job-failed-plain",
-    "title": "A HelmChart's install Job failed, without a message",
-    "kind": {
-     "group": "batch",
-     "kind": "Job"
-    },
-    "when": {
-     "type": "all",
-     "of": [
-      {
-       "type": "condition",
-       "conditionType": "Failed",
-       "status": "True"
-      },
-      {
-       "type": "startsWith",
-       "path": ".metadata.name",
-       "values": [
-        "helm-install-"
-       ],
-       "ignoreCase": false
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "olderThan",
-        "path": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
-        "minutes": 1440
-       }
-      },
-      {
-       "type": "not",
-       "of": {
-        "type": "exists",
-        "path": ".status.conditions[type=\"Failed\",status=\"True\"].message",
-        "nonEmpty": true
-       }
-      },
-      {
-       "type": "related",
-       "path": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
-       "kind": {
-        "group": "helm.cattle.io",
-        "kind": "HelmChart"
-       },
-       "when": {
-        "type": "all",
-        "of": [
-         {
-          "type": "absent",
-          "path": ".metadata.deletionTimestamp"
-         },
-         {
-          "type": "any",
-          "of": [
-           {
-            "type": "not",
-            "of": {
-             "type": "condition",
-             "conditionType": "Failed",
-             "status": "True"
-            }
-           },
-           {
-            "type": "exists",
-            "path": ".status.jobName",
-            "nonEmpty": true
-           }
-          ]
-         }
-        ]
-       }
-      }
-     ]
-    },
-    "message": "The install Job {{.metadata.name}} of this HelmChart failed.",
-    "since": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
-    "reasonOr": "HelmChartFailed",
-    "group": "helm-chart-failed",
-    "about": {
-     "kind": {
-      "group": "helm.cattle.io",
-      "version": "v1",
-      "kind": "HelmChart"
-     },
-     "namePath": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]"
-    },
-    "source": {
-     "labelSelector": "helmcharts.helm.cattle.io/chart",
-     "maxObjects": 1000
-    }
-   },
-   {
-    "id": "job-retrying",
-    "title": "A HelmChart's install keeps failing",
-    "kind": {
-     "group": "batch",
-     "kind": "Job"
+     "group": "helm.cattle.io",
+     "kind": "HelmChart"
     },
     "when": {
      "type": "all",
@@ -1173,40 +912,185 @@
        }
       },
       {
-       "type": "not",
-       "of": {
-        "type": "condition",
-        "conditionType": "Complete",
-        "status": "True"
-       }
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
       },
       {
-       "type": "above",
-       "path": ".status.failed",
-       "value": 2
-      },
-      {
-       "type": "startsWith",
-       "path": ".metadata.name",
-       "values": [
-        "helm-install-"
-       ],
-       "ignoreCase": false
-      },
-      {
-       "type": "related",
-       "path": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+       "type": "relatedBy",
        "kind": {
-        "group": "helm.cattle.io",
-        "kind": "HelmChart"
+        "group": "batch",
+        "kind": "Job"
        },
+       "pairs": [
+        {
+         "theirs": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+         "ours": ".metadata.name"
+        }
+       ],
        "when": {
         "type": "all",
         "of": [
          {
-          "type": "absent",
-          "path": ".metadata.deletionTimestamp"
+          "type": "condition",
+          "conditionType": "Failed",
+          "status": "True"
          },
+         {
+          "type": "not",
+          "of": {
+           "type": "olderThan",
+           "path": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
+           "minutes": 1440
+          }
+         },
+         {
+          "type": "exists",
+          "path": ".status.conditions[type=\"Failed\",status=\"True\"].message",
+          "nonEmpty": true
+         }
+        ]
+       },
+       "newest": true,
+       "prefer": [
+        {
+         "theirs": ".metadata.name",
+         "ours": ".status.jobName"
+        },
+        {
+         "theirs": ".metadata.name",
+         "ours": "helm-install-{{.metadata.name}}"
+        }
+       ],
+       "givesSince": true
+      }
+     ]
+    },
+    "message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+    "reasonOr": "HelmChartFailed",
+    "group": "helm-chart-failed",
+    "source": {
+     "maxObjects": 500
+    }
+   },
+   {
+    "id": "chart-job-failed-plain",
+    "title": "A HelmChart's install Job failed, without a message",
+    "kind": {
+     "group": "helm.cattle.io",
+     "kind": "HelmChart"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "not",
+       "of": {
+        "type": "condition",
+        "conditionType": "Failed",
+        "status": "True"
+       }
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "relatedBy",
+       "kind": {
+        "group": "batch",
+        "kind": "Job"
+       },
+       "pairs": [
+        {
+         "theirs": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+         "ours": ".metadata.name"
+        }
+       ],
+       "when": {
+        "type": "all",
+        "of": [
+         {
+          "type": "condition",
+          "conditionType": "Failed",
+          "status": "True"
+         },
+         {
+          "type": "not",
+          "of": {
+           "type": "olderThan",
+           "path": ".status.conditions[type=\"Failed\",status=\"True\"].lastTransitionTime",
+           "minutes": 1440
+          }
+         },
+         {
+          "type": "not",
+          "of": {
+           "type": "exists",
+           "path": ".status.conditions[type=\"Failed\",status=\"True\"].message",
+           "nonEmpty": true
+          }
+         }
+        ]
+       },
+       "newest": true,
+       "prefer": [
+        {
+         "theirs": ".metadata.name",
+         "ours": ".status.jobName"
+        },
+        {
+         "theirs": ".metadata.name",
+         "ours": "helm-install-{{.metadata.name}}"
+        }
+       ],
+       "givesSince": true
+      }
+     ]
+    },
+    "message": "The install Job {{related:.metadata.name}} of this HelmChart failed.",
+    "reasonOr": "HelmChartFailed",
+    "group": "helm-chart-failed",
+    "source": {
+     "maxObjects": 500
+    }
+   },
+   {
+    "id": "chart-retrying",
+    "title": "A HelmChart's install keeps failing",
+    "kind": {
+     "group": "helm.cattle.io",
+     "kind": "HelmChart"
+    },
+    "when": {
+     "type": "all",
+     "of": [
+      {
+       "type": "not",
+       "of": {
+        "type": "condition",
+        "conditionType": "Failed",
+        "status": "True"
+       }
+      },
+      {
+       "type": "absent",
+       "path": ".metadata.deletionTimestamp"
+      },
+      {
+       "type": "relatedBy",
+       "kind": {
+        "group": "batch",
+        "kind": "Job"
+       },
+       "pairs": [
+        {
+         "theirs": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]",
+         "ours": ".metadata.name"
+        }
+       ],
+       "when": {
+        "type": "all",
+        "of": [
          {
           "type": "not",
           "of": {
@@ -1214,27 +1098,42 @@
            "conditionType": "Failed",
            "status": "True"
           }
+         },
+         {
+          "type": "not",
+          "of": {
+           "type": "condition",
+           "conditionType": "Complete",
+           "status": "True"
+          }
+         },
+         {
+          "type": "above",
+          "path": ".status.failed",
+          "value": 2
          }
         ]
-       }
+       },
+       "newest": true,
+       "prefer": [
+        {
+         "theirs": ".metadata.name",
+         "ours": ".status.jobName"
+        },
+        {
+         "theirs": ".metadata.name",
+         "ours": "helm-install-{{.metadata.name}}"
+        }
+       ]
       }
      ]
     },
-    "message": "Job {{.metadata.name}}: failed Pods so far: {{.status.failed}}; helm-controller keeps retrying.",
+    "message": "Job {{related:.metadata.name}}: failed Pods so far: {{related:.status.failed}}; helm-controller keeps retrying.",
     "graceMinutes": 5,
     "reasonOr": "HelmChartRetrying",
     "group": "helm-chart-retrying",
-    "about": {
-     "kind": {
-      "group": "helm.cattle.io",
-      "version": "v1",
-      "kind": "HelmChart"
-     },
-     "namePath": ".metadata.labels[\"helmcharts.helm.cattle.io/chart\"]"
-    },
     "source": {
-     "labelSelector": "helmcharts.helm.cattle.io/chart",
-     "maxObjects": 1000
+     "maxObjects": 500
     }
    },
    {
@@ -1255,6 +1154,13 @@
        "type": "equals",
        "path": ".metadata.namespace",
        "value": "kube-system"
+      },
+      {
+       "type": "served",
+       "kind": {
+        "group": "k3s.cattle.io",
+        "kind": "Addon"
+       }
       },
       {
        "type": "any",
@@ -1286,23 +1192,6 @@
          ]
         }
        ]
-      },
-      {
-       "type": "relatedBy",
-       "kind": {
-        "group": "k3s.cattle.io",
-        "kind": "Addon"
-       },
-       "pairs": [
-        {
-         "theirs": ".metadata.namespace",
-         "ours": ".metadata.namespace"
-        }
-       ],
-       "when": {
-        "type": "exists",
-        "path": ".metadata.name"
-       }
       },
       {
        "type": "any",
@@ -1383,6 +1272,16 @@
      "maxObjects": 1000
     }
    }
+  ],
+  "lookupSources": [
+   {
+    "kind": {
+     "group": "batch",
+     "kind": "Job"
+    },
+    "labelSelector": "helmcharts.helm.cattle.io/chart",
+    "maxObjects": 1000
+   }
   ]
  },
  "translations": {
@@ -1418,36 +1317,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifest",
    "columns.addon-checksum.title": "Prüfsumme",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Knoten",
    "columns.snapshot-storage.title": "Speicher",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Lokal",
    "columns.snapshot-size.title": "Größe",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Erstellt",
    "columns.snapshot-state.title": "Zustand",
    "columns.snapshot-state.cases.0.text": "Fehlgeschlagen",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Bereit",
    "columns.snapshot-state.cases.2.text": "Nicht bereit",
-   "problems.chart-failed-job-missing.title": "HelmChart-Installation fehlgeschlagen (Job weg)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "HelmChart-Installation fehlgeschlagen (Job weg), ohne Meldung",
-   "problems.chart-failed-job-missing-plain.message": "Der Installations-Job {{.status.jobName}} dieses HelmCharts ist fehlgeschlagen.",
-   "problems.chart-failed-job-not-failed.title": "HelmChart-Installation fehlgeschlagen (Job nicht fehlgeschlagen)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "HelmChart-Installation fehlgeschlagen (Job nicht fehlgeschlagen), ohne Meldung",
-   "problems.chart-failed-job-not-failed-plain.message": "Der Installations-Job {{.status.jobName}} dieses HelmCharts ist fehlgeschlagen.",
-   "problems.chart-failed-no-job.title": "HelmChart-Installation fehlgeschlagen (kein Job genannt)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "HelmChart-Installation fehlgeschlagen (kein Job genannt), ohne Meldung",
-   "problems.chart-failed-no-job-plain.message": "Der Installations-Job {{.status.jobName}} dieses HelmCharts ist fehlgeschlagen.",
-   "problems.job-failed.title": "Der Installations-Job eines HelmCharts ist fehlgeschlagen",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Der Installations-Job eines HelmCharts ist fehlgeschlagen, ohne Meldung",
-   "problems.job-failed-plain.message": "Der Installations-Job {{.metadata.name}} dieses HelmCharts ist fehlgeschlagen.",
-   "problems.job-retrying.title": "Die Installation eines HelmCharts schlägt immer wieder fehl",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: bisher fehlgeschlagene Pods: {{.status.failed}}; helm-controller versucht es weiter.",
+   "problems.chart-failed.title": "HelmChart-Installation fehlgeschlagen",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "HelmChart-Installation fehlgeschlagen, ohne Meldung",
+   "problems.chart-failed-plain.message": "Der Installations-Job {{related:.metadata.name}} dieses HelmCharts ist fehlgeschlagen.",
+   "problems.chart-job-failed.title": "Der Installations-Job eines HelmCharts ist fehlgeschlagen",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Der Installations-Job eines HelmCharts ist fehlgeschlagen, ohne Meldung",
+   "problems.chart-job-failed-plain.message": "Der Installations-Job {{related:.metadata.name}} dieses HelmCharts ist fehlgeschlagen.",
+   "problems.chart-retrying.title": "Die Installation eines HelmCharts schlägt immer wieder fehl",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: bisher fehlgeschlagene Pods: {{related:.status.failed}}; helm-controller versucht es weiter.",
    "problems.component-unavailable.title": "Eine mitgelieferte Komponente ist nicht verfügbar",
    "problems.component-unavailable.message": "Mitgelieferte Komponente {{.metadata.name}}: {{.status.availableReplicas ?? 0}} von {{.spec.replicas ?? 1}} Replikaten verfügbar."
   },
@@ -1485,36 +1377,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifiesto",
    "columns.addon-checksum.title": "Suma de comprobación",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Nodo",
    "columns.snapshot-storage.title": "Almacenamiento",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Local",
    "columns.snapshot-size.title": "Tamaño",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Creado",
    "columns.snapshot-state.title": "Estado",
    "columns.snapshot-state.cases.0.text": "Falló",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Lista",
    "columns.snapshot-state.cases.2.text": "No lista",
-   "problems.chart-failed-job-missing.title": "La instalación de un HelmChart falló (su Job ya no está)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "La instalación de un HelmChart falló (su Job ya no está), sin mensaje",
-   "problems.chart-failed-job-missing-plain.message": "El Job de instalación {{.status.jobName}} de este HelmChart falló.",
-   "problems.chart-failed-job-not-failed.title": "La instalación de un HelmChart falló (su Job no falló)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "La instalación de un HelmChart falló (su Job no falló), sin mensaje",
-   "problems.chart-failed-job-not-failed-plain.message": "El Job de instalación {{.status.jobName}} de este HelmChart falló.",
-   "problems.chart-failed-no-job.title": "La instalación de un HelmChart falló (sin Job indicado)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "La instalación de un HelmChart falló (sin Job indicado), sin mensaje",
-   "problems.chart-failed-no-job-plain.message": "El Job de instalación {{.status.jobName}} de este HelmChart falló.",
-   "problems.job-failed.title": "El Job de instalación de un HelmChart falló",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "El Job de instalación de un HelmChart falló, sin mensaje",
-   "problems.job-failed-plain.message": "El Job de instalación {{.metadata.name}} de este HelmChart falló.",
-   "problems.job-retrying.title": "La instalación de un HelmChart sigue fallando",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: Pods fallidos hasta ahora: {{.status.failed}}; helm-controller sigue reintentando.",
+   "problems.chart-failed.title": "La instalación de un HelmChart falló",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "La instalación de un HelmChart falló, sin mensaje",
+   "problems.chart-failed-plain.message": "El Job de instalación {{related:.metadata.name}} de este HelmChart falló.",
+   "problems.chart-job-failed.title": "El Job de instalación de un HelmChart falló",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "El Job de instalación de un HelmChart falló, sin mensaje",
+   "problems.chart-job-failed-plain.message": "El Job de instalación {{related:.metadata.name}} de este HelmChart falló.",
+   "problems.chart-retrying.title": "La instalación de un HelmChart sigue fallando",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: Pods fallidos hasta ahora: {{related:.status.failed}}; helm-controller sigue reintentando.",
    "problems.component-unavailable.title": "Un componente incluido no está disponible",
    "problems.component-unavailable.message": "Componente incluido {{.metadata.name}}: {{.status.availableReplicas ?? 0}} de {{.spec.replicas ?? 1}} réplicas disponibles."
   },
@@ -1552,36 +1437,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifeste",
    "columns.addon-checksum.title": "Somme de contrôle",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Nœud",
    "columns.snapshot-storage.title": "Stockage",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Local",
    "columns.snapshot-size.title": "Taille",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Créé",
    "columns.snapshot-state.title": "État",
    "columns.snapshot-state.cases.0.text": "Échec",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Prêt",
    "columns.snapshot-state.cases.2.text": "Pas prêt",
-   "problems.chart-failed-job-missing.title": "L'installation d'un HelmChart a échoué (son Job n'est plus là)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "L'installation d'un HelmChart a échoué (son Job n'est plus là), sans message",
-   "problems.chart-failed-job-missing-plain.message": "Le Job d'installation {{.status.jobName}} de ce HelmChart a échoué.",
-   "problems.chart-failed-job-not-failed.title": "L'installation d'un HelmChart a échoué (son Job n'a pas échoué)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "L'installation d'un HelmChart a échoué (son Job n'a pas échoué), sans message",
-   "problems.chart-failed-job-not-failed-plain.message": "Le Job d'installation {{.status.jobName}} de ce HelmChart a échoué.",
-   "problems.chart-failed-no-job.title": "L'installation d'un HelmChart a échoué (aucun Job indiqué)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "L'installation d'un HelmChart a échoué (aucun Job indiqué), sans message",
-   "problems.chart-failed-no-job-plain.message": "Le Job d'installation {{.status.jobName}} de ce HelmChart a échoué.",
-   "problems.job-failed.title": "Le Job d'installation d'un HelmChart a échoué",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Le Job d'installation d'un HelmChart a échoué, sans message",
-   "problems.job-failed-plain.message": "Le Job d'installation {{.metadata.name}} de ce HelmChart a échoué.",
-   "problems.job-retrying.title": "L'installation d'un HelmChart échoue sans cesse",
-   "problems.job-retrying.message": "Job {{.metadata.name}} : Pods en échec jusqu'ici : {{.status.failed}} ; helm-controller continue de réessayer.",
+   "problems.chart-failed.title": "L'installation d'un HelmChart a échoué",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "L'installation d'un HelmChart a échoué, sans message",
+   "problems.chart-failed-plain.message": "Le Job d'installation {{related:.metadata.name}} de ce HelmChart a échoué.",
+   "problems.chart-job-failed.title": "Le Job d'installation d'un HelmChart a échoué",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Le Job d'installation d'un HelmChart a échoué, sans message",
+   "problems.chart-job-failed-plain.message": "Le Job d'installation {{related:.metadata.name}} de ce HelmChart a échoué.",
+   "problems.chart-retrying.title": "L'installation d'un HelmChart échoue sans cesse",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}} : Pods en échec jusqu'ici : {{related:.status.failed}} ; helm-controller continue de réessayer.",
    "problems.component-unavailable.title": "Un composant fourni n'est pas disponible",
    "problems.component-unavailable.message": "Composant fourni {{.metadata.name}} : {{.status.availableReplicas ?? 0}} réplicas disponibles sur {{.spec.replicas ?? 1}}."
   },
@@ -1619,36 +1497,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifest",
    "columns.addon-checksum.title": "Checksum",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Nodo",
    "columns.snapshot-storage.title": "Archiviazione",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Locale",
    "columns.snapshot-size.title": "Dimensione",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Creato",
    "columns.snapshot-state.title": "Stato",
    "columns.snapshot-state.cases.0.text": "Non riuscito",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Pronto",
    "columns.snapshot-state.cases.2.text": "Non pronto",
-   "problems.chart-failed-job-missing.title": "Installazione di un HelmChart fallita (Job assente)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "Installazione di un HelmChart fallita (Job assente), senza messaggio",
-   "problems.chart-failed-job-missing-plain.message": "Il Job di installazione {{.status.jobName}} di questo HelmChart non è riuscito.",
-   "problems.chart-failed-job-not-failed.title": "Installazione di un HelmChart fallita (Job non fallito)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "Installazione di un HelmChart fallita (Job non fallito), senza messaggio",
-   "problems.chart-failed-job-not-failed-plain.message": "Il Job di installazione {{.status.jobName}} di questo HelmChart non è riuscito.",
-   "problems.chart-failed-no-job.title": "Installazione di un HelmChart fallita (nessun Job indicato)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "Installazione di un HelmChart fallita (nessun Job indicato), senza messaggio",
-   "problems.chart-failed-no-job-plain.message": "Il Job di installazione {{.status.jobName}} di questo HelmChart non è riuscito.",
-   "problems.job-failed.title": "Il Job di installazione di un HelmChart è fallito",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Il Job di installazione di un HelmChart è fallito, senza messaggio",
-   "problems.job-failed-plain.message": "Il Job di installazione {{.metadata.name}} di questo HelmChart non è riuscito.",
-   "problems.job-retrying.title": "L'installazione di un HelmChart continua a fallire",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: Pod non riusciti finora: {{.status.failed}}; helm-controller continua a ritentare.",
+   "problems.chart-failed.title": "Installazione di un HelmChart fallita",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "Installazione di un HelmChart fallita, senza messaggio",
+   "problems.chart-failed-plain.message": "Il Job di installazione {{related:.metadata.name}} di questo HelmChart non è riuscito.",
+   "problems.chart-job-failed.title": "Il Job di installazione di un HelmChart è fallito",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Il Job di installazione di un HelmChart è fallito, senza messaggio",
+   "problems.chart-job-failed-plain.message": "Il Job di installazione {{related:.metadata.name}} di questo HelmChart non è riuscito.",
+   "problems.chart-retrying.title": "L'installazione di un HelmChart continua a fallire",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: Pod non riusciti finora: {{related:.status.failed}}; helm-controller continua a ritentare.",
    "problems.component-unavailable.title": "Un componente incluso non è disponibile",
    "problems.component-unavailable.message": "Componente incluso {{.metadata.name}}: {{.status.availableReplicas ?? 0}} repliche disponibili su {{.spec.replicas ?? 1}}."
   },
@@ -1682,36 +1553,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "マニフェスト",
    "columns.addon-checksum.title": "チェックサム",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "ノード",
    "columns.snapshot-storage.title": "ストレージ",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "ローカル",
    "columns.snapshot-size.title": "サイズ",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "作成日時",
    "columns.snapshot-state.title": "状態",
    "columns.snapshot-state.cases.0.text": "失敗",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "準備完了",
    "columns.snapshot-state.cases.2.text": "未完了",
-   "problems.chart-failed-job-missing.title": "HelmChart のインストールが失敗した (Job がない)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "HelmChart のインストールが失敗した (Job がない) (メッセージなし)",
-   "problems.chart-failed-job-missing-plain.message": "この HelmChart のインストール Job {{.status.jobName}} が失敗しました。",
-   "problems.chart-failed-job-not-failed.title": "HelmChart のインストールが失敗した (Job は失敗していない)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "HelmChart のインストールが失敗した (Job は失敗していない) (メッセージなし)",
-   "problems.chart-failed-job-not-failed-plain.message": "この HelmChart のインストール Job {{.status.jobName}} が失敗しました。",
-   "problems.chart-failed-no-job.title": "HelmChart のインストールが失敗した (Job の指定なし)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "HelmChart のインストールが失敗した (Job の指定なし) (メッセージなし)",
-   "problems.chart-failed-no-job-plain.message": "この HelmChart のインストール Job {{.status.jobName}} が失敗しました。",
-   "problems.job-failed.title": "HelmChart のインストール Job が失敗した",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "HelmChart のインストール Job が失敗した (メッセージなし)",
-   "problems.job-failed-plain.message": "この HelmChart のインストール Job {{.metadata.name}} が失敗しました。",
-   "problems.job-retrying.title": "HelmChart のインストールが失敗し続けている",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: これまでに失敗した Pod: {{.status.failed}}。helm-controller は再試行を続けています。",
+   "problems.chart-failed.title": "HelmChart のインストールが失敗した",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "HelmChart のインストールが失敗した (メッセージなし)",
+   "problems.chart-failed-plain.message": "この HelmChart のインストール Job {{related:.metadata.name}} が失敗しました。",
+   "problems.chart-job-failed.title": "HelmChart のインストール Job が失敗した",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "HelmChart のインストール Job が失敗した (メッセージなし)",
+   "problems.chart-job-failed-plain.message": "この HelmChart のインストール Job {{related:.metadata.name}} が失敗しました。",
+   "problems.chart-retrying.title": "HelmChart のインストールが失敗し続けている",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: これまでに失敗した Pod: {{related:.status.failed}}。helm-controller は再試行を続けています。",
    "problems.component-unavailable.title": "同梱コンポーネントが利用できない",
    "problems.component-unavailable.message": "同梱コンポーネント {{.metadata.name}}: {{.spec.replicas ?? 1}} レプリカ中 {{.status.availableReplicas ?? 0}} が利用可能です。"
   },
@@ -1745,36 +1609,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "매니페스트",
    "columns.addon-checksum.title": "체크섬",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "노드",
    "columns.snapshot-storage.title": "스토리지",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "로컬",
    "columns.snapshot-size.title": "크기",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "생성",
    "columns.snapshot-state.title": "상태",
    "columns.snapshot-state.cases.0.text": "실패",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "준비됨",
    "columns.snapshot-state.cases.2.text": "준비 안 됨",
-   "problems.chart-failed-job-missing.title": "HelmChart 설치가 실패함 (Job이 없음)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "HelmChart 설치가 실패함 (Job이 없음)(메시지 없음)",
-   "problems.chart-failed-job-missing-plain.message": "이 HelmChart의 설치 Job {{.status.jobName}}이(가) 실패했습니다.",
-   "problems.chart-failed-job-not-failed.title": "HelmChart 설치가 실패함 (Job은 실패하지 않음)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "HelmChart 설치가 실패함 (Job은 실패하지 않음)(메시지 없음)",
-   "problems.chart-failed-job-not-failed-plain.message": "이 HelmChart의 설치 Job {{.status.jobName}}이(가) 실패했습니다.",
-   "problems.chart-failed-no-job.title": "HelmChart 설치가 실패함 (지정된 Job 없음)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "HelmChart 설치가 실패함 (지정된 Job 없음)(메시지 없음)",
-   "problems.chart-failed-no-job-plain.message": "이 HelmChart의 설치 Job {{.status.jobName}}이(가) 실패했습니다.",
-   "problems.job-failed.title": "HelmChart의 설치 Job이 실패함",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "HelmChart의 설치 Job이 실패함(메시지 없음)",
-   "problems.job-failed-plain.message": "이 HelmChart의 설치 Job {{.metadata.name}}이(가) 실패했습니다.",
-   "problems.job-retrying.title": "HelmChart 설치가 계속 실패함",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: 지금까지 실패한 Pod: {{.status.failed}}. helm-controller가 계속 다시 시도하고 있습니다.",
+   "problems.chart-failed.title": "HelmChart 설치가 실패함",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "HelmChart 설치가 실패함 (메시지 없음)",
+   "problems.chart-failed-plain.message": "이 HelmChart의 설치 Job {{related:.metadata.name}}이(가) 실패했습니다.",
+   "problems.chart-job-failed.title": "HelmChart의 설치 Job이 실패함",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "HelmChart의 설치 Job이 실패함(메시지 없음)",
+   "problems.chart-job-failed-plain.message": "이 HelmChart의 설치 Job {{related:.metadata.name}}이(가) 실패했습니다.",
+   "problems.chart-retrying.title": "HelmChart 설치가 계속 실패함",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: 지금까지 실패한 Pod: {{related:.status.failed}}. helm-controller가 계속 다시 시도하고 있습니다.",
    "problems.component-unavailable.title": "번들 구성 요소를 사용할 수 없음",
    "problems.component-unavailable.message": "기본 제공 구성 요소 {{.metadata.name}}: 복제본 {{.spec.replicas ?? 1}}개 중 {{.status.availableReplicas ?? 0}}개 사용 가능."
   },
@@ -1814,36 +1671,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifest",
    "columns.addon-checksum.title": "Suma kontrolna",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Węzeł",
    "columns.snapshot-storage.title": "Magazyn",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Lokalnie",
    "columns.snapshot-size.title": "Rozmiar",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Utworzono",
    "columns.snapshot-state.title": "Stan",
    "columns.snapshot-state.cases.0.text": "Niepowodzenie",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Gotowa",
    "columns.snapshot-state.cases.2.text": "Niegotowa",
-   "problems.chart-failed-job-missing.title": "Instalacja HelmChartu nieudana (brak Joba)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "Instalacja HelmChartu nieudana (brak Joba), bez komunikatu",
-   "problems.chart-failed-job-missing-plain.message": "Job instalacji {{.status.jobName}} tego HelmChart zakończył się niepowodzeniem.",
-   "problems.chart-failed-job-not-failed.title": "Instalacja HelmChartu nieudana (Job bez błędu)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "Instalacja HelmChartu nieudana (Job bez błędu), bez komunikatu",
-   "problems.chart-failed-job-not-failed-plain.message": "Job instalacji {{.status.jobName}} tego HelmChart zakończył się niepowodzeniem.",
-   "problems.chart-failed-no-job.title": "Instalacja HelmChartu nieudana (nie wskazano Joba)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "Instalacja HelmChartu nieudana (nie wskazano Joba), bez komunikatu",
-   "problems.chart-failed-no-job-plain.message": "Job instalacji {{.status.jobName}} tego HelmChart zakończył się niepowodzeniem.",
-   "problems.job-failed.title": "Job instalacji HelmChartu się nie powiódł",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Job instalacji HelmChartu się nie powiódł, bez komunikatu",
-   "problems.job-failed-plain.message": "Job instalacji {{.metadata.name}} tego HelmChart zakończył się niepowodzeniem.",
-   "problems.job-retrying.title": "Instalacja HelmChartu wciąż się nie udaje",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: dotąd nieudane Pody: {{.status.failed}}; helm-controller ponawia dalej.",
+   "problems.chart-failed.title": "Instalacja HelmChartu nieudana",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "Instalacja HelmChartu nieudana, bez komunikatu",
+   "problems.chart-failed-plain.message": "Job instalacji {{related:.metadata.name}} tego HelmChart zakończył się niepowodzeniem.",
+   "problems.chart-job-failed.title": "Job instalacji HelmChartu się nie powiódł",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Job instalacji HelmChartu się nie powiódł, bez komunikatu",
+   "problems.chart-job-failed-plain.message": "Job instalacji {{related:.metadata.name}} tego HelmChart zakończył się niepowodzeniem.",
+   "problems.chart-retrying.title": "Instalacja HelmChartu wciąż się nie udaje",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: dotąd nieudane Pody: {{related:.status.failed}}; helm-controller ponawia dalej.",
    "problems.component-unavailable.title": "Dołączony komponent jest niedostępny",
    "problems.component-unavailable.message": "Wbudowany komponent {{.metadata.name}}: dostępne {{.status.availableReplicas ?? 0}} z {{.spec.replicas ?? 1}} replik."
   },
@@ -1881,36 +1731,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifesto",
    "columns.addon-checksum.title": "Checksum",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Nó",
    "columns.snapshot-storage.title": "Armazenamento",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Local",
    "columns.snapshot-size.title": "Tamanho",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Criado",
    "columns.snapshot-state.title": "Estado",
    "columns.snapshot-state.cases.0.text": "Falhou",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Pronto",
    "columns.snapshot-state.cases.2.text": "Não pronto",
-   "problems.chart-failed-job-missing.title": "A instalação de um HelmChart falhou (seu Job não existe mais)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "A instalação de um HelmChart falhou (seu Job não existe mais), sem mensagem",
-   "problems.chart-failed-job-missing-plain.message": "O Job de instalação {{.status.jobName}} deste HelmChart falhou.",
-   "problems.chart-failed-job-not-failed.title": "A instalação de um HelmChart falhou (seu Job não falhou)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "A instalação de um HelmChart falhou (seu Job não falhou), sem mensagem",
-   "problems.chart-failed-job-not-failed-plain.message": "O Job de instalação {{.status.jobName}} deste HelmChart falhou.",
-   "problems.chart-failed-no-job.title": "A instalação de um HelmChart falhou (nenhum Job indicado)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "A instalação de um HelmChart falhou (nenhum Job indicado), sem mensagem",
-   "problems.chart-failed-no-job-plain.message": "O Job de instalação {{.status.jobName}} deste HelmChart falhou.",
-   "problems.job-failed.title": "O Job de instalação de um HelmChart falhou",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "O Job de instalação de um HelmChart falhou, sem mensagem",
-   "problems.job-failed-plain.message": "O Job de instalação {{.metadata.name}} deste HelmChart falhou.",
-   "problems.job-retrying.title": "A instalação de um HelmChart continua falhando",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: Pods com falha até agora: {{.status.failed}}; o helm-controller continua tentando.",
+   "problems.chart-failed.title": "A instalação de um HelmChart falhou",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "A instalação de um HelmChart falhou, sem mensagem",
+   "problems.chart-failed-plain.message": "O Job de instalação {{related:.metadata.name}} deste HelmChart falhou.",
+   "problems.chart-job-failed.title": "O Job de instalação de um HelmChart falhou",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "O Job de instalação de um HelmChart falhou, sem mensagem",
+   "problems.chart-job-failed-plain.message": "O Job de instalação {{related:.metadata.name}} deste HelmChart falhou.",
+   "problems.chart-retrying.title": "A instalação de um HelmChart continua falhando",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: Pods com falha até agora: {{related:.status.failed}}; o helm-controller continua tentando.",
    "problems.component-unavailable.title": "Um componente incluído não está disponível",
    "problems.component-unavailable.message": "Componente incluído {{.metadata.name}}: {{.status.availableReplicas ?? 0}} de {{.spec.replicas ?? 1}} réplicas disponíveis."
   },
@@ -1950,36 +1793,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Манифест",
    "columns.addon-checksum.title": "Контрольная сумма",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Узел",
    "columns.snapshot-storage.title": "Хранилище",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Локально",
    "columns.snapshot-size.title": "Размер",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Создан",
    "columns.snapshot-state.title": "Состояние",
    "columns.snapshot-state.cases.0.text": "Ошибка",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Готов",
    "columns.snapshot-state.cases.2.text": "Не готов",
-   "problems.chart-failed-job-missing.title": "Установка HelmChart не удалась (его Job удалён)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "Установка HelmChart не удалась (его Job удалён), без сообщения",
-   "problems.chart-failed-job-missing-plain.message": "Job установки {{.status.jobName}} этого HelmChart завершился с ошибкой.",
-   "problems.chart-failed-job-not-failed.title": "Установка HelmChart не удалась (его Job не завершился с ошибкой)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "Установка HelmChart не удалась (его Job не завершился с ошибкой), без сообщения",
-   "problems.chart-failed-job-not-failed-plain.message": "Job установки {{.status.jobName}} этого HelmChart завершился с ошибкой.",
-   "problems.chart-failed-no-job.title": "Установка HelmChart не удалась (Job не указан)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "Установка HelmChart не удалась (Job не указан), без сообщения",
-   "problems.chart-failed-no-job-plain.message": "Job установки {{.status.jobName}} этого HelmChart завершился с ошибкой.",
-   "problems.job-failed.title": "Job установки HelmChart завершился с ошибкой",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Job установки HelmChart завершился с ошибкой, без сообщения",
-   "problems.job-failed-plain.message": "Job установки {{.metadata.name}} этого HelmChart завершился с ошибкой.",
-   "problems.job-retrying.title": "Установка HelmChart всё время не удаётся",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: Pod с ошибкой пока: {{.status.failed}}; helm-controller продолжает повторять.",
+   "problems.chart-failed.title": "Установка HelmChart не удалась",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "Установка HelmChart не удалась, без сообщения",
+   "problems.chart-failed-plain.message": "Job установки {{related:.metadata.name}} этого HelmChart завершился с ошибкой.",
+   "problems.chart-job-failed.title": "Job установки HelmChart завершился с ошибкой",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Job установки HelmChart завершился с ошибкой, без сообщения",
+   "problems.chart-job-failed-plain.message": "Job установки {{related:.metadata.name}} этого HelmChart завершился с ошибкой.",
+   "problems.chart-retrying.title": "Установка HelmChart всё время не удаётся",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: Pod с ошибкой пока: {{related:.status.failed}}; helm-controller продолжает повторять.",
    "problems.component-unavailable.title": "Встроенный компонент недоступен",
    "problems.component-unavailable.message": "Встроенный компонент {{.metadata.name}}: доступно {{.status.availableReplicas ?? 0}} из {{.spec.replicas ?? 1}} реплик."
   },
@@ -2015,36 +1851,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Manifest",
    "columns.addon-checksum.title": "Sağlama toplamı",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Düğüm",
    "columns.snapshot-storage.title": "Depolama",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Yerel",
    "columns.snapshot-size.title": "Boyut",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Oluşturuldu",
    "columns.snapshot-state.title": "Durum",
    "columns.snapshot-state.cases.0.text": "Başarısız",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Hazır",
    "columns.snapshot-state.cases.2.text": "Hazır değil",
-   "problems.chart-failed-job-missing.title": "Bir HelmChart'ın kurulumu başarısız oldu (Job'ı artık yok)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "Bir HelmChart'ın kurulumu başarısız oldu (Job'ı artık yok), ileti yok",
-   "problems.chart-failed-job-missing-plain.message": "Bu HelmChart'ın {{.status.jobName}} kurulum Job'ı başarısız oldu.",
-   "problems.chart-failed-job-not-failed.title": "Bir HelmChart'ın kurulumu başarısız oldu (Job'ı başarısız olmadı)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "Bir HelmChart'ın kurulumu başarısız oldu (Job'ı başarısız olmadı), ileti yok",
-   "problems.chart-failed-job-not-failed-plain.message": "Bu HelmChart'ın {{.status.jobName}} kurulum Job'ı başarısız oldu.",
-   "problems.chart-failed-no-job.title": "Bir HelmChart'ın kurulumu başarısız oldu (Job belirtilmemiş)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "Bir HelmChart'ın kurulumu başarısız oldu (Job belirtilmemiş), ileti yok",
-   "problems.chart-failed-no-job-plain.message": "Bu HelmChart'ın {{.status.jobName}} kurulum Job'ı başarısız oldu.",
-   "problems.job-failed.title": "Bir HelmChart'ın kurulum Job'ı başarısız oldu",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Bir HelmChart'ın kurulum Job'ı başarısız oldu, ileti yok",
-   "problems.job-failed-plain.message": "Bu HelmChart'ın {{.metadata.name}} kurulum Job'ı başarısız oldu.",
-   "problems.job-retrying.title": "Bir HelmChart'ın kurulumu başarısız olmaya devam ediyor",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: şimdiye kadar başarısız Pod'lar: {{.status.failed}}; helm-controller yeniden denemeye devam ediyor.",
+   "problems.chart-failed.title": "Bir HelmChart'ın kurulumu başarısız oldu",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "Bir HelmChart'ın kurulumu başarısız oldu, ileti yok",
+   "problems.chart-failed-plain.message": "Bu HelmChart'ın {{related:.metadata.name}} kurulum Job'ı başarısız oldu.",
+   "problems.chart-job-failed.title": "Bir HelmChart'ın kurulum Job'ı başarısız oldu",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Bir HelmChart'ın kurulum Job'ı başarısız oldu, ileti yok",
+   "problems.chart-job-failed-plain.message": "Bu HelmChart'ın {{related:.metadata.name}} kurulum Job'ı başarısız oldu.",
+   "problems.chart-retrying.title": "Bir HelmChart'ın kurulumu başarısız olmaya devam ediyor",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: şimdiye kadar başarısız Pod'lar: {{related:.status.failed}}; helm-controller yeniden denemeye devam ediyor.",
    "problems.component-unavailable.title": "Paketle gelen bir bileşen kullanılamıyor",
    "problems.component-unavailable.message": "Birlikte gelen bileşen {{.metadata.name}}: {{.spec.replicas ?? 1}} replikadan {{.status.availableReplicas ?? 0}} kullanılabilir."
   },
@@ -2084,36 +1913,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "Маніфест",
    "columns.addon-checksum.title": "Контрольна сума",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "Вузол",
    "columns.snapshot-storage.title": "Сховище",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "Локально",
    "columns.snapshot-size.title": "Розмір",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "Створено",
    "columns.snapshot-state.title": "Стан",
    "columns.snapshot-state.cases.0.text": "Помилка",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "Готовий",
    "columns.snapshot-state.cases.2.text": "Не готовий",
-   "problems.chart-failed-job-missing.title": "Встановлення HelmChart не вдалося (Job видалено)",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "Встановлення HelmChart не вдалося (Job видалено), без повідомлення",
-   "problems.chart-failed-job-missing-plain.message": "Job встановлення {{.status.jobName}} цього HelmChart завершився з помилкою.",
-   "problems.chart-failed-job-not-failed.title": "Встановлення HelmChart не вдалося (Job без помилки)",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "Встановлення HelmChart не вдалося (Job без помилки), без повідомлення",
-   "problems.chart-failed-job-not-failed-plain.message": "Job встановлення {{.status.jobName}} цього HelmChart завершився з помилкою.",
-   "problems.chart-failed-no-job.title": "Встановлення HelmChart не вдалося (Job не вказано)",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "Встановлення HelmChart не вдалося (Job не вказано), без повідомлення",
-   "problems.chart-failed-no-job-plain.message": "Job встановлення {{.status.jobName}} цього HelmChart завершився з помилкою.",
-   "problems.job-failed.title": "Job встановлення HelmChart завершився з помилкою",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "Job встановлення HelmChart завершився з помилкою, без повідомлення",
-   "problems.job-failed-plain.message": "Job встановлення {{.metadata.name}} цього HelmChart завершився з помилкою.",
-   "problems.job-retrying.title": "Встановлення HelmChart постійно не вдається",
-   "problems.job-retrying.message": "Job {{.metadata.name}}: Pod з помилкою наразі: {{.status.failed}}; helm-controller далі повторює.",
+   "problems.chart-failed.title": "Встановлення HelmChart не вдалося",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "Встановлення HelmChart не вдалося, без повідомлення",
+   "problems.chart-failed-plain.message": "Job встановлення {{related:.metadata.name}} цього HelmChart завершився з помилкою.",
+   "problems.chart-job-failed.title": "Job встановлення HelmChart завершився з помилкою",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "Job встановлення HelmChart завершився з помилкою, без повідомлення",
+   "problems.chart-job-failed-plain.message": "Job встановлення {{related:.metadata.name}} цього HelmChart завершився з помилкою.",
+   "problems.chart-retrying.title": "Встановлення HelmChart постійно не вдається",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}: Pod з помилкою наразі: {{related:.status.failed}}; helm-controller далі повторює.",
    "problems.component-unavailable.title": "Вбудований компонент недоступний",
    "problems.component-unavailable.message": "Вбудований компонент {{.metadata.name}}: доступно {{.status.availableReplicas ?? 0}} з {{.spec.replicas ?? 1}} реплік."
   },
@@ -2147,36 +1969,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "清单",
    "columns.addon-checksum.title": "校验和",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "节点",
    "columns.snapshot-storage.title": "存储",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "本地",
    "columns.snapshot-size.title": "大小",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "创建时间",
    "columns.snapshot-state.title": "状态",
    "columns.snapshot-state.cases.0.text": "失败",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "就绪",
    "columns.snapshot-state.cases.2.text": "未就绪",
-   "problems.chart-failed-job-missing.title": "HelmChart 安装失败（其 Job 已不存在）",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "HelmChart 安装失败（其 Job 已不存在），没有消息",
-   "problems.chart-failed-job-missing-plain.message": "此 HelmChart 的安装 Job {{.status.jobName}} 失败。",
-   "problems.chart-failed-job-not-failed.title": "HelmChart 安装失败（其 Job 未失败）",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "HelmChart 安装失败（其 Job 未失败），没有消息",
-   "problems.chart-failed-job-not-failed-plain.message": "此 HelmChart 的安装 Job {{.status.jobName}} 失败。",
-   "problems.chart-failed-no-job.title": "HelmChart 安装失败（未指明 Job）",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "HelmChart 安装失败（未指明 Job），没有消息",
-   "problems.chart-failed-no-job-plain.message": "此 HelmChart 的安装 Job {{.status.jobName}} 失败。",
-   "problems.job-failed.title": "HelmChart 的安装 Job 失败",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "HelmChart 的安装 Job 失败，没有消息",
-   "problems.job-failed-plain.message": "此 HelmChart 的安装 Job {{.metadata.name}} 失败。",
-   "problems.job-retrying.title": "HelmChart 安装持续失败",
-   "problems.job-retrying.message": "Job {{.metadata.name}}：目前失败的 Pod：{{.status.failed}}；helm-controller 仍在重试。",
+   "problems.chart-failed.title": "HelmChart 安装失败",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "HelmChart 安装失败，没有消息",
+   "problems.chart-failed-plain.message": "此 HelmChart 的安装 Job {{related:.metadata.name}} 失败。",
+   "problems.chart-job-failed.title": "HelmChart 的安装 Job 失败",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "HelmChart 的安装 Job 失败，没有消息",
+   "problems.chart-job-failed-plain.message": "此 HelmChart 的安装 Job {{related:.metadata.name}} 失败。",
+   "problems.chart-retrying.title": "HelmChart 安装持续失败",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}：目前失败的 Pod：{{related:.status.failed}}；helm-controller 仍在重试。",
    "problems.component-unavailable.title": "内置组件不可用",
    "problems.component-unavailable.message": "内置组件 {{.metadata.name}}：{{.spec.replicas ?? 1}} 个副本中 {{.status.availableReplicas ?? 0}} 个可用。"
   },
@@ -2210,36 +2025,29 @@
    "columns.config-chart.title": "HelmChart",
    "columns.addon-source.title": "資訊清單",
    "columns.addon-checksum.title": "總和檢查碼",
-   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|clip:12}}",
+   "columns.addon-checksum.cases.0.text": "{{.spec.checksum|cut:12}}",
    "columns.snapshot-node.title": "節點",
    "columns.snapshot-storage.title": "儲存",
    "columns.snapshot-storage.cases.0.text": "S3",
    "columns.snapshot-storage.cases.1.text": "本機",
    "columns.snapshot-size.title": "大小",
+   "columns.snapshot-size.cases.0.text": "{{.status.size|bytes}}",
    "columns.snapshot-created.title": "建立時間",
    "columns.snapshot-state.title": "狀態",
    "columns.snapshot-state.cases.0.text": "失敗",
    "columns.snapshot-state.cases.0.tooltip": "{{.status.error.message}}",
    "columns.snapshot-state.cases.1.text": "就緒",
    "columns.snapshot-state.cases.2.text": "未就緒",
-   "problems.chart-failed-job-missing.title": "HelmChart 安裝失敗（其 Job 已不存在）",
-   "problems.chart-failed-job-missing.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-missing-plain.title": "HelmChart 安裝失敗（其 Job 已不存在），沒有訊息",
-   "problems.chart-failed-job-missing-plain.message": "此 HelmChart 的安裝 Job {{.status.jobName}} 失敗。",
-   "problems.chart-failed-job-not-failed.title": "HelmChart 安裝失敗（其 Job 未失敗）",
-   "problems.chart-failed-job-not-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-job-not-failed-plain.title": "HelmChart 安裝失敗（其 Job 未失敗），沒有訊息",
-   "problems.chart-failed-job-not-failed-plain.message": "此 HelmChart 的安裝 Job {{.status.jobName}} 失敗。",
-   "problems.chart-failed-no-job.title": "HelmChart 安裝失敗（未指明 Job）",
-   "problems.chart-failed-no-job.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
-   "problems.chart-failed-no-job-plain.title": "HelmChart 安裝失敗（未指明 Job），沒有訊息",
-   "problems.chart-failed-no-job-plain.message": "此 HelmChart 的安裝 Job {{.status.jobName}} 失敗。",
-   "problems.job-failed.title": "HelmChart 的安裝 Job 失敗",
-   "problems.job-failed.message": "{{.status.conditions[type=\"Failed\",status=\"True\"].message}}",
-   "problems.job-failed-plain.title": "HelmChart 的安裝 Job 失敗，沒有訊息",
-   "problems.job-failed-plain.message": "此 HelmChart 的安裝 Job {{.metadata.name}} 失敗。",
-   "problems.job-retrying.title": "HelmChart 安裝持續失敗",
-   "problems.job-retrying.message": "Job {{.metadata.name}}：目前失敗的 Pod：{{.status.failed}}；helm-controller 仍在重試。",
+   "problems.chart-failed.title": "HelmChart 安裝失敗",
+   "problems.chart-failed.message": "{{.status.conditions[type=\"Failed\"].message ?? .status.conditions[type=\"Failed\"].reason}}",
+   "problems.chart-failed-plain.title": "HelmChart 安裝失敗，沒有訊息",
+   "problems.chart-failed-plain.message": "此 HelmChart 的安裝 Job {{related:.metadata.name}} 失敗。",
+   "problems.chart-job-failed.title": "HelmChart 的安裝 Job 失敗",
+   "problems.chart-job-failed.message": "{{related:.status.conditions[type=\"Failed\",status=\"True\"].message}}",
+   "problems.chart-job-failed-plain.title": "HelmChart 的安裝 Job 失敗，沒有訊息",
+   "problems.chart-job-failed-plain.message": "此 HelmChart 的安裝 Job {{related:.metadata.name}} 失敗。",
+   "problems.chart-retrying.title": "HelmChart 安裝持續失敗",
+   "problems.chart-retrying.message": "Job {{related:.metadata.name}}：目前失敗的 Pod：{{related:.status.failed}}；helm-controller 仍在重試。",
    "problems.component-unavailable.title": "內建元件無法使用",
    "problems.component-unavailable.message": "內建元件 {{.metadata.name}}：{{.spec.replicas ?? 1}} 個副本中 {{.status.availableReplicas ?? 0}} 個可用。"
   }

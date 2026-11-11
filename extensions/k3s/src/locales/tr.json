@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{desired}} içinden {{ready}} hazır",
   "serviceLb.noAddress": "Henüz adres yok",
   "serviceLb.serviceUnreadable": "Service okunamıyor",
-  "serviceLb.truncated": "Yalnızca ilk {{limit}} Service listelenir.",
-  "values.contentHidden": "valuesContent ayarlı, ancak Sextant bunu uzantılara vermez: sır içerebilir. YAML bölümü onu gösterir.",
-  "values.setHidden": "set değerleri var, ancak Sextant bunları uzantılara vermez: sır içerebilirler. YAML bölümü onları gösterir.",
-  "node.argsHidden": "Düğümün argümanları var, ancak Sextant bunları uzantılara vermez: katılım token'ını içerebilirler. YAML bölümü onları gösterir."
+  "serviceLb.truncated": "Yalnızca ilk {{limit}} Service listelenir."
 }

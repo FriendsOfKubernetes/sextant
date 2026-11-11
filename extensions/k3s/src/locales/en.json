@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{ready}} of {{desired}} ready",
   "serviceLb.noAddress": "No address yet",
   "serviceLb.serviceUnreadable": "The Service cannot be read",
-  "serviceLb.truncated": "Only the first {{limit}} Services are listed.",
-  "values.contentHidden": "valuesContent is set, but Sextant does not give it to extensions: it may hold secrets. The YAML section shows it.",
-  "values.setHidden": "The set values are there, but Sextant does not give them to extensions: they may hold secrets. The YAML section shows them.",
-  "node.argsHidden": "The node's arguments are there, but Sextant does not give them to extensions: they may hold the join token. The YAML section shows them."
+  "serviceLb.truncated": "Only the first {{limit}} Services are listed."
 }

@@ -4,16 +4,18 @@
 // type check stays inside the extension; `missing`, `related` and `relatedBy` lookups as
 // src/extensions/problemsAcross.ts judges them) and compared with the model on its fixtures and variants of them.
 import type { KubeObject } from "@sextant/extension-sdk";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { parse as parseYaml } from "yaml";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import manifest from "../sextant-extension.json";
 import fixtures from "../fixtures/objects.json";
 import en from "./locales/en.json";
 import { HIDDEN, maskedSet, maskedValuesContent, nodeArgs, secretFlag } from "./mask";
+import { sizeText } from "./dom";
 import {
   addonOwnerOf,
-  BUILT_IN_MESSAGES,
   builtInProblems,
   CHART_TONE,
   chartFailureOf,
@@ -139,6 +141,37 @@ describe("node arguments", () => {
   });
 });
 
+describe("what Sextant gives masked (src/resources/masking-cases.json, shared with Rust and the window)", () => {
+  const cases = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../src/resources/masking-cases.json"), "utf8")) as {
+    nodeArgs: { name: string; text: string; args: unknown; masked: string | null }[];
+    set: { name: string; set: unknown; masked: Record<string, string> | null }[];
+    values: { name: string; text: string; masked: unknown }[];
+  };
+
+  it("reads Sextant's masked node arguments as the arguments themselves", () => {
+    for (const c of cases.nodeArgs) {
+      expect(nodeArgs(c.text), c.name).toEqual(c.args);
+      if (c.masked !== null) expect(nodeArgs(c.masked), c.name).toEqual(c.args);
+    }
+  });
+
+  it("shows Sextant's masked set values as the values themselves", () => {
+    for (const c of cases.set) expect(maskedSet(c.masked ?? undefined), c.name).toEqual(maskedSet(c.set));
+  });
+
+  it("shows Sextant's masked valuesContent as the text itself, and nothing where Sextant gives nothing", () => {
+    for (const c of cases.values) {
+      const shown = maskedValuesContent(c.text);
+      if (c.masked === null) expect(shown, c.name).toBeUndefined();
+      else if (c.masked === "") expect(shown, c.name).toBe("");
+      else {
+        expect(parseYaml(shown!), c.name).toEqual(c.masked);
+        expect(maskedValuesContent(JSON.stringify(c.masked)), c.name).toBe(shown);
+      }
+    }
+  });
+});
+
 describe("values", () => {
   it("hides secret-looking keys and cleans addresses; unreadable text is not shown", () => {
     const masked = maskedValuesContent(spec(f.chartFailed!).valuesContent as string)!;
@@ -260,6 +293,33 @@ interface Engine {
   detectRule(rule: unknown, obj: KubeObject): Detected[];
   valueAt(obj: unknown, path: string): unknown;
 }
+interface Problem extends Detected {
+  key: string;
+  notifyKey: string;
+  category: string;
+  uid: string;
+  object: NonNullable<Detected["object"]>;
+  firstSeen: number;
+  activeAt: number;
+}
+type KindKey = (kind: { group: string; kind: string }) => string;
+interface Rows {
+  status: string;
+  rows: Map<string, unknown>;
+  truncated: boolean;
+  namespaces: null;
+}
+interface Across {
+  judgeAcross(
+    problems: Problem[],
+    context: { rows: undefined; target(def: unknown): Rows | undefined; problemUids(): Set<string> },
+    rules: { rules: Map<string, unknown>; targets: unknown[]; served?: (kind: { group: string; kind: string }) => boolean; api: number },
+  ): Problem[];
+  rowOf(labels: string[], facts: unknown[], keepLabels: boolean, values: string[]): (obj: KubeObject) => unknown;
+  factsOf(rules: unknown[], keyOf: KindKey): Map<string, unknown[]>;
+  comparedPaths(rules: unknown[], keyOf: KindKey): Map<string, string[]>;
+  lookedUp(condition: unknown): { group: string; kind: string }[];
+}
 interface WindowColumn {
   width?: string;
   value(obj: KubeObject): unknown;
@@ -271,10 +331,12 @@ interface Columns {
   computedColumn(id: string, column: unknown): WindowColumn;
 }
 let engine: Engine;
+let across: Across;
 let columns: Columns;
 const here = dirname(fileURLToPath(import.meta.url));
 beforeAll(async () => {
   engine = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/problemRules.ts"))) as Engine;
+  across = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/problemsAcross.ts"))) as Across;
   columns = (await import(/* @vite-ignore */ join(here, "../../../src/extensions/columns.tsx"))) as Columns;
   const { startI18n } = (await import(/* @vite-ignore */ join(here, "../../../src/i18n/index.ts"))) as { startI18n(language: string): Promise<unknown> };
   await startI18n("en");
@@ -286,25 +348,61 @@ const groupOf = (o: KubeObject) => ((o.apiVersion ?? "").includes("/") ? o.apiVe
 const kindOfObj = (o: KubeObject) => ({ group: groupOf(o), kind: o.kind ?? "" });
 const sameKind = (a: { group: string; kind: string }, b: { group: string; kind: string }) => a.group === b.group && a.kind === b.kind;
 
-/** Whether the objects a problem looks up stand as the window's `judgeAcross` asks, in the judged object's namespace. */
-function lookupsStand(d: Detected, judged: KubeObject, objects: KubeObject[]): boolean {
-  const ns = judged.metadata.namespace ?? "";
-  return (d.lookups ?? []).every((lookup) => {
-    const there = objects.filter((o) => sameKind(kindOfObj(o), lookup) && (o.metadata.namespace ?? "") === ns);
-    const holds = (o: KubeObject) => lookup.fact === undefined || engine.evaluate(JSON.parse(lookup.fact), o).holds;
-    if (lookup.by) return there.some((o) => lookup.by!.every(([path, value]) => String(engine.valueAt(o, path)) === value) && holds(o));
-    const found = there.find((o) => o.metadata.name === lookup.name);
-    if (lookup.fact === undefined) return found === undefined;
-    return found !== undefined && holds(found);
-  });
+const keyOf: KindKey = (k) => `${k.group}/${k.kind}`.toLowerCase();
+const ADDON_KIND = { group: "k3s.cattle.io", kind: "Addon" };
+
+interface Cluster {
+  /** The Jobs not read yet (or not readable): their lookups cannot tell. */
+  jobsUnread?: boolean;
+  /** The cluster serves k3s Addons (a k3s or RKE2 server). */
+  server?: boolean;
 }
 
-function windowDetected(objects: KubeObject[]) {
-  return objects.flatMap((obj) =>
+/**
+ * The problems the manifest's rules find, judged as the window judges them: each rule on its objects
+ * (`problemRules.ts`), then their lookups on the rows of the looked-up kinds (`problemsAcross.ts`'s `judgeAcross`),
+ * first seen at `firstSeen`.
+ */
+function windowJudged(objects: KubeObject[], firstSeen: number, cluster: Cluster = {}): Problem[] {
+  const facts = across.factsOf(rules, keyOf);
+  const compared = across.comparedPaths(rules, keyOf);
+  const looked = rules.flatMap((rule) => across.lookedUp(rule.when));
+  const kinds = looked.filter((k, i) => looked.findIndex((o) => keyOf(o) === keyOf(k)) === i);
+  const defs = new Map(kinds.map((k) => [keyOf(k), { kind: k }]));
+  const targets = kinds.map((k) => ({ ...k, namespaced: true, def: defs.get(keyOf(k)) }));
+  const rows = new Map(
+    kinds.map((k) => {
+      const of = objects.filter((o) => keyOf(kindOfObj(o)) === keyOf(k));
+      const row = across.rowOf([], facts.get(keyOf(k)) ?? [], false, compared.get(keyOf(k)) ?? []);
+      const unread = cluster.jobsUnread === true && k.kind === "Job";
+      return [defs.get(keyOf(k)), { status: unread ? "loading" : "ready", rows: new Map(of.map((o) => [o.metadata.uid ?? o.metadata.name, row(o)])), truncated: false, namespaces: null }] as const;
+    }),
+  );
+  const problems = objects.flatMap((obj) =>
     rules
       .filter((rule) => sameKind(rule.kind, kindOfObj(obj)))
-      .flatMap((rule) => engine.detectRule(rule, obj).map((d) => ({ rule, d, obj })))
-      .filter(({ d, obj: judged }) => lookupsStand(d, judged, objects)),
+      .flatMap((rule) =>
+        engine.detectRule(rule, obj).map((d): Problem => {
+          const start = d.since ? Date.parse(d.since) : firstSeen;
+          return {
+            ...d,
+            key: `${obj.metadata.uid}|${d.reason}`,
+            notifyKey: `${obj.metadata.uid}|${d.group}`,
+            category: "ext:sextant.k3s",
+            uid: obj.metadata.uid ?? obj.metadata.name,
+            object: d.object ?? { kind: { ...kindOfObj(obj), version: "v1" }, namespace: obj.metadata.namespace ?? null, name: obj.metadata.name },
+            firstSeen,
+            // As the problems store dates a problem (`resolve`).
+            activeAt: d.activeFrom ?? (d.graceMs ? start + d.graceMs : Math.min(start, firstSeen)),
+          };
+        }),
+      ),
+  );
+  const served = (k: { group: string; kind: string }) => keyOf(k) !== keyOf(ADDON_KIND) || cluster.server !== false;
+  return across.judgeAcross(
+    problems,
+    { rows: undefined, target: (def) => rows.get(def as { kind: { group: string; kind: string } }) as Rows | undefined, problemUids: () => new Set() },
+    { rules: new Map(rules.map((r) => [r.id, r])), targets, served, api: manifest.sextantApi },
   );
 }
 
@@ -318,18 +416,15 @@ interface Found {
 }
 
 /** The problems the manifest's rules find, as the window finds them, each about its object, first seen at `firstSeen`. */
-function windowProblems(objects: KubeObject[], firstSeen: number): Found[] {
-  return windowDetected(objects).map(({ d, obj }) => {
-    const start = d.since ? Date.parse(d.since) : firstSeen;
-    return {
-      kind: d.object?.kind.kind ?? obj.kind ?? "",
-      name: d.object?.name ?? obj.metadata.name,
-      reason: d.reason,
-      message: d.message ?? "",
-      activeAt: d.activeFrom ?? start + (d.graceMs ?? 0),
-      ...(d.until !== undefined ? { until: d.until } : {}),
-    };
-  });
+function windowProblems(objects: KubeObject[], firstSeen: number, cluster: Cluster = {}): Found[] {
+  return windowJudged(objects, firstSeen, cluster).map((p) => ({
+    kind: p.object.kind.kind,
+    name: p.object.name,
+    reason: p.reason,
+    message: p.message ?? "",
+    activeAt: p.activeAt,
+    ...(p.until !== undefined ? { until: p.until } : {}),
+  }));
 }
 
 const sorted = <T extends { kind: string; name: string; reason: string }>(list: T[]) =>
@@ -337,40 +432,24 @@ const sorted = <T extends { kind: string; name: string; reason: string }>(list: 
 
 const NOW = Date.parse("2026-10-01T12:00:00Z");
 
-/**
- * The built-in problems in the window's terms, with the one difference the manifest cannot avoid: a chart whose own
- * Failed condition holds while its install Job failed is told by the Job's rule, so its message is the Job's (else
- * the plain text), not helm-controller's; and a Failed chart without a Job names the Job \`status.jobName\` names where the
- * built-in plain text left the name empty (README "Requirements and limits").
- */
+/** The built-in problems in the window's terms. */
 function builtIn(input: BuiltInInputs): Found[] {
-  const charts = [...input.charts];
-  return builtInProblems(input, NOW).map((p) => {
-    const out: Found = { kind: p.kind, name: p.name, reason: p.reason, message: p.message, activeAt: p.activeAt, ...(p.until !== undefined ? { until: p.until } : {}) };
-    const chart = charts.find((c) => c.kind === p.kind && c.metadata.name === p.name && c.metadata.namespace === p.namespace);
-    const job = chart && input.jobs ? jobOfChart(chart, input.jobs) : undefined;
-    const jobFailed = job && (job.status?.conditions as { type: string; status: string }[] | undefined)?.some((c) => c.type === "Failed" && c.status === "True");
-    if (p.reason === "HelmChartFailed" && chart && jobFailed && chartStateOf(chart) === "failed") {
-      const message = chartFailureOf({ ...chart, status: { ...chart.status, conditions: [] } }, job);
-      out.message = message ?? BUILT_IN_MESSAGES.k3sHelmChartFailed.replace("{{job}}", job.metadata.name);
-    }
-    // Without a Job, the built-in plain message left the Job's name out ("The install Job  of …"); the rule names the
-    // one helm-controller wrote in `status.jobName`.
-    if (p.reason === "HelmChartFailed" && chart && !job && p.message === BUILT_IN_MESSAGES.k3sHelmChartFailed.replace("{{job}}", "")) {
-      out.message = BUILT_IN_MESSAGES.k3sHelmChartFailed.replace("{{job}}", String(chart.status?.jobName ?? ""));
-    }
-    return out;
-  });
+  return builtInProblems(input, NOW).map((p) => ({ kind: p.kind, name: p.name, reason: p.reason, message: p.message, activeAt: p.activeAt, ...(p.until !== undefined ? { until: p.until } : {}) }));
 }
 
 const ADDONS = () => [fx("addonCoredns"), fx("addonTraefik")];
 
 /** Both judge the same objects alike: the charts, their Jobs, kube-system's Deployments (on a server: with Addons). */
-function expectSame(input: { charts?: KubeObject[]; jobs?: KubeObject[]; deployments?: KubeObject[]; server?: boolean }, label: string) {
+function expectSame(input: { charts?: KubeObject[]; jobs?: KubeObject[]; deployments?: KubeObject[]; server?: boolean; jobsUnread?: boolean }, label: string) {
   const server = input.server ?? true;
-  const full: BuiltInInputs = { charts: input.charts ?? [], jobs: input.jobs ?? [], deployments: server ? (input.deployments ?? []) : undefined };
+  const full: BuiltInInputs = {
+    charts: input.charts ?? [],
+    // Not read in full: the built-in category judged the charts without their Jobs.
+    jobs: input.jobsUnread ? undefined : (input.jobs ?? []),
+    deployments: server ? (input.deployments ?? []) : undefined,
+  };
   const objects = [...(input.charts ?? []), ...(input.jobs ?? []), ...(input.deployments ?? []), ...(server ? ADDONS() : [])];
-  expect(sorted(windowProblems(objects, NOW)), label).toEqual(sorted(builtIn(full)));
+  expect(sorted(windowProblems(objects, NOW, { server, jobsUnread: input.jobsUnread === true })), label).toEqual(sorted(builtIn(full)));
 }
 
 // ---------- The problem rules ----------
@@ -386,7 +465,8 @@ describe("the problem rules, against the built-in ones", () => {
       "HelmChart/rke2-ingress-nginx:HelmChartRetrying",
     ]);
     const failedAt = Date.parse("2026-10-01T10:00:00Z");
-    expect(found[1]).toMatchObject({ activeAt: failedAt, until: failedAt + FAILED_FOR_MS, message: "Job has reached the specified backoff limit" });
+    // helm-controller's own message, dated from its Job's failure, as the built-in category told it.
+    expect(found[1]).toMatchObject({ activeAt: failedAt, until: failedAt + FAILED_FOR_MS, message: "Job has reached configured number of retries without succeeding" });
     expect(found[2]).toMatchObject({ activeAt: NOW + RETRY_GRACE_MS, message: "Job helm-install-rke2-ingress-nginx: failed Pods so far: 4; helm-controller keeps retrying." });
     expect(found[0]).toMatchObject({ activeAt: Date.parse("2026-10-01T09:00:00Z") + UNAVAILABLE_GRACE_MS, message: "Bundled component traefik: 0 of 1 replicas available." });
     // The values of a chart never reach a problem.
@@ -405,6 +485,7 @@ describe("the problem rules, against the built-in ones", () => {
       ["no status", (c) => delete c.status],
       ["being deleted", (c) => (c.metadata.deletionTimestamp = "2026-10-01T11:00:00Z")],
       ["naming another Job", (c) => (st(c).jobName = "helm-install-other")],
+      ["naming no Job", (c) => delete st(c).jobName],
     ];
     const job = (change: (j: KubeObject) => void) => {
       const j = fx("jobFailed");
@@ -425,47 +506,63 @@ describe("the problem rules, against the built-in ones", () => {
       ["a Job pending after 4 failed pods", [job((j) => (st(j).conditions = [], (st(j).failed = 4)))]],
       ["a complete Job after 4 failed pods", [job((j) => ((st(j).conditions = [{ type: "Complete", status: "True" }]), (st(j).failed = 4)))]],
       ["a Job with a False Failed condition", [job((j) => ((failed(j).status = "False"), (st(j).active = 1)))]],
+      // The one the chart names first, else the newest labelled for it (`jobOfChart`).
+      [
+        "the named Job failed, a newer one runs",
+        [job(() => undefined), job((j) => ((j.metadata.name = "helm-install-my-app-2"), (j.metadata.uid = "j2"), (j.metadata.creationTimestamp = "2026-10-01T11:00:00Z"), (st(j).conditions = []), (st(j).active = 1)))],
+      ],
+      [
+        "an older Job failed, a newer one runs, neither named",
+        [
+          job((j) => ((j.metadata.name = "helm-install-my-app-old"), (j.metadata.uid = "j1"))),
+          job((j) => ((j.metadata.name = "helm-install-my-app-new"), (j.metadata.uid = "j2"), (j.metadata.creationTimestamp = "2026-10-01T11:00:00Z"), (st(j).conditions = []), (st(j).active = 1), (st(j).failed = 4))),
+        ],
+      ],
+      ["a failed Job of another chart", [job((j) => (j.metadata.labels!["helmcharts.helm.cattle.io/chart"] = "other"))]],
     ];
     expect(failedAt).toBe(failed(fx("jobFailed")).lastTransitionTime);
     for (const [chartLabel, change] of charts) {
       for (const [jobLabel, list] of jobVariants) {
         const chart = fx("chartFailed");
         change(chart);
-        // The one place the window cannot follow: a Failed chart whose Job failed is told by the Job, see `builtIn`;
-        // a Failed chart naming no Job (or another) keeps the chart's own reading, without the Job's day.
-        if (chartLabel === "naming another Job" && chartStateOf(chart) === "failed" && list.length > 0) continue;
         expectSame({ charts: [chart], jobs: copy(list) }, `${chartLabel}, ${jobLabel}`);
+        expectSame({ charts: [copy(chart)], jobs: copy(list), jobsUnread: true }, `${chartLabel}, ${jobLabel}, Jobs not read`);
       }
     }
   });
 
-  it("leave a Failed chart without `status.jobName` to its own condition (the built-in found its Job by the name it would give it)", () => {
+  it("find a Failed chart's Job as the built-in did when `status.jobName` names none: the newest labelled for it", () => {
     const chart = fx("chartFailed");
     delete st(chart).jobName;
-    const found = windowProblems([chart, fx("jobFailed")], NOW);
-    expect(found).toEqual([{ kind: "HelmChart", name: "my-app", reason: "HelmChartFailed", message: "Job has reached configured number of retries without succeeding", activeAt: NOW }]);
     const failedAt = Date.parse("2026-10-01T10:00:00Z");
-    expect(builtInProblems({ charts: [chart], jobs: [fx("jobFailed")], deployments: [] }, NOW)).toMatchObject([
-      { ...found[0], since: "2026-10-01T10:00:00Z", activeAt: failedAt, until: failedAt + FAILED_FOR_MS },
+    expect(windowProblems([chart, fx("jobFailed")], NOW)).toEqual([
+      { kind: "HelmChart", name: "my-app", reason: "HelmChartFailed", message: "Job has reached configured number of retries without succeeding", activeAt: failedAt, until: failedAt + FAILED_FOR_MS },
     ]);
+    expectSame({ charts: [chart], jobs: [fx("jobFailed")] }, "no status.jobName");
   });
 
-  it("tell a Job's problem about its HelmChart, notifying once for the chart, in the built-in groups", () => {
-    const detected = windowDetected([fx("chartFailed"), fx("jobFailed"), fx("chartRetrying"), fx("jobRetrying")]);
-    expect(detected.map(({ obj, d }) => [obj.metadata.name, d.object, d.notifyAs, d.group])).toEqual([
-      ["helm-install-my-app", { kind: { group: "helm.cattle.io", version: "v1", kind: "HelmChart" }, namespace: "kube-system", name: "my-app" }, "helm.cattle.io/HelmChart/kube-system/my-app", "helm-chart-failed"],
-      [
-        "helm-install-rke2-ingress-nginx",
-        { kind: { group: "helm.cattle.io", version: "v1", kind: "HelmChart" }, namespace: "kube-system", name: "rke2-ingress-nginx" },
-        "helm.cattle.io/HelmChart/kube-system/rke2-ingress-nginx",
-        "helm-chart-retrying",
-      ],
+  it("judge a Failed chart by its own condition while its Jobs cannot be read, as the built-in did", () => {
+    const found = windowProblems([fx("chartFailed"), fx("jobFailed")], NOW, { jobsUnread: true });
+    expect(found).toEqual([{ kind: "HelmChart", name: "my-app", reason: "HelmChartFailed", message: "Job has reached configured number of retries without succeeding", activeAt: NOW }]);
+    const plain = fx("chartFailed");
+    delete conditions(plain)[1]!.message;
+    delete conditions(plain)[1]!.reason;
+    expect(windowProblems([plain], NOW, { jobsUnread: true })[0]?.message).toBe("The install Job  of this HelmChart failed.");
+  });
+
+  it("tell a chart's problems about the chart itself, notifying once for it, in the built-in groups", () => {
+    const judged = windowJudged([fx("chartFailed"), fx("jobFailed"), fx("chartRetrying"), fx("jobRetrying")], NOW);
+    expect(judged.map((p) => [p.object.name, p.object.kind.kind, p.notifyKey, p.group])).toEqual([
+      ["my-app", "HelmChart", "c0ffee00-0000-4000-8000-000000000002|helm-chart-failed", "helm-chart-failed"],
+      ["rke2-ingress-nginx", "HelmChart", "c0ffee00-0000-4000-8000-000000000003|helm-chart-retrying", "helm-chart-retrying"],
     ]);
-    // Without the chart among the rows (not read yet), nothing is said.
+    // A Job's problems need its chart: without one, nothing is said.
     expect(windowProblems([fx("jobFailed"), fx("jobRetrying")], NOW)).toEqual([]);
+    // A chart's Job's time is its problem's.
+    expect(judged[0]).toMatchObject({ since: "2026-10-01T10:00:00Z" });
   });
 
-  it("judge kube-system's component Deployments, only on a server (where Addons are there), as the built-in did", () => {
+  it("judge kube-system's component Deployments, only on a server (where Addons are served), as the built-in did", () => {
     const deployment = (name: string, change: (d: KubeObject) => void = () => undefined) => {
       const d = fx(name);
       change(d);
@@ -498,7 +595,7 @@ describe("the problem rules, against the built-in ones", () => {
   it("count on the sections as the built-in counters did: charts on helm-controller's, components on k3s / RKE2's", () => {
     const [helm, k3s] = manifest.contributes.sectionBadges;
     expect(helm!.section).toBe("helmController");
-    expect(new Set(helm!.rules)).toEqual(new Set(rules.filter((r) => r.kind.kind !== "Deployment").map((r) => r.id)));
+    expect(new Set(helm!.rules)).toEqual(new Set(rules.filter((r) => r.kind.kind === "HelmChart").map((r) => r.id)));
     expect(k3s).toMatchObject({ section: "k3s", rules: ["component-unavailable"] });
     // Rules of one problem notify as one, as the built-in key `<uid>|<reason>` did.
     expect(new Set(rules.map((r) => `${r.reasonOr}:${r.group}`))).toEqual(
@@ -546,18 +643,25 @@ describe("the kinds' \"Only problems\" and the Node section's condition, against
       ["other instance type", node({ labels: { "node.kubernetes.io/instance-type": "m5.large" } })],
     ];
     for (const [label, n] of nodes) expect(engine.evaluate(section.when, n).holds, label).toBe(nodeDistributionOf(n).distribution !== undefined);
-    // A look-alike suffix passes the condition (no condition reads a pattern); the frame finds no distribution and hides.
-    const lookAlike = node({ version: "v1.31.2+k3sx" });
-    expect(engine.evaluate(section.when, lookAlike).holds).toBe(true);
-    expect(nodeDistributionOf(lookAlike).distribution).toBeUndefined();
+    // A look-alike suffix is no sign, as the built-in pattern read it (`fits`: `*+k3s#`).
+    for (const version of ["v1.31.2+k3sx", "v1.31.2+k3s", "v1.31.2+rke2r", "v1.31.2+k3s1-rc"]) {
+      const lookAlike = node({ version });
+      expect(engine.evaluate(section.when, lookAlike).holds, version).toBe(false);
+      expect(nodeDistributionOf(lookAlike).distribution, version).toBeUndefined();
+    }
     expect(section).toMatchObject({ order: 29, heading: false, startHidden: true });
   });
 
-  it("leave out a node whose only sign is its node-args or node-env annotation, which Sextant keeps from extensions", () => {
+  it("show it on a node whose only sign is its node-args or node-env annotation, reading only that it is there", () => {
     const section = manifest.contributes.detailsSections.find((s) => s.id === "k3s-node")!;
-    const only = node({ annotations: { "k3s.io/node-args": "[]" } });
-    expect(nodeDistributionOf(only).distribution).toBe("k3s");
-    expect(engine.evaluate(section.when, only).holds).toBe(false);
+    for (const key of ["k3s.io/node-args", "k3s.io/node-env", "rke2.io/node-args", "rke2.io/node-env"]) {
+      // As Sextant gives the annotation to an extension (empty) and as the window has it.
+      for (const value of ["", "[]", '{"K3S_TOKEN":"x"}']) {
+        const only = node({ annotations: { [key]: value } });
+        expect(nodeDistributionOf(only).distribution, key).toBe(key.split(".")[0]);
+        expect(engine.evaluate(section.when, only).holds, `${key} ${value}`).toBe(true);
+      }
+    }
   });
 });
 
@@ -647,9 +751,9 @@ describe("the columns, against the built-in ones", () => {
     for (const obj of [fx("addonCoredns"), fx("addonTraefik")]) expect(cell("addon-source", obj)).toBe(spec(obj).source);
   });
 
-  it("cut an Addon's checksum to its first 12 characters, with \"…\" where the built-in column cut it silently", () => {
+  it("cut an Addon's checksum to its first 12 characters, silently, as the built-in column did", () => {
     const sum = spec(f.addonCoredns!).checksum as string;
-    expect(cell("addon-checksum", fx("addonCoredns"))).toBe(`${sum.slice(0, 12)}…`);
+    expect(cell("addon-checksum", fx("addonCoredns"))).toBe(sum.slice(0, 12));
     const short = fx("addonCoredns");
     spec(short).checksum = "abc";
     expect(cell("addon-checksum", short)).toBe("abc");
@@ -694,6 +798,16 @@ describe("the columns, against the built-in ones", () => {
     expect(cell("snapshot-size", fx("snapshotLocal"))).toBe(BYTES(12582944));
     expect(cell("snapshot-size", snapshotVariants().find(([l]) => l === "a size in Mi")![1])).toBe("12.0MiB");
     expect(cell("snapshot-size", snapshotVariants().find(([l]) => l === "a size as a number")![1])).toBe("4.00KiB");
+    // A size that is no quantity as it is, and every size sorted by the text shown, as the built-in column (`sizeText`).
+    for (const [label, obj] of snapshotVariants()) {
+      const size = snapshotOf(obj).size;
+      expect(cell("snapshot-size", obj), label).toBe(size === undefined ? "" : sizeText(size));
+    }
+    const odd = fx("snapshotLocal");
+    st(odd).size = "about 12 MB";
+    expect(cell("snapshot-size", odd)).toBe("about 12 MB");
+    expect(windowColumn("snapshot-size").value(odd)).toBe("about 12 MB");
+    expect(windowColumn("snapshot-size").value(fx("snapshotLocal"))).toBe(BYTES(12582944));
     expect(cell("snapshot-created", fx("snapshotLocal"))).not.toBe("");
   });
 });

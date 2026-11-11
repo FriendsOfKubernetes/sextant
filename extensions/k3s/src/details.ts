@@ -10,9 +10,10 @@
 //   `k3s-node` on a Node        — the distribution, version, role, what told it, the addresses k3s recorded, and the
 //                                 node's arguments. Sextant shows the section only on nodes a condition picks
 //                                 (`when`); the frame hides it again where the node tells no distribution after all.
-// Sextant gives an extension neither a node's `node-args` nor a HelmChart's `valuesContent` and `set`
-// (`without_inline_secrets`, ADR-0123): the frame says so where the built-in view showed them masked, and masks what
-// it does get (a HelmChart's `values`, a HelmChartConfig's `set`) with the built-in rules.
+// Sextant gives this extension a node's `node-args` and a HelmChart's `valuesContent` and `set` masked
+// (`permissions.maskedSecrets`, ADR-0169, by the built-in rules in Rust); the frame masks them, and what else it gets
+// (a HelmChart's `values`, a HelmChartConfig's `set`), with the built-in rules once more (mask.ts), and says a field
+// Sextant could not read safely (blanked) cannot be read, as the built-in view did.
 // The sections have no heading of their own (`heading: false`), as the built-in ones had none; their blocks open and
 // close in Sextant's own memory of details sections (`context.blocks`, `ui.setBlockOpen`). A HelmChart's Jobs (≤
 // `MAX_CHART_JOBS`, by the chart label in its namespace) and its HelmChartConfig, and a HelmChartConfig's HelmChart,
@@ -129,13 +130,13 @@ const listedOf = (live: Live | undefined): Listed =>
 /** A HelmChart's or HelmChartConfig's values (`valuesContent`, `values`, `set`), masked, folded behind a toggle. */
 function valuesBlock(obj: KubeObject, blocks: Blocks): HTMLElement {
   const spec = (obj.spec ?? {}) as Record<string, unknown>;
+  // What Sextant could not read safely and gave blanked: `valuesContent` the built-in view could not read either (it
+  // said so), a `set` that is no mapping (it showed nothing).
   const hidden = hiddenPaths(obj);
-  const contentHidden = hidden.includes("spec.valuesContent");
-  const setHidden = hidden.includes("spec.set");
-  const content = contentHidden ? "" : typeof spec.valuesContent === "string" ? maskedValuesContent(spec.valuesContent) : "";
+  const content = hidden.includes("spec.valuesContent") ? undefined : typeof spec.valuesContent === "string" ? maskedValuesContent(spec.valuesContent) : "";
   const values = spec.values && typeof spec.values === "object" && !Array.isArray(spec.values) ? stringify(maskValues(spec.values), { lineWidth: 0 }) : "";
-  const set = setHidden ? [] : maskedSet(spec.set);
-  const nothing = content === "" && values === "" && set.length === 0 && !contentHidden && !setHidden;
+  const set = hidden.includes("spec.set") ? [] : maskedSet(spec.set);
+  const nothing = content === "" && values === "" && set.length === 0;
   const folded = (summary: string, text: string) =>
     element("details", { className: "k3s-values" }, element("summary", { textContent: summary }), element("pre", { className: "k3s-pre", textContent: clip(text) }));
   const body = nothing
@@ -143,10 +144,8 @@ function valuesBlock(obj: KubeObject, blocks: Blocks): HTMLElement {
     : present([
         remark(t("values.note")),
         content === undefined && remark(t("values.unreadable")),
-        contentHidden && remark(t("values.contentHidden")),
         Boolean(content) && folded(t("values.showContent"), content!),
         values !== "" && folded(t("values.showValues"), values),
-        setHidden && remark(t("values.setHidden")),
         set.length > 0 && folded(t("values.showSet"), set.join("\n")),
       ]);
   return block(blocks, VALUES_BLOCK, t("values.title"), body);
@@ -274,13 +273,13 @@ export function snapshotView(sextant: Sextant, obj: KubeObject): Node[] {
   ]);
 }
 
-/** Whether Sextant kept the node's arguments from the extension (they arrive as "", named in its annotation). */
+/** Whether Sextant could not read the node's arguments safely (they arrive as "", named only as hidden). */
 export const argsHiddenByHost = (node: KubeObject, distribution: string): boolean =>
   hiddenPaths(node).includes(`metadata.annotations[${JSON.stringify(`${distribution}.io/node-args`)}]`);
 
-/** A node's arguments: flag and value, a hidden one as "hidden"; what Sextant keeps from the extension, said so. */
+/** A node's arguments: flag and value, a hidden one as "hidden"; ones that cannot be read, said so. */
 function argsContent(sextant: Sextant, node: KubeObject, distribution: string): Node[] {
-  if (argsHiddenByHost(node, distribution)) return [remark(t("node.argsHidden"))];
+  if (argsHiddenByHost(node, distribution)) return [remark(t("node.argsUnreadable"))];
   const d = nodeDistributionOf(node);
   if (d.args === undefined) return [];
   if (d.args === null) return [remark(t("node.argsUnreadable"))];

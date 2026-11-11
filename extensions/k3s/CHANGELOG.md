@@ -1,5 +1,28 @@
 # Changes of k3s / RKE2
 
+## 1.1.0 — 2026-11-12
+
+Needs Sextant 0.30.1 (`sextantApi` 5); Sextant 0.30.0 keeps 1.0.0. What the built-in view did that extension API 4
+could not say (ADR-0169):
+
+- **A node's arguments and a chart's values** are shown masked again, as the built-in view showed them: Sextant gives
+  the extension a masked copy of a node's `node-args` and a HelmChart's `valuesContent` and `set` (a HelmChartConfig's
+  `valuesContent`), every secret value hidden in Sextant before the object leaves it (`permissions.maskedSecrets`,
+  asked for at install); a node's environment is still never given. A node's role comes from its `server` argument
+  too, and a value Sextant cannot read safely is said to be unreadable, as the built-in view said it.
+- **The problems of a HelmChart** are judged on the chart with its install Job as the built-in category judged them:
+  the Job the chart names, else `helm-install-<name>`, else the newest labelled for it; helm-controller's own message
+  dated from its Job's failure; the chart's own `Failed` condition also while its Jobs cannot be read; the "no
+  message" text naming that Job, or none. Each problem is about the chart itself (`chart-failed`, `chart-failed-plain`,
+  `chart-job-failed`, `chart-job-failed-plain`, `chart-retrying` replace the rules of 1.0.0).
+- **A bundled component** is judged wherever the cluster serves k3s Addons, as the built-in category did.
+- **The Node section** shows on a node whose kubelet version reads like k3s's or RKE2's (`+k3s<n>`, `+rke2r<n>`), not on
+  a look-alike, and on one whose only sign is its `node-args` or `node-env` annotation.
+- **Checksum** is cut to 12 characters silently, and **Size** shows a size that is no quantity as it is and sorts by the
+  text shown, as the built-in columns did.
+- Installing asks for consent to the masked fields of Nodes, HelmCharts and HelmChartConfigs; the problem rules judge
+  HelmCharts and Deployments and look up Jobs (listed by helm-controller's label), no longer Addons.
+
 ## 1.0.0 — 2026-11-10
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in k3s / RKE2 view (ADR-0123) as an

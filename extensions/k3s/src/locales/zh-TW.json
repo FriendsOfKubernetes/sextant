@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{desired}} 個中 {{ready}} 個就緒",
   "serviceLb.noAddress": "尚無位址",
   "serviceLb.serviceUnreadable": "無法讀取該 Service",
-  "serviceLb.truncated": "只列出前 {{limit}} 個 Services。",
-  "values.contentHidden": "已設定 valuesContent，但 Sextant 不會將它交給擴充功能：其中可能含有機密。YAML 區段會顯示它。",
-  "values.setHidden": "已有 set 值，但 Sextant 不會將它們交給擴充功能：其中可能含有機密。YAML 區段會顯示它們。",
-  "node.argsHidden": "節點有引數，但 Sextant 不會將它們交給擴充功能：其中可能含有加入權杖。YAML 區段會顯示它們。"
+  "serviceLb.truncated": "只列出前 {{limit}} 個 Services。"
 }

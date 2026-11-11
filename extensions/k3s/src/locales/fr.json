@@ -167,8 +167,5 @@
   "serviceLb.ready": "{{ready}} sur {{desired}} prêts",
   "serviceLb.noAddress": "Pas encore d'adresse",
   "serviceLb.serviceUnreadable": "Le Service ne peut pas être lu",
-  "serviceLb.truncated": "Seuls les {{limit}} premiers Services sont listés.",
-  "values.contentHidden": "valuesContent est défini, mais Sextant ne le donne pas aux extensions : il peut contenir des secrets. La section YAML le montre.",
-  "values.setHidden": "Les valeurs set sont là, mais Sextant ne les donne pas aux extensions : elles peuvent contenir des secrets. La section YAML les montre.",
-  "node.argsHidden": "Les arguments du nœud sont là, mais Sextant ne les donne pas aux extensions : ils peuvent contenir le jeton d'adhésion. La section YAML les montre."
+  "serviceLb.truncated": "Seuls les {{limit}} premiers Services sont listés."
 }
