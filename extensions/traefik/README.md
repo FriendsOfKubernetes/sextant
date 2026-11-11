@@ -17,15 +17,17 @@ ADR-0153 (computed columns), ADR-0160 (the section's icon and place, the UI kit)
 `same`, lists counted), ADR-0165 (a kind's own "Only problems") and ADR-0167 (the counter's own label, problem
 categories of the extension's own, column widths, sort keys and blank cells, offsets, counts in conditions, text
 conditions, `*` paths and `joinPaths`, `|keys`, untitled details sections, details blocks in Sextant's own memory,
-capped watches).
+capped watches) and ADR-0169 (extension API 5: the References column's `problem` cases, `|positions`, trimmed match
+steps, `alsoKinds`, lists three deep with the holding object's namespace, 100 rules, `{{missing}}` of a single
+reference).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.traefik` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 5: Sextant 0.30.1 or newer; Sextant 0.30.0 is offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `traefik-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Traefik |
 | Checked against | Traefik's own types (`pkg/provider/kubernetes/crd/traefikio/v1alpha1`), its CRD provider's reference resolution (namespaces, `name@provider`, `@internal`, `allowCrossNamespace`) and its documentation (routing/providers/kubernetes-crd, middlewares, TLS) |
@@ -45,9 +47,20 @@ rules below (IngressRoutes, Traefik Services, Middlewares). TLS Options, TLS Sto
 Secrets, which were never judged for problems: their "Only problems" lists nothing, as the built-in's did.
 
 **Columns**, in place of the CRDs' own printer columns (left out, as the built-in view did), after Namespace, in the
-built-in widths and order. The ids of `traefik.containo.us`'s columns are the same with `l-` in front (`l-ir-ep`,
-`l-ir-hosts`, `l-ir-svc`, `l-ir-tls`, `l-irt-ep`, `l-irt-hosts`, `l-irt-svc`, `l-irt-tls`, `l-iru-ep`, `l-iru-svc`, `l-mw-type`, `l-mwt-type`,
-`l-ts-strat`, `l-ts-svc`, `l-to-min`, `l-to-auth`, `l-tst-def`, `l-tst-sec`, `l-st-sni`, `l-st-insec`, `l-st-sec`):
+built-in widths and order. The ids of `traefik.containo.us`'s columns are the same with `l-` in front (`l-ir-refs`,
+`l-ir-ep`, `l-ir-hosts`, `l-ir-svc`, `l-ir-tls`, `l-irt-refs`, `l-irt-ep`, `l-irt-hosts`, `l-irt-svc`, `l-irt-tls`,
+`l-iru-refs`, `l-iru-ep`, `l-iru-svc`, `l-mw-refs`, `l-mw-type`, `l-mwt-type`, `l-ts-refs`, `l-ts-strat`, `l-ts-svc`,
+`l-to-refs`, `l-to-min`, `l-to-auth`, `l-tst-refs`, `l-tst-def`, `l-tst-sec`, `l-st-refs`, `l-st-sni`, `l-st-insec`,
+`l-st-sec`):
+- Every kind but Middlewares TCP, first: **References** (`ir-refs`, `irt-refs`, `iru-refs`, `mw-refs`, `ts-refs`,
+  `to-refs`, `tst-refs`, `st-refs`, `stt-refs`), as the built-in tables' first column: "Broken reference" in red where
+  a problem rule below holds for the row (also while it waits out its 2 minutes), "Checking…" in grey while the lists
+  the rules look up are being read, "Not all checked" in grey where they cannot tell (a list not read in full, not
+  readable in the namespace it names, or the row's kind not judged there), else "References found" in green. It reads
+  the rules' problems (the column's `problem` cases, `sextantApi` 5) and holds their lists while the table is shown,
+  whether or not the opt-in category is on, as the built-in column held its store; it does not sort, as the built-in did
+  not. TLS Options, TLS Stores and Servers Transports name only Secrets, which the built-in judged only in the open
+  details: their column says "References found".
 - IngressRoutes, IngressRoutes TCP and UDP: **Entry points** (`ir-ep`, `irt-ep`, `iru-ep`), **Hosts** (`ir-hosts`,
   `irt-hosts`, HTTP and TCP only: every exact `Host(…)`/`HostSNI(…)` name of the match rules once, lower case, not `*`,
   with the `ruleHosts` filter, as the built-in column), **Services** (`ir-svc`,
@@ -108,7 +121,10 @@ others wrap between words.
 - Nothing is changed or deleted by the extension; Edit and Delete are Sextant's own actions, under your own rules.
 - Its problem rules judge IngressRoutes (HTTP, TCP, UDP), TraefikServices and Middlewares of both groups and, to tell
   whether a reference's target exists, list Services, IngressRoutes, Middlewares, TraefikServices, TLSOptions and
-  ServersTransports (HTTP and TCP) and MiddlewareTCPs by name, metadata only; Sextant asks for that separately at install.
+  ServersTransports (HTTP and TCP) and MiddlewareTCPs of both groups by name, metadata only (a kind the cluster does not
+  serve is not listed); Sextant asks for that separately at install, and 1.1.0 asks again for the old group's
+  ServersTransportTCP name, which `l-it-x` looks up beside `traefik.io`'s. The References column reads these rules'
+  problems.
 - An update asks for consent again when it needs a new kind or action, or changes a grant.
 
 ## Problems
@@ -117,30 +133,41 @@ As the built-in category `traefik`: the extension's own category **Traefik refer
 turned on on the Problems page, because it lists every Traefik object of a cluster and the objects they name. Every
 rule counts after 2 minutes (a reference applied in the wrong order is fixed by the next apply), notifies, and tells
 reason `MissingReference` with the built-in message "Refers to objects that do not exist: … Traefik skips what depends
-on them.", naming every missing one of its list (`namespace/name` in another namespace; rules of one object notify
-once, group `missing-reference`), or `SkippedRoute` (group `skipped-route`). Each reference is looked up in the
-namespace it names, else in its object's own, as Traefik looks; another provider's (`@` in the name) is left out, and a
-list loading, failed, capped or not readable there is "cannot tell", never a problem. The ids are short (each is in
+on them.", naming every missing one (`namespace/name` in another namespace; rules of one object notify once, group
+`missing-reference`), or `SkippedRoute` with the built-in message naming the routes by number ("Traefik skips its
+routes 1, 3: …", group `skipped-route`). Each reference is looked up in the namespace it names, else in its load
+balancer's (a service's middlewares and servers transport), else in its object's own, as Traefik looks; another
+provider's (`@` in the name) is left out, and so is the namespace another provider's service names. A Traefik target is
+looked up in both groups (`alsoKinds`): found in either, it is there, as the built-in found an old-group target of a
+`traefik.io` object ("only in `traefik.containo.us`", open, never broken); a group the cluster does not serve has no
+objects, so a target kind neither serves is missing, as the built-in called it. A list loading, failed, capped or not
+readable there is "cannot tell", never a problem. The ids are short (each is in
 every language's keys twice): the kind (`ir` IngressRoute, `it` IngressRouteTCP, `iu` IngressRouteUDP, `ts` a
 TraefikService's weighted or highest-random-weight services, `tm` its mirroring service, `tr` its mirrors, `tf` its
 failover service and fallback, `th` its highest-random-weight services' middlewares, `mw` a Middleware's chain, `me`
 its error pages' service), then what is missing (`k`
 skipped routes, `o` TLSOption, `s` Service, `t` TraefikService, `x` servers transport, `m` middleware, `p` parent
-route). The rules of `traefik.containo.us` are the same with `l-` in front (`l-ir-k`, `l-ir-o`, `l-it-k`, `l-it-o`, `l-ir-s`, `l-ir-t`, `l-ir-x`, `l-ir-m`, `l-ir-p`, `l-it-s`, `l-it-m`, `l-iu-s`, `l-ts-s`, `l-ts-t`, `l-ts-x`, `l-tm-s`, `l-tr-s`, `l-tf-s`, `l-tm-t`, `l-tm-x`, `l-ts-m`, `l-mw-m`, `l-me-s`, `l-me-t`, `l-me-x`) and look the Traefik targets up in it; with 60 rules in all, that group (which Traefik v3 no longer reads) has no `l-it-x` (it never had ServersTransportTCP), `l-tr-t`, `l-tr-x`, `l-tf-t`, `l-tf-x`, `l-th-m`, `l-tm-m`, `l-tr-m`, `l-tf-m` or `l-me-m`.
+route, `sm` a route service's middleware). The rules of `traefik.containo.us` are the same with `l-` in front
+(`l-ir-k`, `l-ir-o`, `l-it-k`, `l-it-o`, `l-ir-s`, `l-ir-t`, `l-ir-x`, `l-ir-m`, `l-ir-sm`, `l-ir-p`, `l-it-s`, `l-it-m`,
+`l-it-x`, `l-iu-s`, `l-ts-s`, `l-ts-t`, `l-ts-x`, `l-tm-s`, `l-tr-s`, `l-tf-s`, `l-tm-t`, `l-tm-x`, `l-tr-t`, `l-tr-x`,
+`l-tf-t`, `l-tf-x`, `l-ts-m`, `l-th-m`, `l-tm-m`, `l-tr-m`, `l-tf-m`, `l-mw-m`, `l-me-s`, `l-me-t`, `l-me-x`, `l-me-m`):
+72 rules in all (100 from `sextantApi` 5). `l-it-x` looks a ServersTransportTCP up in `traefik.io` too, as the built-in
+did (the old group never had the kind).
 
 | Id | Kind | When it holds |
 |---|---|---|
-| `ir-k` | IngressRoute | A route has no `match` (or an empty one), or a `kind` other than `Rule`; "Traefik skips some of its routes: an empty match rule or a kind other than Rule." |
-| `it-k` | IngressRouteTCP | A route has no `match` (or an empty one) |
+| `ir-k` | IngressRoute | A route has no `match` (or one of blanks only), or a `kind` other than `Rule`; "Traefik skips its routes 2, 4: an empty match rule or a kind other than Rule." (`|positions`) |
+| `it-k` | IngressRouteTCP | A route has no `match` (or one of blanks only) |
 | `ir-o`, `it-o` | IngressRoute, IngressRouteTCP | `spec.tls.options` names a TLSOption that does not exist |
 | `ir-s`, `it-s`, `iu-s` | IngressRoute, IngressRouteTCP, IngressRouteUDP | A route's service names a Service that does not exist (on HTTP routes: `kind` unset, empty or `Service`) |
 | `ir-t` | IngressRoute | A route's service names a TraefikService (`kind: TraefikService`) that does not exist |
 | `ir-x`, `it-x` | IngressRoute, IngressRouteTCP | A route's service names a ServersTransport (ServersTransportTCP on TCP; `serversTransport`, in the service's namespace) that does not exist |
 | `ir-m`, `it-m` | IngressRoute, IngressRouteTCP | A route names a Middleware (MiddlewareTCP on TCP) that does not exist |
+| `ir-sm` | IngressRoute | A route's service names a Middleware that does not exist (in the service's namespace when it names none) |
 | `ir-p` | IngressRoute | `spec.parentRefs` names an IngressRoute that does not exist |
 | `ts-s`, `ts-t`, `ts-x` | TraefikService | A weighted or highest-random-weight service names a Service, TraefikService or ServersTransport that does not exist |
-| `ts-m`, `th-m` | TraefikService | A weighted or highest-random-weight service names a Middleware that does not exist |
-| `tm-m`, `tr-m`, `tf-m` | TraefikService | The mirroring service, a mirror, or the failover service or fallback names a Middleware that does not exist |
+| `ts-m`, `th-m` | TraefikService | A weighted or highest-random-weight service names a Middleware that does not exist (in the service's namespace when it names none) |
+| `tm-m`, `tr-m`, `tf-m` | TraefikService | The mirroring service, a mirror, or the failover service or fallback names a Middleware that does not exist (as `ts-m`) |
 | `tm-s`, `tm-t`, `tm-x` | TraefikService | The mirroring service names a Service, TraefikService or ServersTransport that does not exist |
 | `tr-s`, `tr-t`, `tr-x` | TraefikService | The same of a mirror |
 | `tf-s`, `tf-t`, `tf-x` | TraefikService | The same of the failover service or its fallback |
@@ -173,43 +200,25 @@ None: the extension is read-only and has no action of its own (ADR-0108).
 
 - Traefik's CRDs (`traefik.io/v1alpha1`, and `traefik.containo.us/v1alpha1` where still served); the section shows only
   where the cluster serves them.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - **Not every reference is a problem.** Left to the details (which judge every reference): a route service's own
-    middlewares (a list inside a list of a list, deeper than a path reads) and a service `kind` Traefik does not know
-    (which Traefik's CRDs refuse anyway); and in `traefik.containo.us`, with 60 rules in all, the TraefikServices and
-    servers transports of mirrors and failover services and the middlewares of every load balancer but a weighted
-    service. A load balancer's middlewares naming no namespace are looked up in the object's namespace, where the
-    built-in took the load balancer's (a service naming another namespace). Closed by lists three deep, a `namespacePath`
-    falling back to the enclosing item's, and more rules per extension.
+- Where it differs from the former built-in view:
   - **One problem per kind of reference and place**, where the built-in had one per object naming every broken
     reference ("Service a and Middleware b"): the rules of one object notify once (`group`), but the Problems page
-    lists each.
-  - A missing TLS option of another namespace is named without it (`{{missing}}` fills lists only).
-  - Another provider's service (`name@provider`) naming a namespace: the built-in looked its servers transport up in the
-    object's namespace, the rules in the one it names.
-  - A ServersTransportTCP reference of a `traefik.containo.us` route, which that group never had, was missing to the
-    built-in; no rule judges it. An IngressRouteUDP's service names no servers transport in Traefik's CRD; the built-in
-    read one all the same.
-  - **No reference column.** The built-in tables' first column, "References" (found / broken / not all checked /
-    checking), came from judging each row's references across objects; a column case cannot read the row's problems.
-    Closed by a column case condition `{"type": "problem"}` (the row has an active problem of the extension's rules),
-    with "cannot tell" for rows whose lookups are not read.
-  - **The skipped routes are not numbered.** The built-in message named them ("Traefik skips its routes 1, 3: …"); the
-    rule says "some of its routes". Closed by a placeholder filter `|positions` (the 1-based places of a `[…,*]` step's
-    matches).
-  - **A match of blanks only** (`match: " "`) was an empty rule to the built-in (it trimmed it); a match step compares
-    the text as written. Closed by `!=` comparing trimmed text, or a `blank` pair.
-  - **Where both groups are served**, a `traefik.io` object's Traefik target is looked up only in `traefik.io`: one
-    only in `traefik.containo.us`, which the built-in called "legacy only" (open), is a problem; and a
-    `traefik.containo.us` object's target only in `traefik.io` is one too, which the built-in found. A target kind
-    neither group serves is "cannot tell", where the built-in called it missing. Closed by `missing` taking a list of
-    kinds looked up in order (`kinds`, the first served).
+    lists each. A rule's message cannot name the kinds of what it did not find, so one rule per kind is kept.
+  - **The References column** says "References found" for a reference found in another namespace or another provider's
+    object (`name@provider`), and for a `traefik.io` object's target found only in `traefik.containo.us`, where the
+    built-in said "Not all checked": the rules judge them found (they do not depend on Traefik's static
+    configuration, which no object shows), and the column tells what the rules say. "Not all checked" is kept for what
+    the rules cannot tell.
+  - A service `kind` Traefik does not know is not a problem, where the built-in called it broken: Traefik's CRDs allow
+    only `Service` and `TraefikService`, so the API server refuses such an object. An IngressRouteUDP's service names
+    no servers transport in Traefik's CRD either; the built-in read one all the same.
   - A Middleware's **Type** names every key of its `spec` (`|keys`), where the built-in named the first; a Middleware
     has one.
   - A rule title of the old group says `(containo.us)`, so that every title keeps within 80 characters in every
     language; kind titles and columns say `traefik.containo.us` in full.
   - The extension's permission reads Secrets in every namespace; it only ever watches their metadata, as the built-in
-    view did, but the grant itself does not say "metadata only".
+    view did, but the grant itself does not say "metadata only" (a grant of metadata alone would be a new permission
+    action, ADR-0049).
 - Checked by tests on fixtures of Traefik objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
 
@@ -217,6 +226,8 @@ None: the extension is read-only and has no action of its own (ADR-0108).
 
 - **No "Traefik" section:** the cluster serves none of Traefik's CRDs, or the extension is disabled.
 - **The counter shows nothing:** the category "Traefik references" is off; turn it on on the Problems page.
+- **The References column says "Not all checked" on every row:** the rules' kinds were not agreed to at install
+  (Settings → Extensions → Traefik), or the lists they look up cannot be read with your credentials.
 - **"In another namespace: depends on allowCrossNamespace":** Traefik's Kubernetes CRD provider follows such a
   reference only with `providers.kubernetesCRD.allowCrossNamespace` on, which no object shows.
 - **"Cannot tell: the list could not be read":** that kind cannot be listed in that namespace with your credentials,

@@ -1,5 +1,23 @@
 # Changes of Traefik
 
+## 1.1.0 — 2026-11-11
+
+Needs Sextant 0.30.1 (`sextantApi` 5); Sextant 0.30.0 keeps 1.0.0. What the built-in view did that extension API 4
+could not say (ADR-0169):
+
+- **The References column** on every kind but Middlewares TCP, first, as the built-in tables had it: "Broken reference",
+  "Checking…", "Not all checked" or "References found", from what the problem rules say of the row (`problem` cases).
+- **Every reference is judged**: a route service's own middlewares (`ir-sm`, lists three deep), and in
+  `traefik.containo.us` the TraefikServices and transports of mirrors and failover services, the middlewares of every
+  load balancer and a TCP route's ServersTransportTCP (`l-ir-sm`, `l-it-x`, `l-tr-t`, `l-tr-x`, `l-tf-t`, `l-tf-x`,
+  `l-th-m`, `l-tm-m`, `l-tr-m`, `l-tf-m`, `l-me-m`): 72 rules.
+- **Looked up where Traefik looks**: a load balancer's middlewares naming no namespace in the load balancer's;
+  another provider's service's transport in the object's namespace; a Traefik target in either group (one only in
+  `traefik.containo.us` is no longer a problem of a `traefik.io` object, one only in `traefik.io` none of an old one),
+  and a target kind neither group serves missing.
+- **Messages as the built-in wrote them**: the skipped routes numbered ("Traefik skips its routes 1, 3: …"), a route of
+  blanks only skipped, a missing TLS option of another namespace named with it.
+
 ## 1.0.0 — 2026-11-10
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in Traefik view (ADR-0108) as an

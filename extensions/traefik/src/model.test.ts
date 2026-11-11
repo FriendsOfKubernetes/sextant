@@ -211,6 +211,7 @@ interface Lookup {
   name: string;
   namespace?: string;
   anyOf?: string;
+  also?: { group: string; kind: string }[];
 }
 interface Detected {
   reason: string;
@@ -221,7 +222,7 @@ interface Detected {
   lookups?: Lookup[];
 }
 interface Engine {
-  evaluate(condition: unknown, obj: KubeObject): Verdict;
+  evaluate(condition: unknown, obj: KubeObject, ctx?: { problemState?: (obj: KubeObject) => string | undefined }): Verdict;
   detectRule(rule: unknown, obj: KubeObject): Detected[];
 }
 interface WindowColumn {
@@ -283,49 +284,52 @@ const triple = (kind: string, namespace: string, name: string) => `${kind} ${nam
 
 /** Where in its object a varied reference is: the place the readings tell apart for what the rules cover. */
 type Loc = "routes" | "tcpRoutes" | "udpRoutes" | "weighted" | "hrw" | "mirroring" | "mirrors" | "failover" | "fallback" | "errors" | "other" | `${MwLoc}Mw`;
-type MwLoc = "weighted" | "hrw" | "mirroring" | "mirrors" | "failover" | "errors";
+type MwLoc = "routes" | "weighted" | "hrw" | "mirroring" | "mirrors" | "failover" | "errors";
 
 /**
  * Whether the rules judge a broken reference the built-in found (README, "Requirements and limits"): every reference
- * but a service kind Traefik does not know and a route service's own middlewares; in the old group (60 rules in all)
- * not the TraefikServices and transports of mirrors and failover services, nor the middlewares of load balancers other
- * than weighted services.
+ * but a service kind Traefik does not know (its CRDs refuse one) and an IngressRouteUDP service's servers transport
+ * (its CRD has no such field; the built-in read one all the same).
  */
-function covered(ref: Ref, loc: Loc, group: string): boolean {
+function covered(ref: Ref, loc: Loc): boolean {
   if (ref.badKind) return false;
-  const io = group === TRAEFIK_GROUP;
-  if (ref.place === "middleware") return loc === "weightedMw" || (io && loc.endsWith("Mw"));
-  // The old group never had ServersTransportTCP (the built-in called every such reference of it missing); an
-  // IngressRouteUDP's services name no servers transport in Traefik's CRD, the built-in read one all the same.
-  if (ref.kind === "ServersTransportTCP") return loc === "tcpRoutes" && io;
-  if (!io && (ref.kind === "TraefikService" || ref.kind === "ServersTransport") && ["mirrors", "failover", "fallback"].includes(loc)) return false;
+  if (ref.kind === "ServersTransportTCP") return loc === "tcpRoutes";
   return true;
 }
 
 /** The built-in category's problems of `obj`: the broken references (those the rules cover, else all) and skipped routes. */
-function builtIn(kind: Kind, obj: KubeObject, world: World, loc: Loc): { broken: string[]; uncovered: string[]; skipped: boolean; refs: string[] } {
+function builtIn(
+  kind: Kind,
+  obj: KubeObject,
+  world: World,
+  loc: Loc,
+): { broken: string[]; uncovered: string[]; skipped: boolean; refs: string[]; routes: string[]; health: string } {
   const judgement = judge(kind, obj, lookupIn(world, kind.group), skipSecrets);
   const broken = judgement.checks.filter(breaks);
   const problems = builtInProblems(obj.metadata.namespace ?? "", judgement);
   return {
-    broken: [...new Set(broken.filter((c) => covered(c.ref, loc, kind.group)).map((c) => triple(c.ref.kind, c.ref.namespace, c.ref.name)))].sort(),
-    uncovered: [...new Set(broken.filter((c) => !covered(c.ref, loc, kind.group)).map((c) => triple(c.ref.kind, c.ref.namespace, c.ref.name)))].sort(),
+    broken: [...new Set(broken.filter((c) => covered(c.ref, loc)).map((c) => triple(c.ref.kind, c.ref.namespace, c.ref.name)))].sort(),
+    uncovered: [...new Set(broken.filter((c) => !covered(c.ref, loc)).map((c) => triple(c.ref.kind, c.ref.namespace, c.ref.name)))].sort(),
     skipped: problems.some((p) => p.reason === "SkippedRoute"),
     refs: problems.find((p) => p.reason === "MissingReference")?.refs ?? [],
+    routes: problems.find((p) => p.reason === "SkippedRoute")?.routes ?? [],
+    health: judgement.health,
   };
 }
 
 const MISSING = /^Refers to objects that do not exist: (\S+) (.+)\. Traefik skips what depends on them\.$/;
 
 /**
- * The extension's problems of `obj`, as the window keeps them (`judgeAcross`, every list read in full): a rule's single
- * lookups must all be missing, of each list at least one; `{{missing}}` names the missing ones (`namespace/name` where
- * another namespace) in the UI language's list.
+ * The extension's problems of `obj`, as the window keeps them (`judgeAcross`, every list read in full, sextantApi 5): a
+ * rule's single lookups must all be missing, of each list at least one, in every kind it looks up (`alsoKinds`; a kind
+ * the world does not serve has no objects); `{{missing}}` names the missing ones (`namespace/name` where another
+ * namespace) in the UI language's list.
  */
-function extension(kind: Kind, obj: KubeObject, world: World): { broken: string[]; skipped: boolean; messages: string[] } {
+function extension(kind: Kind, obj: KubeObject, world: World): { broken: string[]; skipped: boolean; messages: string[]; skippedMessages: string[] } {
   const ns = obj.metadata.namespace ?? "";
   const broken = new Set<string>();
   const messages: string[] = [];
+  const skippedMessages: string[] = [];
   let skipped = false;
   for (const rule of rules.filter((r) => r.kind.group === kind.group && r.kind.kind === kind.kind)) {
     // `notify` left out: Rust reads it as true (`#[serde(default = "yes")]`).
@@ -335,13 +339,13 @@ function extension(kind: Kind, obj: KubeObject, world: World): { broken: string[
       expect(d.graceMs).toBe(2 * 60_000);
       if (d.reason === "SkippedRoute") {
         expect(d.group).toBe("skipped-route");
-        expect(d.message).toBe("Traefik skips some of its routes: an empty match rule or a kind other than Rule.");
+        skippedMessages.push(d.message ?? "");
         skipped = true;
         continue;
       }
       expect(d.reason).toBe("MissingReference");
       expect(d.group).toBe("missing-reference");
-      const gone = (l: Lookup) => !world.get(`${l.group}/${l.kind}`)?.has(nameKey(l.namespace ?? ns, l.name));
+      const gone = (l: Lookup) => [l, ...(l.also ?? [])].every((k) => !world.get(`${k.group}/${k.kind}`)?.has(nameKey(l.namespace ?? ns, l.name)));
       const lookups = d.lookups ?? [];
       const single = lookups.filter((l) => l.anyOf === undefined);
       const listed = lookups.filter((l) => l.anyOf !== undefined);
@@ -349,10 +353,10 @@ function extension(kind: Kind, obj: KubeObject, world: World): { broken: string[
       const missing = listed.filter(gone);
       if (listed.length > 0 && missing.length === 0) continue;
       for (const l of [...single, ...missing]) broken.add(triple(l.kind, l.namespace ?? ns, l.name));
-      messages.push((d.message ?? "").split("{{missing}}").join(formatList([...new Set(missing.map((l) => (l.namespace && l.namespace !== ns ? `${l.namespace}/${l.name}` : l.name)))])));
+      messages.push((d.message ?? "").split("{{missing}}").join(formatList([...new Set([...single, ...missing].map((l) => (l.namespace && l.namespace !== ns ? `${l.namespace}/${l.name}` : l.name)))])));
     }
   }
-  return { broken: [...broken].sort(), skipped, messages };
+  return { broken: [...broken].sort(), skipped, messages, skippedMessages };
 }
 
 const asGroup = (obj: KubeObject, group: string): KubeObject => ({ ...copy(obj), apiVersion: `${group}/v1alpha1` });
@@ -371,8 +375,6 @@ function balancers(): Record<string, unknown>[] {
           if (kind !== undefined) lb.kind = kind;
           if (namespace !== undefined) lb.namespace = namespace;
           if (serversTransport !== undefined) lb.serversTransport = serversTransport;
-          // Another provider's service with a namespace and a transport: pinned apart (the transport's namespace).
-          if (name?.includes("@") && namespace === "other" && serversTransport) continue;
           out.push(lb);
         }
       }
@@ -442,17 +444,23 @@ function variants(): Variant[] {
     const tcpMw = copy(fx.tcpRoute!);
     (tcpMw.spec as { routes: { middlewares?: unknown[] }[] }).routes[0]!.middlewares = [ref];
     out.push([`tcp route middleware ${label}`, "IngressRouteTCP", tcpMw, "other"]);
-    // A load balancer's own middlewares, at each place (the load balancer in the object's namespace).
-    const lb = { name: "svc1", port: 80, middlewares: [{ name: "secured" }, ref] };
-    const places: [MwLoc, string, KubeObject][] = [
-      ["weighted", "TraefikService", { ...copy(fx.wrr!), spec: { weighted: { services: [lb, { name: "svc2", port: 80 }] } } }],
-      ["hrw", "TraefikService", { ...copy(fx.wrr!), spec: { highestRandomWeight: { services: [{ name: "svc2", port: 80 }, lb] } } }],
-      ["mirroring", "TraefikService", { ...copy(fx.mirror!), spec: { mirroring: { ...lb, mirrors: [{ name: "svc2", port: 80, percent: 20 }] } } }],
-      ["mirrors", "TraefikService", { ...copy(fx.mirror!), spec: { mirroring: { name: "svc2", port: 80, mirrors: [{ ...lb, percent: 20 }] } } }],
-      ["failover", "TraefikService", { ...copy(fx.mirror!), spec: { failover: { service: { name: "svc2", port: 80 }, fallback: lb } } }],
-      ["errors", "Middleware", { ...copy(fx.httpsOnly!), spec: { errors: { status: ["500"], query: "/", service: lb } } }],
-    ];
-    for (const [where, kind, obj] of places) out.push([`${where} service middleware ${label}`, kind, copy(obj), `${where}Mw`]);
+    // A load balancer's own middlewares, at each place: the load balancer in the object's namespace, in another one (a
+    // middleware naming none is looked up there), and another provider's naming one (looked up in the object's).
+    for (const balancer of [{ name: "svc1" }, { name: "svc1", namespace: "other" }, { name: "x@file", namespace: "other" }]) {
+      const lb = { ...balancer, port: 80, middlewares: [{ name: "secured" }, ref] };
+      const route = copy(fx.ingressRoute!);
+      (route.spec as { routes: { services: unknown[] }[] }).routes[0]!.services = [lb, { name: "foo", port: 80 }];
+      const places: [MwLoc, string, KubeObject][] = [
+        ["routes", "IngressRoute", route],
+        ["weighted", "TraefikService", { ...copy(fx.wrr!), spec: { weighted: { services: [lb, { name: "svc2", port: 80 }] } } }],
+        ["hrw", "TraefikService", { ...copy(fx.wrr!), spec: { highestRandomWeight: { services: [{ name: "svc2", port: 80 }, lb] } } }],
+        ["mirroring", "TraefikService", { ...copy(fx.mirror!), spec: { mirroring: { ...lb, mirrors: [{ name: "svc2", port: 80, percent: 20 }] } } }],
+        ["mirrors", "TraefikService", { ...copy(fx.mirror!), spec: { mirroring: { name: "svc2", port: 80, mirrors: [{ ...lb, percent: 20 }] } } }],
+        ["failover", "TraefikService", { ...copy(fx.mirror!), spec: { failover: { service: { name: "svc2", port: 80 }, fallback: lb } } }],
+        ["errors", "Middleware", { ...copy(fx.httpsOnly!), spec: { errors: { status: ["500"], query: "/", service: lb } } }],
+      ];
+      for (const [where, kind, obj] of places) out.push([`${where} service ${JSON.stringify(balancer)} middleware ${label}`, kind, copy(obj), `${where}Mw`]);
+    }
     const parent = copy(fx.ingressRoute!);
     (parent.spec as Record<string, unknown>).parentRefs = [ref, { name: "parent" }];
     out.push([`parent ${label}`, "IngressRoute", parent, "other"]);
@@ -473,7 +481,7 @@ function variants(): Variant[] {
     ["IngressRoute", fx.ingressRoute!],
     ["IngressRouteTCP", fx.tcpRoute!],
   ] as const) {
-    for (const match of ["Host(`a`)", "", undefined]) {
+    for (const match of ["Host(`a`)", "", "  ", undefined]) {
       for (const routeKind of [undefined, "", "Rule", "Regex"]) {
         const o = copy(base);
         const routes = (o.spec as { routes: Record<string, unknown>[] }).routes;
@@ -498,7 +506,9 @@ describe("the problem rules, against the built-in category `traefik`", () => {
     expect(manifest.contributes.sectionBadges).toEqual([
       { section: "traefik", label: { one: "{{count}} Traefik object has a broken reference", other: "{{count}} Traefik objects have a broken reference" } },
     ]);
-    expect(rules).toHaveLength(60);
+    // Every reference of both groups (100 rules from sextantApi 5).
+    expect(rules).toHaveLength(72);
+    expect(manifest.sextantApi).toBe(5);
     // The rules judge the kinds the built-in found problems of, in both groups.
     const judged = new Set(rules.map((r) => `${r.kind.group}/${r.kind.kind}`));
     expect([...judged].sort()).toEqual(
@@ -519,13 +529,17 @@ describe("the problem rules, against the built-in category `traefik`", () => {
         const got = extension(kind, obj, world);
         expect(got.broken, label).toEqual(want.broken);
         expect(got.skipped, label).toBe(want.skipped);
+        // The skipped routes numbered as the built-in message numbered them.
+        expect(got.skippedMessages, label).toEqual(want.skipped ? [`Traefik skips its routes ${formatList(want.routes)}: an empty match rule or a kind other than Rule.`] : []);
+        // The References column: "Broken reference" where the built-in said so (a problem of the rules).
+        if (want.uncovered.length === 0) expect(got.broken.length > 0 || got.skipped, label).toBe(want.health === "failed");
         if (want.broken.length > 0) problems++;
         if (want.broken.some((b) => b.includes(" other/"))) crossNamespace++;
         if (want.uncovered.length > 0) uncovered++;
       }
       expect(problems).toBeGreaterThan(1500);
       expect(crossNamespace).toBeGreaterThan(300);
-      // What the rules leave out: unknown service kinds.
+      // What the rules leave out: unknown service kinds (Traefik's CRDs refuse them) and a UDP service's transport.
       expect(uncovered).toBeGreaterThan(100);
     });
   }
@@ -550,9 +564,7 @@ describe("the problem rules, against the built-in category `traefik`", () => {
         const named = builtIn(kind, base, world, loc).broken;
         for (const name of m![2]!.split(/, | and /)) {
           const qualified = name.includes("/") ? name : `${base.metadata.namespace}/${name}`;
-          // A TLS option's message names it without its namespace (pinned below).
-          if (m![1] === "TLSOption") expect(named.some((n) => n.startsWith("TLSOption ") && n.endsWith(`/${name}`)), `${label}: ${message}`).toBe(true);
-          else expect(named, `${label}: ${message}`).toContain(`${m![1]} ${qualified}`);
+          expect(named, `${label}: ${message}`).toContain(`${m![1]} ${qualified}`);
         }
       }
     }
@@ -562,48 +574,17 @@ describe("the problem rules, against the built-in category `traefik`", () => {
     for (const [key, obj] of Object.entries(fx)) {
       if (Array.isArray(obj) || typeof obj !== "object") continue;
       const def = TRAEFIK_KINDS.find((d) => d.kind.kind === obj.kind && d.kind.group === TRAEFIK_GROUP)!;
-      expect(extension(def.kind, obj, worldOf(TRAEFIK_GROUP)), key).toEqual({ broken: [], skipped: false, messages: [] });
+      expect(extension(def.kind, obj, worldOf(TRAEFIK_GROUP)), key).toEqual({ broken: [], skipped: false, messages: [], skippedMessages: [] });
     }
   });
 
-  it("differ where the API cannot say it", () => {
+  it("differ only where Traefik's CRDs refuse the object, and in telling each kind of reference apart", () => {
     const world = worldOf(TRAEFIK_GROUP);
-    // A route service's own middlewares (a list in a list of a list) and an unknown service kind: the built-in found
-    // them, the rules do not.
+    // An unknown service kind: Traefik's CRDs allow only Service and TraefikService; the built-in called it broken.
     const route = copy(fx.ingressRoute!);
-    const routes = (route.spec as { routes: { services: Record<string, unknown>[] }[] }).routes;
-    routes[0]!.services[0]!.middlewares = [{ name: "gone-mw" }];
-    routes[1]!.services[0]!.kind = "ExternalName";
-    expect(builtIn(INGRESS_ROUTE, route, world, "routes").uncovered).toEqual(["Middleware default/gone-mw", "Service default/wrr1"]);
+    (route.spec as { routes: { services: Record<string, unknown>[] }[] }).routes[1]!.services[0]!.kind = "ExternalName";
+    expect(builtIn(INGRESS_ROUTE, route, world, "routes").uncovered).toEqual(["Service default/wrr1"]);
     expect(extension(INGRESS_ROUTE, route, world).broken).toEqual([]);
-    // In the old group (60 rules in all), a mirroring service's own middlewares and a failover's TraefikService are
-    // left to the details; in traefik.io they are judged.
-    const mirror = copy(fx.mirror!);
-    (mirror.spec as { mirroring: Record<string, unknown> }).mirroring.middlewares = [{ name: "gone-mw" }];
-    const failover = copy(fx.mirror!);
-    failover.spec = { failover: { service: { name: "gone-ts", kind: "TraefikService" }, fallback: { name: "svc1", port: 80 } } };
-    const oldWorld = worldOf(LEGACY_GROUP);
-    const legacy = { group: LEGACY_GROUP, kind: "TraefikService" };
-    expect(builtIn(legacy, asGroup(mirror, LEGACY_GROUP), oldWorld, "mirroringMw").uncovered).toEqual(["Middleware default/gone-mw"]);
-    expect(extension(legacy, asGroup(mirror, LEGACY_GROUP), oldWorld).broken).toEqual([]);
-    expect(extension(TRAEFIK_SERVICE, mirror, world).broken).toEqual(["Middleware default/gone-mw"]);
-    expect(builtIn(legacy, asGroup(failover, LEGACY_GROUP), oldWorld, "failover").uncovered).toEqual(["TraefikService default/gone-ts"]);
-    expect(extension(legacy, asGroup(failover, LEGACY_GROUP), oldWorld).broken).toEqual([]);
-    expect(extension(TRAEFIK_SERVICE, failover, world).broken).toEqual(["TraefikService default/gone-ts"]);
-    // A weighted service's middlewares are looked up in the namespace they name, else the TraefikService's; the built-in
-    // took the service's namespace for one naming none.
-    const weighted = copy(fx.wrr!);
-    (weighted.spec as { weighted: { services: Record<string, unknown>[] } }).weighted.services[0] = { name: "svc1", namespace: "other", port: 80, middlewares: [{ name: "only-here" }] };
-    const here2 = new Map(world);
-    here2.set(`${TRAEFIK_GROUP}/Middleware`, new Set([...world.get(`${TRAEFIK_GROUP}/Middleware`)!, nameKey("default", "only-here")]));
-    expect(builtIn(TRAEFIK_SERVICE, weighted, here2, "weightedMw").broken).toEqual(["Middleware other/only-here"]);
-    expect(extension(TRAEFIK_SERVICE, weighted, here2).broken).toEqual([]);
-    // Another provider's service naming a namespace: the built-in looked its transport up in the object's namespace
-    // (the service's own namespace was not used for another provider's name); the item's namespace is used here.
-    const provider = copy(fx.ingressRoute!);
-    (provider.spec as { routes: { services: Record<string, unknown>[] }[] }).routes[0]!.services = [{ name: "api@internal", namespace: "other", serversTransport: "gone-st" }];
-    expect(builtIn(INGRESS_ROUTE, provider, world, "routes").broken).toEqual(["ServersTransport default/gone-st"]);
-    expect(extension(INGRESS_ROUTE, provider, world).broken).toEqual(["ServersTransport other/gone-st"]);
     // One problem per kind of reference and place: the built-in had one per object naming every broken reference.
     const two = copy(fx.ingressRoute!);
     const tr = (two.spec as { routes: { services: Record<string, unknown>[]; middlewares?: unknown[] }[] }).routes;
@@ -616,29 +597,63 @@ describe("the problem rules, against the built-in category `traefik`", () => {
     (own.spec as { routes: { middlewares: Record<string, unknown>[] }[] }).routes[0]!.middlewares[0]!.name = "gone";
     expect(builtIn(INGRESS_ROUTE, own, world, "routes").refs).toEqual(["Middleware gone"]);
     expect(extension(INGRESS_ROUTE, own, world).messages).toEqual(["Refers to objects that do not exist: Middleware gone. Traefik skips what depends on them."]);
-    // A missing TLS option in another namespace: its message names it without the namespace (`{{missing}}` is lists only).
+  });
+
+  it("judge what extension API 5 brought as the built-in did (ADR-0169)", () => {
+    const world = worldOf(TRAEFIK_GROUP);
+    // A route service's own middlewares (lists three deep), in the service's namespace when they name none.
+    const route = copy(fx.ingressRoute!);
+    (route.spec as { routes: { services: Record<string, unknown>[] }[] }).routes[0]!.services[0]!.middlewares = [{ name: "gone-mw" }];
+    expect(builtIn(INGRESS_ROUTE, route, world, "routesMw").broken).toEqual(["Middleware default/gone-mw"]);
+    expect(extension(INGRESS_ROUTE, route, world).broken).toEqual(["Middleware default/gone-mw"]);
+    const weighted = copy(fx.wrr!);
+    (weighted.spec as { weighted: { services: Record<string, unknown>[] } }).weighted.services[0] = { name: "svc1", namespace: "other", port: 80, middlewares: [{ name: "only-here" }] };
+    const here2 = new Map(world);
+    here2.set(`${TRAEFIK_GROUP}/Middleware`, new Set([...world.get(`${TRAEFIK_GROUP}/Middleware`)!, nameKey("default", "only-here")]));
+    expect(builtIn(TRAEFIK_SERVICE, weighted, here2, "weightedMw").broken).toEqual(["Middleware other/only-here"]);
+    expect(extension(TRAEFIK_SERVICE, weighted, here2).broken).toEqual(["Middleware other/only-here"]);
+    // The old group judges every reference too: a mirroring service's middlewares, a failover's TraefikService.
+    const oldWorld = worldOf(LEGACY_GROUP);
+    const legacy = { group: LEGACY_GROUP, kind: "TraefikService" };
+    const mirror = copy(fx.mirror!);
+    (mirror.spec as { mirroring: Record<string, unknown> }).mirroring.middlewares = [{ name: "gone-mw" }];
+    expect(extension(legacy, asGroup(mirror, LEGACY_GROUP), oldWorld).broken).toEqual(["Middleware default/gone-mw"]);
+    const failover = copy(fx.mirror!);
+    failover.spec = { failover: { service: { name: "gone-ts", kind: "TraefikService" }, fallback: { name: "svc1", port: 80 } } };
+    expect(extension(legacy, asGroup(failover, LEGACY_GROUP), oldWorld).broken).toEqual(["TraefikService default/gone-ts"]);
+    // Another provider's service naming a namespace: its transport looked up in the object's namespace.
+    const provider = copy(fx.ingressRoute!);
+    (provider.spec as { routes: { services: Record<string, unknown>[] }[] }).routes[0]!.services = [{ name: "api@internal", namespace: "other", serversTransport: "gone-st" }];
+    expect(builtIn(INGRESS_ROUTE, provider, world, "routes").broken).toEqual(["ServersTransport default/gone-st"]);
+    expect(extension(INGRESS_ROUTE, provider, world).broken).toEqual(["ServersTransport default/gone-st"]);
+    // A missing TLS option of another namespace named with it.
     const opt = copy(fx.ingressRoute!);
     (opt.spec as { tls: Record<string, unknown> }).tls.options = { name: "gone", namespace: "other" };
     expect(builtIn(INGRESS_ROUTE, opt, world, "other").refs).toEqual(["TLSOption other/gone"]);
-    expect(extension(INGRESS_ROUTE, opt, world).messages).toEqual(["Refers to objects that do not exist: TLSOption gone. Traefik skips what depends on them."]);
-    // The built-in message numbered the skipped routes; the rule's says "some of its routes".
+    expect(extension(INGRESS_ROUTE, opt, world).messages).toEqual(["Refers to objects that do not exist: TLSOption other/gone. Traefik skips what depends on them."]);
+    // The skipped routes numbered; a match of blanks only is an empty one.
     const skipped = copy(fx.ingressRoute!);
-    (skipped.spec as { routes: Record<string, unknown>[] }).routes[1]!.match = "";
-    const rule = rules.find((r) => r.id === "ir-k")!;
+    (skipped.spec as { routes: Record<string, unknown>[] }).routes[1]!.match = "  ";
     expect(builtInProblems("default", judge(INGRESS_ROUTE, skipped, lookupIn(world, TRAEFIK_GROUP), skipSecrets))).toEqual([{ reason: "SkippedRoute", routes: ["2"] }]);
-    expect(engine.detectRule(rule, skipped).map((d) => d.message)).toEqual(["Traefik skips some of its routes: an empty match rule or a kind other than Rule."]);
-    // A match of blanks only: the built-in trimmed it; a match step compares the text as written.
-    const blank = copy(fx.ingressRoute!);
-    (blank.spec as { routes: Record<string, unknown>[] }).routes[0]!.match = "  ";
-    expect(builtIn(INGRESS_ROUTE, blank, world, "other").skipped).toBe(true);
-    expect(engine.detectRule(rule, blank)).toEqual([]);
-    // Both groups served, the target only in the old one: the built-in called it "legacy only" (open); the traefik.io
-    // rule looks only in traefik.io.
+    expect(extension(INGRESS_ROUTE, skipped, world).skippedMessages).toEqual(["Traefik skips its routes 2: an empty match rule or a kind other than Rule."]);
+    // Both groups served, the target only in the old one: "legacy only" to the built-in, open, no problem; an old
+    // object's target only in traefik.io is found.
     const wrr = copy(fx.wrr!);
     (wrr.spec as { weighted: { services: unknown[] } }).weighted.services = [{ name: "old-ts", kind: "TraefikService" }];
     const both = lookupOf(servedIn(TRAEFIK_GROUP, LEGACY_GROUP), (g, kind) => list(kind === "TraefikService" && g === LEGACY_GROUP ? [{ namespace: "default", name: "old-ts" }] : []));
     expect(judge(TRAEFIK_SERVICE, wrr, both, skipSecrets).checks.map((c) => c.state)).toEqual(["legacyOnly"]);
-    expect(extension(TRAEFIK_SERVICE, wrr, world).broken).toEqual(["TraefikService default/old-ts"]);
+    const bothWorld = new Map([...world, ...oldWorld]);
+    bothWorld.set(`${LEGACY_GROUP}/TraefikService`, new Set([nameKey("default", "old-ts")]));
+    expect(extension(TRAEFIK_SERVICE, wrr, bothWorld).broken).toEqual([]);
+    bothWorld.set(`${TRAEFIK_GROUP}/TraefikService`, new Set([nameKey("default", "new-ts")]));
+    const fromOld = asGroup(wrr, LEGACY_GROUP);
+    (fromOld.spec as { weighted: { services: { name: string }[] } }).weighted.services[0]!.name = "new-ts";
+    expect(extension(legacy, fromOld, bothWorld).broken).toEqual([]);
+    // A target kind neither group serves: missing, as the built-in called it.
+    const noOptions = new Map([...world].filter(([key]) => !key.endsWith("/TLSOption")));
+    const named = copy(fx.ingressRoute!);
+    (named.spec as { tls: Record<string, unknown> }).tls.options = { name: "opt" };
+    expect(extension(INGRESS_ROUTE, named, noOptions).broken).toEqual(["TLSOption default/opt"]);
   });
 });
 
@@ -724,8 +739,14 @@ const joined = (values: readonly (string | undefined)[]) => {
 };
 
 describe("the columns, against the built-in ones", () => {
-  it("are the built-in columns after the namespace, but the references' state", () => {
-    const of = (group: string, kind: string) => manifest.contributes.columns.filter((c) => c.kind.group === group && c.kind.kind === kind).map((c) => [c.title, c.width]);
+  it("are the built-in columns after the namespace, the references' state first", () => {
+    // The References column first, but on Middlewares TCP (the built-in table had none there); then the rest.
+    const of = (group: string, kind: string) => {
+      const cols = manifest.contributes.columns.filter((c) => c.kind.group === group && c.kind.kind === kind).map((c) => [c.title, c.width]);
+      if (cols.length === 0 || kind === "MiddlewareTCP") return cols;
+      expect(cols[0], `${group}/${kind}`).toEqual(["References", "140px"]);
+      return cols.slice(1);
+    };
     for (const group of [TRAEFIK_GROUP, LEGACY_GROUP]) {
       expect(of(group, "IngressRoute")).toEqual([
         ["Entry points", "minmax(100px, 1fr)"],
@@ -884,9 +905,33 @@ describe("the columns, against the built-in ones", () => {
     }
   });
 
-  it("differ where the API cannot say it: no state column, every key of a middleware", () => {
-    const ids = manifest.contributes.columns.map((c) => c.id);
-    expect(ids.some((id) => id.endsWith("-state"))).toBe(false);
+  it("say what the references find as the built-in References column did (ADR-0169)", () => {
+    const state = (id: string, obj: KubeObject, problemState?: string) =>
+      (columnOf(id).cases ?? []).find((c) => {
+        const v = engine.evaluate(c.when, obj, { problemState: () => problemState });
+        return v.holds;
+      })?.text;
+    for (const group of [TRAEFIK_GROUP, LEGACY_GROUP]) {
+      const p = prefixOf(group);
+      const route = asGroup(fx.ingressRoute!, group);
+      for (const id of ["ir-refs", "irt-refs", "iru-refs", "mw-refs", "ts-refs"].map((id) => p + id)) {
+        expect(state(id, route, "found"), id).toBe("Broken reference");
+        expect(state(id, route, "checking"), id).toBe("Checking…");
+        expect(state(id, route, "unknown"), id).toBe("Not all checked");
+        expect(state(id, route), id).toBe("References found");
+        expect(columnOf(id).cases!.map((c) => (c as { tone?: string }).tone), id).toEqual(["error", "muted", "muted", "ok"]);
+      }
+      // The built-in judged only Secrets of these, in the details: always found in the table.
+      for (const id of ["to-refs", "tst-refs", "st-refs"].map((id) => p + id)) {
+        expect(state(id, route, "found"), id).toBe("References found");
+        expect(columnOf(id).cases!.map((c) => (c as { tone?: string }).tone), id).toEqual(["ok"]);
+      }
+    }
+    expect(columnOf("stt-refs").cases).toHaveLength(1);
+    expect(manifest.contributes.columns.some((c) => c.id === "mwt-refs" || c.id === "l-stt-refs")).toBe(false);
+  });
+
+  it("differ where Traefik has one key: every key of a middleware", () => {
     const two = copy(fx.httpsOnly!);
     (two.spec as Record<string, unknown>).stripPrefix = { prefixes: ["/a"] };
     expect(middlewareType(two)).toBe("redirectScheme");
