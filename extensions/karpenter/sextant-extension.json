@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.karpenter",
   "name": "Karpenter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Karpenter's NodePools, NodeClaims and node classes: a NodePool's usage against its limits, its disruption settings and the recent disruptions of its NodeClaims, and a NodeClaim's launch, registration and initialization with why Karpenter disrupts it. Read-only.",
   "author": "Sextant",
-  "sextantApi": 4,
+  "sextantApi": 5,
   "entry": "index.html",
   "icon": "karpenter",
   "permissions": {
@@ -68,43 +68,9 @@
             },
             {
               "type": "atLeast",
-              "path": ".status.resources.cpu|quantity",
-              "otherPath": ".spec.limits.cpu|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources.memory|quantity",
-              "otherPath": ".spec.limits.memory|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources.nodes|quantity",
-              "otherPath": ".spec.limits.nodes|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources.pods|quantity",
-              "otherPath": ".spec.limits.pods|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources.ephemeral-storage|quantity",
-              "otherPath": ".spec.limits.ephemeral-storage|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
-              "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources[\"amd.com/gpu\"]|quantity",
-              "otherPath": ".spec.limits[\"amd.com/gpu\"]|quantity"
-            },
-            {
-              "type": "atLeast",
-              "path": ".status.resources[\"aws.amazon.com/neuron\"]|quantity",
-              "otherPath": ".spec.limits[\"aws.amazon.com/neuron\"]|quantity"
+              "path": ".status.resources|quantity",
+              "otherPath": ".spec.limits|quantity",
+              "eachKey": true
             }
           ]
         }
@@ -229,476 +195,93 @@
           ".spec.limits"
         ],
         "separator": ", ",
+        "items": {
+          "with": {
+            "used": ".status.resources"
+          },
+          "cases": [
+            {
+              "when": {
+                "type": "equals",
+                "path": ".key",
+                "value": "cpu"
+              },
+              "text": "cpu {{.used ?? 0|cpu}}/{{.value|cpu}}"
+            },
+            {
+              "when": {
+                "type": "equals",
+                "path": ".key",
+                "value": "cpu"
+              },
+              "text": "cpu {{.used ?? 0|cpu}}/{{.value}}"
+            },
+            {
+              "when": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "equals",
+                    "path": ".key",
+                    "value": "memory"
+                  },
+                  {
+                    "type": "endsWith",
+                    "path": ".key",
+                    "values": [
+                      "storage"
+                    ]
+                  }
+                ]
+              },
+              "text": "{{.key}} {{.used ?? 0|bytes}}/{{.value|bytes}}"
+            },
+            {
+              "when": {
+                "type": "any",
+                "of": [
+                  {
+                    "type": "equals",
+                    "path": ".key",
+                    "value": "memory"
+                  },
+                  {
+                    "type": "endsWith",
+                    "path": ".key",
+                    "values": [
+                      "storage"
+                    ]
+                  }
+                ]
+              },
+              "text": "{{.key}} {{.used ?? 0|bytes}}/{{.value}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".value"
+              },
+              "text": "{{.key}} {{.used ?? 0|quantity}}/{{.value|quantity}}"
+            },
+            {
+              "when": {
+                "type": "exists",
+                "path": ".value"
+              },
+              "text": "{{.key}} {{.used ?? 0|quantity}}/{{.value}}"
+            }
+          ]
+        },
         "cases": [
           {
             "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.cpu|quantity",
-                      "otherPath": ".spec.limits.cpu|quantity"
-                    }
-                  ]
-                }
-              ]
+              "type": "atLeast",
+              "path": ".status.resources|quantity",
+              "otherPath": ".spec.limits|quantity",
+              "eachKey": true
             },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}",
+            "text": "{{value}}",
             "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.memory|quantity",
-                      "otherPath": ".spec.limits.memory|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                }
-              ]
-            },
-            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.nodes"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.nodes|quantity",
-                      "otherPath": ".spec.limits.nodes|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.nodes"
-                }
-              ]
-            },
-            "text": "nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
-                      "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 1
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
-                }
-              ]
-            },
-            "text": "nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.cpu|quantity",
-                      "otherPath": ".spec.limits.cpu|quantity"
-                    },
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.memory|quantity",
-                      "otherPath": ".spec.limits.memory|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.nodes"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.cpu|quantity",
-                      "otherPath": ".spec.limits.cpu|quantity"
-                    },
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.nodes|quantity",
-                      "otherPath": ".spec.limits.nodes|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.nodes"
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.nodes"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.memory|quantity",
-                      "otherPath": ".spec.limits.memory|quantity"
-                    },
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.nodes|quantity",
-                      "otherPath": ".spec.limits.nodes|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.nodes"
-                }
-              ]
-            },
-            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nodes {{.status.resources.nodes ?? 0}}/{{.spec.limits.nodes}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.cpu|quantity",
-                      "otherPath": ".spec.limits.cpu|quantity"
-                    },
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
-                      "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.cpu"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
-                }
-              ]
-            },
-            "text": "cpu {{.status.resources.cpu ?? 0|cpu}}/{{.spec.limits.cpu|cpu}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
-                },
-                {
-                  "type": "any",
-                  "of": [
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources.memory|quantity",
-                      "otherPath": ".spec.limits.memory|quantity"
-                    },
-                    {
-                      "type": "atLeast",
-                      "path": ".status.resources[\"nvidia.com/gpu\"]|quantity",
-                      "otherPath": ".spec.limits[\"nvidia.com/gpu\"]|quantity"
-                    }
-                  ]
-                }
-              ]
-            },
-            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}",
-            "tone": "error"
-          },
-          {
-            "when": {
-              "type": "all",
-              "of": [
-                {
-                  "type": "equals",
-                  "path": ".spec.limits|count",
-                  "value": 2
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits.memory"
-                },
-                {
-                  "type": "exists",
-                  "path": ".spec.limits[\"nvidia.com/gpu\"]"
-                }
-              ]
-            },
-            "text": "memory {{.status.resources.memory ?? 0|bytes}}/{{.spec.limits.memory|bytes}}, nvidia.com/gpu {{.status.resources[\"nvidia.com/gpu\"] ?? 0}}/{{.spec.limits[\"nvidia.com/gpu\"]}}"
           }
         ]
       },

@@ -10,17 +10,19 @@ part of Sextant's former built-in autoscaling view (ADR-0080) with the same beha
 Sextant. Its id is `sextant.karpenter`. Why it is built this way: ADR-0080 (the readings), ADR-0139 (Sextant's own
 extensions), ADR-0140 (translations), ADR-0152 (kinds in a section of their own, `problemWhen`), ADR-0153 (computed
 columns), ADR-0160 (the section's icon and place, the UI kit), ADR-0161 (printer columns left out, paths picking an
-item), ADR-0163 (field values in texts) and ADR-0167 (column widths and sort values, map entries, counts and literal
+item), ADR-0163 (field values in texts), ADR-0167 (column widths and sort values, map entries, counts and literal
 fallbacks in placeholders and conditions, Kubernetes quantities compared and written as Sextant writes them, non-empty
-texts, match fields with `!=`, details sections without a heading, blocks in Sextant's memory).
+texts, match fields with `!=`, details sections without a heading, blocks in Sextant's memory) and ADR-0169 (a map's
+entries as a column's items, a case toning the cell's own text, `atLeast` over every key of two maps, `|quantity` in a
+text).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.karpenter` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 5: Sextant 0.30.1 or newer; Sextant 0.30.0 is offered 1.0.0. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `karpenter-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Karpenter |
 | Checked against | Karpenter's objects as kubernetes-sigs/karpenter writes them (`karpenter.sh/v1`, and `v1beta1` where fields moved: `pkg/apis/v1/nodepool.go`, `nodeclaim.go`, `nodeclaim_status.go`, `pkg/controllers/disruption`, `pkg/events`) and the providers' node classes (`karpenter.k8s.aws/v1` EC2NodeClass, `karpenter.azure.com/v1beta1` AKSNodeClass) |
@@ -31,8 +33,8 @@ texts, match fields with `!=`, details sections without a heading, blocks in Sex
 section's icon, right after KEDA's: Node Pools, Node Claims, EC2 Node Classes and AKS Node Classes, each with its own
 icon, Sextant's own table, filters, selection bar and details, and Edit and Delete as on every kind.
 
-**"Only problems"** on every kind, as the built-in tables had it: the `Ready` condition False, or — on NodePools — a
-resource in use at or over its limit (it launches no more nodes).
+**"Only problems"** on every kind, as the built-in tables had it: the `Ready` condition False, or — on NodePools — any
+limited resource in use at or over its limit, compared as Kubernetes quantities (it launches no more nodes).
 
 **Columns**, in the built-in columns' places and widths, the CRDs' own printer columns left out:
 
@@ -40,7 +42,7 @@ resource in use at or over its limit (it launches no more nodes).
 |---|---|---|---|
 | NodePool | Node class | `np-node-class` | The node class's name (`spec.template.spec.nodeClassRef.name`) |
 | NodePool | Nodes | `np-nodes` | `status.resources.nodes` |
-| NodePool | Usage / limits | `np-limits` | Each limited resource as `cpu 3920m/4, memory 45.9GiB/1000GiB` (in use, 0 when not reported, over the limit; cpu in cores or millicores, memory and storage in binary units), red when one is reached |
+| NodePool | Usage / limits | `np-limits` | Every limited resource, in key order, as `cpu 3920m/4, memory 45.9GiB/1000GiB` (in use, 0 when not reported, over the limit; cpu in cores or millicores, memory and storage in binary units, any other resource as a number, a limit that is no quantity as written), red when one is reached |
 | NodePool | Consolidation | `np-consolidation` | `spec.disruption.consolidationPolicy` |
 | NodePool | Ready | `np-ready` | The `Ready` condition's status: True green, False red, anything else yellow |
 | NodeClaim | NodePool | `nc-node-pool` | The `karpenter.sh/nodepool` label (older `karpenter.sh/provisioner-name`) |
@@ -115,15 +117,8 @@ None: it only reads.
 ## Requirements and limits
 
 - Karpenter's CRDs (`karpenter.sh/v1`, or `v1beta1`); the section shows only where the cluster serves them.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - **Usage / limits** writes the nine usual sets of limits — one or two of cpu, memory, nodes and `nvidia.com/gpu` —
-    as the built-in column did, and any other set (three resources or more, or another resource) as its limits alone
-    in key order (`cpu=100, memory=400Gi, nodes=20`), without what is in use and never red: a case's text holds at most
-    five placeholders, and a map's keys cannot be gone through. (A list column over a map's entries, with the entry's
-    key and its value at another path in the item's text, would close it.)
-  - **"Only problems"** compares, as Kubernetes quantities, the limits of cpu, memory, nodes, pods, ephemeral storage,
-    `nvidia.com/gpu`, `amd.com/gpu` and `aws.amazon.com/neuron`; the built-in filter compared every limited resource.
-    (The same going through a map's keys, in `atLeast`, would close it.)
+- Where it differs from the former built-in view: nowhere the extension API cannot say. Usage / limits writes the
+  resources in key order, as the API server writes the map the built-in column followed.
 - Checked by tests on fixtures of Karpenter's objects against the built-in readings (ported unchanged); not yet tried on
   a live cluster.
 

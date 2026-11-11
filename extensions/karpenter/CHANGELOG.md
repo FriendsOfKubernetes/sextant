@@ -1,5 +1,17 @@
 # Changes of Karpenter
 
+## 1.1.0 — 2026-11-12
+
+Needs Sextant 0.30.1 (`sextantApi` 5); Sextant 0.30.0 keeps 1.0.0. What the built-in view did that extension API 4
+could not say (ADR-0169):
+
+- **Usage / limits** writes every limited resource with what is in use against its limit, whatever the set — cpu in
+  cores or millicores, memory and storage in binary units, any other resource as a number in the UI language, a limit
+  that is no quantity as written — and is red when any is reached, as the built-in column was (an entries column's
+  items reading `status.resources` by the limit's key, and a case toning the cell's own text).
+- **"Only problems"** compares every limited resource, as Kubernetes quantities, with what is in use (`atLeast` over
+  every key of the two maps), not eight named ones.
+
 ## 1.0.0 — 2026-11-10
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: the Karpenter part of Sextant's former built-in autoscaling

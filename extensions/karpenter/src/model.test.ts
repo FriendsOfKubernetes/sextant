@@ -139,7 +139,9 @@ function pools(): KubeObject[] {
     for (const used of [undefined, 0, 1, 2]) {
       const limits: Record<string, string> = {};
       const resources: Record<string, string> = {};
-      keys.forEach((k, i) => {
+      // In key order, as the API server writes a map (the built-in column followed the object's order).
+      [...keys].sort().forEach((k) => {
+        const i = keys.indexOf(k);
         if (!(mask & (1 << i))) return;
         limits[k] = amounts[k]![0];
         if (used !== undefined) resources[k] = amounts[k]![1][(used + i) % 3]!;
@@ -149,8 +151,6 @@ function pools(): KubeObject[] {
   }
   return out;
 }
-
-const LIMIT_SETS = new Set(["cpu", "memory", "nodes", "nvidia.com/gpu", "cpu,memory", "cpu,nodes", "memory,nodes", "cpu,nvidia.com/gpu", "memory,nvidia.com/gpu"]);
 
 describe("the columns, against the built-in ones", () => {
   it("are placed after the name, in the built-in order and widths, with the CRDs' own columns left out", () => {
@@ -187,7 +187,7 @@ describe("the columns, against the built-in ones", () => {
     }
   });
 
-  it("show the usage against the limits: the usual sets as the built-in did, any other by its limits", () => {
+  it("show the usage against every limit as the built-in did, red when one is reached", () => {
     for (const pool of pools()) {
       const keys = Object.keys((pool.spec as { limits?: object }).limits ?? {});
       const label = `${pool.metadata.name} ${keys.join(",")}`;
@@ -195,18 +195,16 @@ describe("the columns, against the built-in ones", () => {
         expect(cell("np-limits", pool), label).toBeUndefined();
         continue;
       }
-      if (!LIMIT_SETS.has(keys.join(","))) {
-        // Another set: the limits as written, in key order, without what is in use.
-        const limits = Object.entries((pool.spec as { limits: Record<string, string> }).limits).sort(([a], [b]) => (a < b ? -1 : 1));
-        expect(cell("np-limits", pool), label).toBe(limits.map(([k, v]) => `${k}=${v}`).join(", "));
-        continue;
-      }
       expect(cell("np-limits", pool), label).toBe(limitsText(pool));
       expect(tone("np-limits", pool), label).toBe(limitRows(pool).some((l) => l.reached) ? "danger" : undefined);
     }
     expect(cell("np-limits", byName("NodePool", "default"))).toBe("cpu 12/1000, memory 45.9GiB/1000GiB");
-    expect(cell("np-limits", byName("NodePool", "many"))).toBe("cpu=100, memory=400Gi, nodes=20");
+    expect(cell("np-limits", byName("NodePool", "many"))).toBe(limitsText(byName("NodePool", "many")));
     expect([cell("np-limits", byName("NodePool", "gpu")), tone("np-limits", byName("NodePool", "gpu"))]).toEqual(["cpu 64/64, nvidia.com/gpu 8/8", "danger"]);
+    // A resource of no known unit as a number, a limit that is no quantity as written, nothing in use as 0.
+    const odd = { apiVersion: "karpenter.sh/v1", kind: "NodePool", metadata: { name: "odd" }, spec: { limits: { "example.com/fpga": "1500m", nodes: "1k", pods: "lots" } }, status: { resources: { nodes: "1k" } } } as KubeObject;
+    expect([cell("np-limits", odd), tone("np-limits", odd)]).toEqual([limitsText(odd), "danger"]);
+    expect(limitsText(odd)).toBe("example.com/fpga 0/1.50, nodes 1000/1000, pods 0/lots");
   });
 
   it("show a NodeClaim's pool, instance, capacity, zone, node, launch state and Ready", () => {
@@ -264,8 +262,10 @@ describe("Only problems, against the built-in filter", () => {
     expect(holdsNow(when, pool({ cpu: "10" }, { cpu: "4" }, "False"))).toBe(true);
     expect(holdsNow(when, pool({ memory: "64Gi" }, { memory: "67108864Ki" }))).toBe(true);
     expect(holdsNow(when, pool({ memory: "64Gi" }, { memory: "67108863Ki" }))).toBe(false);
-    // A resource outside the known ones is not compared (the README's known difference).
+    // Every limited resource is compared, as the built-in filter did.
     const other = pool({ "example.com/fpga": "2" }, { "example.com/fpga": "2" });
-    expect([isProblem(other), holdsNow(when, other)]).toEqual([true, false]);
+    expect([isProblem(other), holdsNow(when, other)]).toEqual([true, true]);
+    const unreadable = pool({ "example.com/fpga": "two" }, { "example.com/fpga": "2" });
+    expect([isProblem(unreadable), holdsNow(when, unreadable)]).toEqual([false, false]);
   });
 });
