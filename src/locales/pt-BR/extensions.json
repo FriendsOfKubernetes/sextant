@@ -349,7 +349,15 @@
     "list": "A extensão pode executar estes programas, nunca por meio de um shell, preenchendo só os valores que seus parâmetros permitem:",
     "changes": "Altera algo: o Sextant pergunta a você toda vez. Executa no contêiner {{container}} do pod pronto mais recente com os rótulos {{selector}}.",
     "reads": "Só lê. Executa no contêiner {{container}} do pod pronto mais recente com os rótulos {{selector}}.",
-    "scope": "Só em namespaces onde a extensão pode ler pods. O que os comandos imprimem vai para a extensão; o registro de atividades guarda o comando, nunca a saída."
+    "scope": "Só em namespaces onde a extensão pode ler pods. O que os comandos imprimem vai para a extensão; o registro de atividades guarda o comando, nunca a saída.",
+    "params": {
+      "enum": "{{name}}: um de {{values}}",
+      "int": "{{name}}: um número inteiro de {{min}} a {{max}}",
+      "intFrom": "{{name}}: um número inteiro de pelo menos {{min}}",
+      "intTo": "{{name}}: um número inteiro de no máximo {{max}}",
+      "intAny": "{{name}}: um número inteiro",
+      "name": "{{name}}: um nome de objeto"
+    }
   },
   "services": {
     "heading": "Serviços no cluster",

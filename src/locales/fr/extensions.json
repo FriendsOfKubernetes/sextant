@@ -349,7 +349,15 @@
     "list": "L’extension peut lancer ces programmes, jamais via un shell, en ne remplissant que les valeurs que permettent leurs paramètres :",
     "changes": "Modifie quelque chose : Sextant vous demande à chaque fois. S’exécute dans le conteneur {{container}} du pod prêt le plus récent portant les labels {{selector}}.",
     "reads": "Lit seulement. S’exécute dans le conteneur {{container}} du pod prêt le plus récent portant les labels {{selector}}.",
-    "scope": "Uniquement dans les espaces de noms où l’extension peut lire les pods. Ce qu’affichent les commandes va à l’extension ; le journal d’activité garde la commande, jamais sa sortie."
+    "scope": "Uniquement dans les espaces de noms où l’extension peut lire les pods. Ce qu’affichent les commandes va à l’extension ; le journal d’activité garde la commande, jamais sa sortie.",
+    "params": {
+      "enum": "{{name}} : l'une des valeurs {{values}}",
+      "int": "{{name}} : un nombre entier de {{min}} à {{max}}",
+      "intFrom": "{{name}} : un nombre entier d'au moins {{min}}",
+      "intTo": "{{name}} : un nombre entier d'au plus {{max}}",
+      "intAny": "{{name}} : un nombre entier",
+      "name": "{{name}} : un nom d'objet"
+    }
   },
   "services": {
     "heading": "Services dans le cluster",

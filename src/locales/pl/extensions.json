@@ -356,7 +356,15 @@
     "list": "Rozszerzenie może uruchamiać te programy, nigdy przez powłokę, wstawiając tylko wartości dozwolone przez ich parametry:",
     "changes": "Coś zmienia: Sextant pyta Cię za każdym razem. Działa w kontenerze {{container}} najnowszego gotowego poda z etykietami {{selector}}.",
     "reads": "Tylko odczytuje. Działa w kontenerze {{container}} najnowszego gotowego poda z etykietami {{selector}}.",
-    "scope": "Tylko w przestrzeniach nazw, w których rozszerzenie może odczytywać pody. To, co wypisują polecenia, trafia do rozszerzenia; dziennik aktywności zapisuje polecenie, nigdy jego wynik."
+    "scope": "Tylko w przestrzeniach nazw, w których rozszerzenie może odczytywać pody. To, co wypisują polecenia, trafia do rozszerzenia; dziennik aktywności zapisuje polecenie, nigdy jego wynik.",
+    "params": {
+      "enum": "{{name}}: jedna z wartości {{values}}",
+      "int": "{{name}}: liczba całkowita od {{min}} do {{max}}",
+      "intFrom": "{{name}}: liczba całkowita nie mniejsza niż {{min}}",
+      "intTo": "{{name}}: liczba całkowita nie większa niż {{max}}",
+      "intAny": "{{name}}: liczba całkowita",
+      "name": "{{name}}: nazwa obiektu"
+    }
   },
   "services": {
     "heading": "Usługi w klastrze",

@@ -335,7 +335,15 @@
     "list": "擴充功能可以執行這些程式，絕不透過 shell，只填入其參數允許的值：",
     "changes": "會變更內容：Sextant 每次都會詢問你。在帶有標籤 {{selector}} 的最新就緒 Pod 的容器 {{container}} 中執行。",
     "reads": "只讀取。在帶有標籤 {{selector}} 的最新就緒 Pod 的容器 {{container}} 中執行。",
-    "scope": "僅在擴充功能可讀取 Pod 的命名空間中執行。命令的輸出交給擴充功能；活動記錄只記錄命令，從不記錄其輸出。"
+    "scope": "僅在擴充功能可讀取 Pod 的命名空間中執行。命令的輸出交給擴充功能；活動記錄只記錄命令，從不記錄其輸出。",
+    "params": {
+      "enum": "{{name}}：{{values}} 之一",
+      "int": "{{name}}：{{min}} 到 {{max}} 之間的整數",
+      "intFrom": "{{name}}：不小於 {{min}} 的整數",
+      "intTo": "{{name}}：不大於 {{max}} 的整數",
+      "intAny": "{{name}}：整數",
+      "name": "{{name}}：物件名稱"
+    }
   },
   "services": {
     "heading": "叢集中的服務",

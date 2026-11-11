@@ -335,7 +335,15 @@
     "list": "扩展可以运行这些程序，绝不通过 shell，只填入其参数允许的值：",
     "changes": "会更改内容：Sextant 每次都会询问你。在带有标签 {{selector}} 的最新就绪 Pod 的容器 {{container}} 中运行。",
     "reads": "只读取。在带有标签 {{selector}} 的最新就绪 Pod 的容器 {{container}} 中运行。",
-    "scope": "仅在扩展可读取 Pod 的命名空间中运行。命令的输出交给扩展；活动日志只记录命令，从不记录其输出。"
+    "scope": "仅在扩展可读取 Pod 的命名空间中运行。命令的输出交给扩展；活动日志只记录命令，从不记录其输出。",
+    "params": {
+      "enum": "{{name}}：{{values}} 之一",
+      "int": "{{name}}：{{min}} 到 {{max}} 之间的整数",
+      "intFrom": "{{name}}：不小于 {{min}} 的整数",
+      "intTo": "{{name}}：不大于 {{max}} 的整数",
+      "intAny": "{{name}}：整数",
+      "name": "{{name}}：对象名称"
+    }
   },
   "services": {
     "heading": "集群中的服务",

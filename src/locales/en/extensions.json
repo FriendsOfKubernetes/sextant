@@ -342,7 +342,15 @@
     "list": "The extension may run these programs, never through a shell, filling in only the values its parameters allow:",
     "changes": "Changes something: Sextant asks you every time. Runs in the container {{container}} of the newest ready pod with the labels {{selector}}.",
     "reads": "Only reads. Runs in the container {{container}} of the newest ready pod with the labels {{selector}}.",
-    "scope": "Only in namespaces where the extension may read pods. What the commands print goes to the extension; the activity log keeps the command, never its output."
+    "scope": "Only in namespaces where the extension may read pods. What the commands print goes to the extension; the activity log keeps the command, never its output.",
+    "params": {
+      "enum": "{{name}}: one of {{values}}",
+      "int": "{{name}}: a whole number from {{min}} to {{max}}",
+      "intFrom": "{{name}}: a whole number of at least {{min}}",
+      "intTo": "{{name}}: a whole number of at most {{max}}",
+      "intAny": "{{name}}: a whole number",
+      "name": "{{name}}: an object name"
+    }
   },
   "services": {
     "heading": "Services in the cluster",

@@ -342,7 +342,15 @@
     "list": "Die Erweiterung darf diese Programme ausführen, nie über eine Shell, und setzt nur Werte ein, die ihre Parameter erlauben:",
     "changes": "Ändert etwas: Sextant fragt Sie jedes Mal. Läuft im Container {{container}} des neuesten bereiten Pods mit den Labels {{selector}}.",
     "reads": "Liest nur. Läuft im Container {{container}} des neuesten bereiten Pods mit den Labels {{selector}}.",
-    "scope": "Nur in Namespaces, in denen die Erweiterung Pods lesen darf. Was die Befehle ausgeben, erhält die Erweiterung; das Aktivitätsprotokoll speichert den Befehl, nie seine Ausgabe."
+    "scope": "Nur in Namespaces, in denen die Erweiterung Pods lesen darf. Was die Befehle ausgeben, erhält die Erweiterung; das Aktivitätsprotokoll speichert den Befehl, nie seine Ausgabe.",
+    "params": {
+      "enum": "{{name}}: einer von {{values}}",
+      "int": "{{name}}: eine ganze Zahl von {{min}} bis {{max}}",
+      "intFrom": "{{name}}: eine ganze Zahl ab {{min}}",
+      "intTo": "{{name}}: eine ganze Zahl bis {{max}}",
+      "intAny": "{{name}}: eine ganze Zahl",
+      "name": "{{name}}: ein Objektname"
+    }
   },
   "services": {
     "heading": "Services im Cluster",
