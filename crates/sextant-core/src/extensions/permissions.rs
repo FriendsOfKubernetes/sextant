@@ -17,7 +17,8 @@ use crate::access::{
     NamespaceScope,
 };
 
-/// The actions an extension may ask for. Exec and Port forward are not available to extensions.
+/// The actions an extension may ask for. Exec is not available to extensions (they run only the commands of their
+/// manifest, ADR-0147); Port forward is, since `sextantApi` 4 (ADR-0156).
 pub const EXTENSION_ACTIONS: [AccessAction; 6] = [
     AccessAction::Read,
     AccessAction::Modify,
