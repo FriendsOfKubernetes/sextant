@@ -28,7 +28,14 @@ offset?: number,
 /**
  * More paths whose numbers are added to `path`'s first (#407): a JobSet's own restarts and its Jobs'. At most 3.
  */
-addPaths?: Array<string>, } | { "type": "enteredWithin", minutes: number, } | { "type": "expiring", path: string, } | { "type": "olderThan", path: string, minutes: number, 
+addPaths?: Array<string>, 
+/**
+ * `path` and `otherPath` name maps (ADR-0169): it holds when, for any key both have, the value at `path` is at
+ * least the one at `otherPath` (plus `offset`), a filter ending a path (`|quantity`) reading each value — a
+ * NodePool's usage of any resource it limits at its limit. A value that is no number on either side compares
+ * nothing. Not with `addPaths`; `sextantApi` 5.
+ */
+eachKey?: boolean, } | { "type": "enteredWithin", minutes: number, } | { "type": "expiring", path: string, } | { "type": "olderThan", path: string, minutes: number, 
 /**
  * Holds at once for a value that is there but no time (#405), as the built-in rules counted it.
  */

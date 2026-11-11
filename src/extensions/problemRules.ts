@@ -96,6 +96,23 @@ function walk(obj: unknown, steps: readonly PathStep[]): unknown {
   return at;
 }
 
+/**
+ * The map at a compared path whose filter (`|quantity`, `|count`, …) reads each of its values (`eachKey`, ADR-0169):
+ * key → its number, read when asked; `undefined` when the path holds no map.
+ */
+function mapValues(obj: unknown, path: string): Record<string, () => number | undefined> | undefined {
+  const bar = path.lastIndexOf("|");
+  const field = bar >= 0 ? path.slice(0, bar) : path;
+  const filter = bar >= 0 ? path.slice(bar + 1).trim() : undefined;
+  const map = valueAt(obj, field);
+  if (map === null || typeof map !== "object" || Array.isArray(map)) return undefined;
+  const out: Record<string, () => number | undefined> = {};
+  for (const [key, value] of Object.entries(map as Record<string, unknown>)) {
+    out[key] = () => numberOf(filter === undefined ? value : valueAt(value, `.|${filter}`));
+  }
+  return out;
+}
+
 const isScalar = (v: unknown): v is string | number | boolean =>
   typeof v === "string" || typeof v === "number" || typeof v === "boolean";
 
@@ -338,6 +355,20 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       return { holds: true, since: new Date(ctx.enteredAt).toISOString(), until: ctx.enteredAt + condition.minutes * MINUTE_MS };
     }
     case "atLeast": {
+      // `eachKey` (ADR-0169): two maps compared key by key, a path's filter (`|quantity`) reading each value; any key
+      // whose values are both numbers and at least holds — a NodePool's usage of any resource it limits at its limit.
+      if (condition.eachKey) {
+        const ours = mapValues(obj, condition.path);
+        const theirs = mapValues(obj, condition.otherPath);
+        if (!ours || !theirs) return NO;
+        for (const [key, read] of Object.entries(ours)) {
+          if (!Object.prototype.hasOwnProperty.call(theirs, key)) continue;
+          const a = read();
+          const b = theirs[key]!();
+          if (a !== undefined && b !== undefined && a >= b + (condition.offset ?? 0)) return { holds: true };
+        }
+        return NO;
+      }
       // Both as numbers (a list as its length); not a number on either side never holds (#386).
       // `addPaths` (#407): their numbers added to `path`'s first.
       const parts = [condition.path, ...(condition.addPaths ?? [])].map((p) => numberOf(valueAt(obj, p)));
@@ -773,6 +804,12 @@ function filteredText(value: unknown, filter: string | undefined): string | unde
     if (value === null || typeof value !== "object" || Array.isArray(value)) return undefined;
     const keys = Object.keys(value);
     return keys.length === 0 ? undefined : formatList(keys);
+  }
+  if (filter === "quantity") {
+    // A quantity's amount as a number in the UI language (ADR-0169): a whole one without fraction digits, any other
+    // with two, as the built-in Karpenter view wrote a limit ("20", "1,50" in German).
+    const amount = parseQuantity(value);
+    return amount === undefined ? undefined : formatNumber(amount, Number.isInteger(amount) ? 0 : 2);
   }
   if (filter === "cpu" || filter === "bytes") {
     // A quantity written as Sextant writes its own (#404): "250m", "4"; "45.9GiB".

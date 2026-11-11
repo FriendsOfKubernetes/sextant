@@ -511,6 +511,13 @@ pub enum ProblemCondition {
         #[serde(default, rename = "addPaths", skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
         add_paths: Option<Vec<String>>,
+        /// `path` and `otherPath` name maps (ADR-0169): it holds when, for any key both have, the value at `path` is at
+        /// least the one at `otherPath` (plus `offset`), a filter ending a path (`|quantity`) reading each value — a
+        /// NodePool's usage of any resource it limits at its limit. A value that is no number on either side compares
+        /// nothing. Not with `addPaths`; `sextantApi` 5.
+        #[serde(default, rename = "eachKey", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        each_key: Option<bool>,
     },
     /// The object entered the rule's label-selected source less than `minutes` ago, as Sextant saw it (#393): holds from
     /// then for `minutes`, never for objects already there when the list was first read; `sextantApi` 4, problem rules
@@ -1438,6 +1445,38 @@ fn check_condition<'k>(
                 &path.key("otherPath"),
                 checks.metadata_only,
             )?;
+            if let ProblemCondition::AtLeast {
+                each_key: Some(each),
+                add_paths,
+                ..
+            } = condition
+            {
+                // Every key of two maps (ADR-0169).
+                if checks.api < PARITY_API {
+                    return Err(at(
+                        &path.key("eachKey"),
+                        format!("needs sextantApi {PARITY_API} or later"),
+                    ));
+                }
+                if !each {
+                    return Err(at(&path.key("eachKey"), "is `true` or left out"));
+                }
+                if add_paths.is_some() {
+                    return Err(at(
+                        &path.key("addPaths"),
+                        "goes without `eachKey`: the values of one key are compared",
+                    ));
+                }
+                for (field, place) in [(field, "path"), (other_path, "otherPath")] {
+                    let text = numeric_path(field, checks.api, &path.key(place))?;
+                    if text.contains('*') {
+                        return Err(at(
+                            &path.key(place),
+                            "names a map of the object, without `*`, with `eachKey`",
+                        ));
+                    }
+                }
+            }
             if let ProblemCondition::AtLeast {
                 add_paths: Some(more),
                 ..
@@ -2392,7 +2431,7 @@ fn lists_matches(text: &str) -> bool {
 
 /// Below `sextantApi` 5, no path or placeholder of `contributes` (the raw manifest, before defaults) uses what came
 /// with it (ADR-0169): lists three deep, a match field compared trimmed (`[field~="…"]`), `|positions`, `|uniqueKey`,
-/// `{{selectsNone:namespaces}}`. An older
+/// `|quantity` in a text, `{{selectsNone:namespaces}}`. An older
 /// Sextant refuses them, so a manifest that names an older API must not use them (#420). Strings are visited in key
 /// order, as the SDK's `checkParitySyntax`.
 pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), ManifestError> {
@@ -2424,6 +2463,9 @@ pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), M
                     }
                     if filters.contains(&"uniqueKey") {
                         found = found.or(Some("`|uniqueKey`"));
+                    }
+                    if filters.contains(&"quantity") {
+                        found = found.or(Some("`|quantity` in a text"));
                     }
                     if inner.trim() == SELECTS_NONE_NAMESPACES {
                         found = found.or(Some("`{{selectsNone:namespaces}}`"));
@@ -2653,7 +2695,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404); `lower` writes a text in lower case.
-pub const PLACEHOLDER_FILTERS: [&str; 18] = [
+pub const PLACEHOLDER_FILTERS: [&str; 19] = [
     "lower",
     "firstLine",
     "lastSegment",
@@ -2678,6 +2720,9 @@ pub const PLACEHOLDER_FILTERS: [&str; 18] = [
     // A sort key of a list's texts (ADR-0169): each once, empty ones left out, sorted by code point, joined with `,`
     // in every language — as a built-in view keyed a list of names. `sextantApi` 5.
     "uniqueKey",
+    // A Kubernetes quantity ("1k", "1500m") written as its amount in the UI language, a whole one without fraction
+    // digits and any other with two (ADR-0169), as the built-in Karpenter view wrote a limit. `sextantApi` 5.
+    "quantity",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
@@ -3145,5 +3190,47 @@ mod tests {
         ));
         let named = parse_field_path(".spec[0]").unwrap();
         assert!(!reads_secret(&kind("route.openshift.io", "Route"), &named));
+    }
+
+    #[test]
+    fn maps_are_compared_key_by_key_and_a_quantity_written_only_from_api_5() {
+        let at_limit = json!({ "type": "atLeast", "path": ".status.resources|quantity",
+                               "otherPath": ".spec.limits|quantity", "eachKey": true });
+        let condition: ProblemCondition = serde_json::from_value(at_limit.clone()).unwrap();
+        let kind = KindPattern::new("karpenter.sh", "NodePool");
+        let here = JsonPath::default().key("when");
+        assert!(
+            check_object_condition(&condition, std::slice::from_ref(&kind), &here, PARITY_API)
+                .is_ok()
+        );
+        let refused =
+            check_object_condition(&condition, std::slice::from_ref(&kind), &here, SOURCES_API)
+                .unwrap_err();
+        assert!(refused.to_string().contains("eachKey"), "{refused}");
+        // Without it an `atLeast` reads as it did, and writes no `eachKey`.
+        let one: ProblemCondition =
+            serde_json::from_value(json!({ "type": "atLeast", "path": ".a", "otherPath": ".b" }))
+                .unwrap();
+        assert_eq!(
+            serde_json::to_value(&one).unwrap(),
+            json!({ "type": "atLeast", "path": ".a", "otherPath": ".b" })
+        );
+        assert_eq!(serde_json::to_value(&condition).unwrap(), at_limit);
+        // `|quantity` in a text is new; in a compared path it is not.
+        let text =
+            json!({ "columns": [{ "cases": [{ "text": "{{.spec.limits.nodes|quantity}}" }] }] });
+        assert!(check_parity_syntax(SOURCES_API, &text).is_err());
+        assert!(check_parity_syntax(PARITY_API, &text).is_ok());
+        assert!(
+            check_parity_syntax(
+                SOURCES_API,
+                &json!({ "kinds": [{ "problemWhen": at_limit }] })
+            )
+            .is_ok()
+        );
+        // A case's `{{value}}` is taken out before its other placeholders are checked.
+        let own = super::super::contributions::own_text_placeholders;
+        assert_eq!(own("{{ value }} ({{.a}})"), (true, " ({{.a}})".to_owned()));
+        assert_eq!(own("{{.value}} {{"), (false, "{{.value}} {{".to_owned()));
     }
 }

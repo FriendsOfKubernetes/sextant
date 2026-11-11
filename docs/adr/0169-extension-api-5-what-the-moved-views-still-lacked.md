@@ -143,6 +143,43 @@ A placeholder filter for a sort key: a list's texts each once, empty ones left o
 `,` in every language, as a built-in view keyed a list of names (the monitors' Namespaces column sorted and filtered by
 `names.join(",")`); `|unique` writes the shown text in the UI language's list, which sorts otherwise.
 
+### A map's entries as a list column's items (`items` on `format: "entries"`, `items.with`)
+
+The built-in Karpenter column wrote every limited resource of a NodePool with what is in use against its limit
+(`cpu 3920m/4, memory 45.9GiB/1000GiB`). An entries column could write only `key=value`, and a case's text names fixed
+paths, so the extension wrote nine fixed sets of limits. From `sextantApi` 5 an `entries` column may have `items`: each
+entry of the map, in key order, is the item `{key, value}`, written by the first of its cases holding on it, as a list
+column's items are (an entry none holds for is left out; `items.separator`, else the column's, else the UI language's
+list). `items.with` (1 to 3 names, a lower-case letter then letters and digits, not `key` or `value`) names more maps of
+the object, field paths without `*` checked as the column's: the value each holds at the entry's key is the item's
+field of that name (`{"used": ".status.resources"}` → `{{.used}}`), absent where it has none. Item paths are checked
+as a list column's items' are: the map path reads no secret, so neither does an entry. `items.with` on any other format
+is refused.
+
+### A case toning the cell's own text (`{{value}}`)
+
+The built-in column was red as a whole when any limit was reached, and an extension's tone comes from a case, whose text
+replaces the cell's. From `sextantApi` 5 a computed column case's `text` may hold `{{value}}`: the text the cell shows
+when no case holds. It is put in after the rest of the case's text is filled, so cluster text in it is never read as a
+placeholder, and a case whose cell has no text does not hold. (`valueText` keeps its own `{{value}}`; anywhere else
+`{{value}}` stays no placeholder.)
+
+### `atLeast` over every key of two maps (`eachKey`)
+
+The built-in "Only problems" compared every limited resource with what is in use; a rule could compare only named
+paths. With `eachKey: true` an `atLeast`'s `path` and `otherPath` name maps (without `*`), a filter ending a path
+(`|quantity`) reading each value: it holds when, for any key both maps have, the value at `path` is at least the one at
+`otherPath` plus `offset`. A key on one side only, or a value that is no number on either side, compares nothing — it
+never makes a problem. Not with `addPaths`. It reads only the object, so it goes anywhere an `atLeast` goes (rules,
+`problemWhen`, cases, item cases).
+
+### `|quantity` in a text
+
+A placeholder filter: a Kubernetes quantity's amount as a number in the UI language, a whole one without fraction
+digits, any other with two, without grouping (`1k` → `1000`, `1500m` → `1.50`) — as the built-in Karpenter column wrote
+a resource that is neither cpu nor memory nor storage. Before 5 a text could not have it (a compared path's
+`|quantity` reads the amount as before).
+
 ## Consequences
 
 - Sextant's own extensions that use these additions need Sextant 0.30.1; on 0.30.0 they stay at their API-4 releases.
@@ -161,3 +198,7 @@ A placeholder filter for a sort key: a list's texts each once, empty ones left o
   columns count and sort as the built-in (the Rules count needed no addition: `[alert!="",*].alert` reads only a
   present name). What stays different is in its README: past 40 namespaces it lists the Services or Pods everywhere
   the extension may read (the built-in judged nothing then), and an endpoint without any port leaves no empty item.
+- Karpenter 1.1.0 (`sextantApi` 5) uses an entries column's items with `with`, `{{value}}`, `eachKey` and `|quantity`:
+  Usage / limits writes every limited resource as the built-in column did and is red when one is reached, and "Only
+  problems" compares every limited resource. Its README lists no difference left; the resources are written in key
+  order, as the API server writes the map.

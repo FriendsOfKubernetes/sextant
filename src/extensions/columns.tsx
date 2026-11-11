@@ -122,7 +122,7 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
   for (const c of column.cases ?? []) {
     if (!holdsNow(c, obj, now, ctx)) continue;
     const template = caseText(c, obj);
-    const filled = template.includes("{{") ? fillTemplate(template, obj) : template;
+    const filled = template.includes("{{") ? fillCaseText(template, column, obj, now) : template;
     if (filled === null) continue;
     // A tooltip whose placeholder has no value leaves the column's own tooltip (#380); with `tooltipOr` (#403) an empty
     // value skips to the next one.
@@ -139,6 +139,22 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
     };
   }
   return undefined;
+}
+
+/** `{{value}}` in a case's text (ADR-0169), with or without spaces inside. */
+const OWN_TEXT = /\{\{\s*value\s*\}\}/;
+
+/**
+ * A case's text filled from the object; `{{value}}` (ADR-0169) is the text the cell shows when no case holds, put in
+ * after the rest is filled so that cluster text in it is never read as a placeholder. `null` when a placeholder (or the
+ * cell's own text) has no value.
+ */
+function fillCaseText(template: string, column: ColumnContribution, obj: KubeObject, now: number): string | null {
+  if (!OWN_TEXT.test(template)) return fillTemplate(template, obj);
+  const pieces = template.split(new RegExp(OWN_TEXT.source, "g")).map((piece) => (piece.includes("{{") ? fillTemplate(piece, obj) : piece));
+  if (pieces.some((piece) => piece === null)) return null;
+  const own = plainCell(column, obj, now).text;
+  return own === undefined ? null : pieces.join(own);
 }
 
 /** What a cell is: its sort value, its text for search and copying, and how it draws. */
@@ -185,13 +201,15 @@ function firstPlusTooltip(column: ColumnContribution, obj: KubeObject, now: numb
   return shown && textOf(shown.join("\n"), MAX_TOOLTIP_CHARS);
 }
 
+/** The tone `tones` gives a shown value; `"*"` the tone of any other value (#403). */
+function toneOf(column: ColumnContribution, value: string | undefined): Tone | undefined {
+  const named = value !== undefined ? (column.tones?.[value] ?? column.tones?.["*"]) : undefined;
+  return named ? TONES[named] : undefined;
+}
+
 function cellOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: RuleContext = {}): Cell {
   const replaced = caseOf(column, obj, now, ctx);
-  const tone = (value: string | undefined): Tone | undefined => {
-    // `"*"`: the tone of any other value (#403).
-    const named = value !== undefined ? (column.tones?.[value] ?? column.tones?.["*"]) : undefined;
-    return named ? TONES[named] : undefined;
-  };
+  const tone = (value: string | undefined) => toneOf(column, value);
   if (replaced !== undefined) {
     const { text } = replaced;
     // A case's own tone (it is translated, so `tones` cannot name it), else the tone `tones` gives its text.
@@ -205,6 +223,12 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
     const sort = typeof replaced.value === "string" ? (numeric ? numberOf(filled) : filled) : (replaced.value ?? text);
     return { sort, text, draw: toned || column.tones ? <StatusText value={text} tone={toned ?? "neutral"} /> : text };
   }
+  return plainCell(column, obj, now);
+}
+
+/** A cell as its value shows it, no case considered. */
+function plainCell(column: ColumnContribution, obj: KubeObject, now: number): Cell {
+  const tone = (value: string | undefined) => toneOf(column, value);
   const looked = column.lookup === undefined ? undefined : lookupValue(obj, column.lookup);
   const value = looked !== undefined && looked !== null ? looked : firstValue(obj, column.paths);
   // `valueText` writes a text or number value (#387): "{{value}}%".
@@ -280,12 +304,15 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
       // A map's `key=value` entries in key order (#404), joined in the UI language.
       if (value === null || typeof value !== "object" || Array.isArray(value)) return { sort: undefined, text: undefined, draw: null };
       const map = value as Record<string, unknown>;
-      const items = Object.keys(map)
-        .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
-        .filter((k) => typeof map[k] === "string" || typeof map[k] === "number" || typeof map[k] === "boolean")
-        .map((k) => cleanText(`${k}=${String(map[k])}`) ?? "");
+      const keys = Object.keys(map).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      const items = column.items
+        ? entryTexts(column.items, obj, map, keys, now)
+        : keys
+            .filter((k) => typeof map[k] === "string" || typeof map[k] === "number" || typeof map[k] === "boolean")
+            .map((k) => cleanText(`${k}=${String(map[k])}`) ?? "");
       if (items.length === 0) return { sort: undefined, text: undefined, draw: null };
-      const text = textOf(column.separator === undefined ? formatList(items) : items.join(column.separator)) ?? "";
+      const separator = column.items?.separator ?? column.separator;
+      const text = textOf(separator === undefined ? formatList(items) : items.join(separator)) ?? "";
       return { sort: text, text, draw: text };
     }
     case "text": {
@@ -295,6 +322,32 @@ function cellOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
       return { sort: plain, text, draw: column.tones ? <StatusText value={text} tone={tone(plain) ?? "neutral"} /> : text };
     }
   }
+}
+
+/**
+ * An entries column's item texts (ADR-0169): each entry, in key order, is the item `{key, value}` with the value of
+ * every `with` map at the same key under its name, written by the first case holding on it; one none holds for is
+ * left out.
+ */
+function entryTexts(
+  items: NonNullable<ColumnContribution["items"]>,
+  obj: KubeObject,
+  map: Record<string, unknown>,
+  keys: readonly string[],
+  now: number,
+): string[] {
+  const others = Object.entries(items.with ?? {}).map(([name, path]) => [name, valueAt(obj, path)] as const);
+  const entries = keys.map((key) => {
+    const item: Record<string, unknown> = { key, value: map[key] };
+    for (const [name, other] of others) {
+      if (other !== null && typeof other === "object" && !Array.isArray(other) && Object.prototype.hasOwnProperty.call(other, key)) {
+        item[name] = (other as Record<string, unknown>)[key];
+      }
+    }
+    return item;
+  });
+  const written = entries.filter((item) => items.cases.some((c) => holdsNow(c, item as KubeObject, now)));
+  return entries.map((item) => cleanText(itemText(items.cases, item, now, obj, written) ?? "") ?? "").filter((t) => t !== "");
 }
 
 /** A duration in the age units of the UI language, as an age is shown. */

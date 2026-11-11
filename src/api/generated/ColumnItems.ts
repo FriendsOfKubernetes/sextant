@@ -12,4 +12,10 @@ cases: Array<ColumnItemCase>,
 /**
  * What joins the items' texts (1 to 5 characters); the UI language's list without it.
  */
-separator?: string, };
+separator?: string, 
+/**
+ * On a `format: "entries"` column (ADR-0169): more maps read by each entry's key, under these names beside the
+ * entry's `key` and `value` in the item (`{"used": ".status.resources"}` → `.used`, a NodePool's usage of the
+ * resource it limits). 1 to 3; `sextantApi` 5.
+ */
+with?: { [key in string]: string }, };

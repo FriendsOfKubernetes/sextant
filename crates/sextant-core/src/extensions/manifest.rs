@@ -564,6 +564,12 @@ pub struct ColumnItems {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub separator: Option<String>,
+    /// On a `format: "entries"` column (ADR-0169): more maps read by each entry's key, under these names beside the
+    /// entry's `key` and `value` in the item (`{"used": ".status.resources"}` → `.used`, a NodePool's usage of the
+    /// resource it limits). 1 to 3; `sextantApi` 5.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub with: Option<BTreeMap<String, String>>,
 }
 
 /// An item's text where a condition on the item holds: paths read from the item (`.revisionName`).

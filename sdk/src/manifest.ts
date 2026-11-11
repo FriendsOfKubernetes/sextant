@@ -170,7 +170,8 @@ export interface ManifestColumn {
   tooltipPaths?: string[];
   /**
    * Texts shown instead of the value where a condition holds, the first that holds, each with its tone; a text may hold
-   * `{{<field path>}}` placeholders (since Sextant 0.30), and a case whose placeholder has no value does not hold.
+   * `{{<field path>}}` placeholders (since Sextant 0.30), and a case whose placeholder has no value does not hold;
+   * `{{value}}` is the text the cell shows when no case holds, so a case may tone it (`sextantApi` 5, Sextant 0.30.1).
    */
   cases?: {
     when: ProblemCondition;
@@ -202,11 +203,13 @@ export interface ManifestColumn {
    * A `list` column's items each written by the first case that holds on the item (paths read from the item), joined by
    * `separator`, else the UI language's list (since Sextant 0.30). The column's `paths` name the lists, without `*`
    * unless the cases read the item only as itself: `{{.}}` is a text item, `{{$.metadata.namespace}}` reads the object
-   * (also in a `firstPlus` column).
+   * (also in a `firstPlus` column). On an `entries` column each entry, in key order, is the item `{key, value}`, with
+   * the value of each `with` map at the same key under its name (`{"used": ".status.resources"}` → `{{.used}}`;
+   * `sextantApi` 5, Sextant 0.30.1).
    */
   /** What joins a `list` or `entries` column's texts instead of the UI language's list (since Sextant 0.30). */
   separator?: string;
-  items?: { cases: { when: ProblemCondition; text: string }[]; separator?: string };
+  items?: { cases: { when: ProblemCondition; text: string }[]; separator?: string; with?: Record<string, string> };
   /** A `list` column's items in the UI language's order (since Sextant 0.30). */
   sorted?: boolean;
   /**

@@ -726,6 +726,15 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`${condition.type}\` needs sextantApi ${SOURCES_API} or later`);
     checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
     checkRulePath(numericPath(condition.otherPath, counter.api, [...segments, "otherPath"]), kind, [...segments, "otherPath"], counter.metadataOnly);
+    if (condition.type === "atLeast" && condition.eachKey !== undefined) {
+      // Every key of two maps (ADR-0169).
+      if (counter.api < PARITY_API) fail([...segments, "eachKey"], `needs sextantApi ${PARITY_API} or later`);
+      if (condition.eachKey !== true) fail([...segments, "eachKey"], "is `true` or left out");
+      if (condition.addPaths !== undefined) fail([...segments, "addPaths"], "goes without `eachKey`: the values of one key are compared");
+      for (const place of ["path", "otherPath"]) {
+        if (numericPath(condition[place], counter.api, [...segments, place]).includes("*")) fail([...segments, place], "names a map of the object, without `*`, with `eachKey`");
+      }
+    }
     if (condition.type === "atLeast" && condition.addPaths !== undefined) {
       if (condition.addPaths.length === 0 || condition.addPaths.length > 3) fail([...segments, "addPaths"], "has 1 to 3 paths");
       condition.addPaths.forEach((extra, j) =>
@@ -1413,7 +1422,7 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts", "positions", "uniqueKey"];
+const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts", "positions", "uniqueKey", "quantity"];
 
 /** `lists_matches`: a path whose last step, and no other, lists the matches (`|positions`, ADR-0169). */
 function listsMatches(text) {
@@ -1424,7 +1433,7 @@ function listsMatches(text) {
 
 /**
  * `check_parity_syntax` (ADR-0169): below sextantApi 5, no path or placeholder of `contributes` uses lists three deep,
- * a match field compared trimmed, `|positions`, `|uniqueKey` or `{{selectsNone:namespaces}}`; strings visited in key
+ * a match field compared trimmed, `|positions`, `|uniqueKey`, `|quantity` in a text or `{{selectsNone:namespaces}}`; strings visited in key
  * order, as Rust does.
  */
 function checkParitySyntax(manifest) {
@@ -1445,6 +1454,7 @@ function checkParitySyntax(manifest) {
         const [field, ...filters] = inner.split("|");
         if (filters.some((f) => f.trim() === "positions")) found ??= "`|positions`";
         if (filters.some((f) => f.trim() === "uniqueKey")) found ??= "`|uniqueKey`";
+        if (filters.some((f) => f.trim() === "quantity")) found ??= "`|quantity` in a text";
         if (inner.trim() === SELECTS_NONE_NAMESPACES) found ??= "`{{selectsNone:namespaces}}`";
         for (const one of splitOutsideQuotes(field, "??").flatMap((p) => splitOutsideQuotes(p, "+")).flatMap((p) => splitOutsideQuotes(p, " * "))) found ??= newIn(one);
       }
@@ -2225,6 +2235,44 @@ function checkSeparator(sep, segments) {
 /** `MAX_ITEM_CASES` (#404). */
 const MAX_ITEM_CASES = 10;
 
+/** `MAX_ITEMS_WITH` (ADR-0169). */
+const MAX_ITEMS_WITH = 3;
+
+/** `check_items_with` (ADR-0169): an entries column's maps read by an entry's key. */
+function checkItemsWith(manifest, column, withMaps, segments) {
+  if (manifest.sextantApi < PARITY_API) fail(segments, `needs sextantApi ${PARITY_API} or later`);
+  if (column.format !== "entries") fail(segments, 'goes with `format: "entries"`: maps read by an entry\'s key');
+  const names = sortedKeys(withMaps);
+  if (names.length === 0 || names.length > MAX_ITEMS_WITH) fail(segments, `names 1 to ${MAX_ITEMS_WITH} maps`);
+  for (const name of names) {
+    const place = [...segments, name];
+    if (!/^[a-z][A-Za-z0-9]{0,39}$/.test(name) || name === "key" || name === "value") {
+      fail(place, "is named by a lower-case letter and then letters and digits, not `key` or `value`");
+    }
+    if (withMaps[name].includes("*")) fail(place, "names a map of the object, without `*`");
+    checkPath(withMaps[name], column.kind, place);
+  }
+}
+
+/** `own_text_placeholders` (ADR-0169): whether a case's text has `{{value}}`, and the text without them. */
+function ownTextPlaceholders(text) {
+  let found = false;
+  let out = "";
+  let rest = text;
+  for (;;) {
+    const start = rest.indexOf("{{");
+    if (start < 0) break;
+    const after = rest.slice(start + 2);
+    const end = after.indexOf("}}");
+    if (end < 0) break;
+    out += rest.slice(0, start);
+    if (after.slice(0, end).trim() === "value") found = true;
+    else out += rest.slice(start, start + 2 + end + 2);
+    rest = after.slice(end + 2);
+  }
+  return [found, out + rest];
+}
+
 /** A list format (`is_list`): `list` or `firstPlus`. */
 const isList = (format) => format === "list" || format === "firstPlus";
 
@@ -2310,7 +2358,12 @@ function checkColumns(manifest) {
     if (column.items !== undefined) {
       const at = [...here, "items"];
       if (manifest.sextantApi < WINDOW_API) fail(at, `needs sextantApi ${WINDOW_API} or later`);
-      if (!isList(column.format)) fail(at, 'goes with `format: "list"` or `"firstPlus"`');
+      // A map's entries as items (ADR-0169): `{key, value}` and the `with` maps' values by the key.
+      const entries = column.format === "entries";
+      if (entries && manifest.sextantApi < PARITY_API) fail(at, `on \`format: "entries"\` needs sextantApi ${PARITY_API} or later`);
+      if (!isList(column.format) && !entries) fail(at, 'goes with `format: "list"`, `"firstPlus"` or `"entries"`');
+      if (column.items.with !== undefined) checkItemsWith(manifest, column, column.items.with, [...at, "with"]);
+      if (entries && (column.paths ?? []).some((p) => p.includes("*"))) fail([...at, "cases"], "go with `paths` that name the maps themselves, without `*`");
       if (column.format === "firstPlus" && column.items.separator !== undefined) fail([...at, "separator"], 'goes with `format: "list"`: `firstPlus` shows one item');
       // Cases that read an item only as itself (`.`) and the object (`$…`) may go with `*` (`reads_item_itself`).
       if ((column.paths ?? []).some((p) => p.includes("*")) && !column.items.cases.every(readsItemItself)) {
@@ -2369,7 +2422,10 @@ function checkColumns(manifest) {
       if (asksProblems(c.when) && !judged) fail([...here, "cases", j, "when"], "asks what the extension's rules say (`problem`) of a kind no rule of it judges");
       // Field values in the text, as a problem message has them (#368). An empty text leaves the cell blank (#404).
       if (c.text === "" ? manifest.sextantApi < WINDOW_API : c.text.trim() === "") fail([...here, "cases", j, "text"], c.text === "" ? `is empty only from sextantApi ${WINDOW_API}` : "must not be blank");
-      checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
+      // `{{value}}` (ADR-0169): the text the cell shows when no case holds, with this case's tone.
+      const [own, rest] = ownTextPlaceholders(c.text);
+      if (own && manifest.sextantApi < PARITY_API) fail([...here, "cases", j, "text"], `\`{{value}}\` (the cell's own text) needs sextantApi ${PARITY_API} or later`);
+      checkMessage(rest, column.kind, [...here, "cases", j, "text"], false);
       if (c.value !== undefined) {
         // A text column's value may be a text with placeholders, the reason a row sorts by (#404).
         const bad = 'goes with `format: "number"`, `"text"`, `"count"` or `"sum"`';

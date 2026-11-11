@@ -11,6 +11,7 @@ use super::problems::{check_message, check_object_condition, check_path};
 use super::schema::JsonPath;
 use crate::access::{AccessAction, KindPattern};
 use serde_json::Value;
+use std::collections::BTreeMap;
 
 /// The extension API version that brought computed columns, action conditions and `contributes.kinds`.
 pub const WINDOW_API: u32 = 4;
@@ -623,9 +624,21 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             if !case.text.is_empty() && case.text.trim().is_empty() {
                 return Err(at(&text_at, "must not be blank"));
             }
+            // `{{value}}` (ADR-0169): the text the cell shows when no case holds, with this case's tone — a NodePool's
+            // usage against every limit, red when one is reached.
+            let (own, rest) = own_text_placeholders(&case.text);
+            if own && manifest.sextant_api < super::problems::PARITY_API {
+                return Err(at(
+                    &text_at,
+                    format!(
+                        "`{{{{value}}}}` (the cell's own text) needs sextantApi {} or later",
+                        super::problems::PARITY_API
+                    ),
+                ));
+            }
             // Field values in the text, as a problem message has them (#368), and in its tooltip (#380).
             check_message(
-                &case.text,
+                &rest,
                 &column.kind,
                 &here.key("cases").index(j).key("text"),
                 false,
@@ -695,6 +708,28 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
     Ok(())
 }
 
+/// Whether a case's text has `{{value}}` (the cell's own text, ADR-0169), and the text without those placeholders.
+pub(crate) fn own_text_placeholders(text: &str) -> (bool, String) {
+    let mut found = false;
+    let mut out = String::new();
+    let mut rest = text;
+    while let Some(start) = rest.find("{{") {
+        let after = &rest[start + 2..];
+        let Some(end) = after.find("}}") else {
+            break;
+        };
+        out.push_str(&rest[..start]);
+        if after[..end].trim() == "value" {
+            found = true;
+        } else {
+            out.push_str(&rest[start..start + 2 + end + 2]);
+        }
+        rest = &after[end + 2..];
+    }
+    out.push_str(rest);
+    (found, out)
+}
+
 /// A column's `lookup` (#387): the list, index and the item's field (relative, `.setWeight`) are field paths that read
 /// no secret of the kind, the field checked where it is read (`<list>[0]<field>`).
 fn check_lookup(
@@ -762,8 +797,31 @@ fn check_items(
     if manifest.sextant_api < WINDOW_API {
         return Err(at(here, format!("needs sextantApi {WINDOW_API} or later")));
     }
-    if !is_list(column.format) {
-        return Err(at(here, "goes with `format: \"list\"` or `\"firstPlus\"`"));
+    // A map's entries as items (ADR-0169): `{key, value}` and the `with` maps' values by the key.
+    let entries = column.format == Some(ColumnFormat::Entries);
+    if entries && manifest.sextant_api < super::problems::PARITY_API {
+        return Err(at(
+            here,
+            format!(
+                "on `format: \"entries\"` needs sextantApi {} or later",
+                super::problems::PARITY_API
+            ),
+        ));
+    }
+    if !is_list(column.format) && !entries {
+        return Err(at(
+            here,
+            "goes with `format: \"list\"`, `\"firstPlus\"` or `\"entries\"`",
+        ));
+    }
+    if let Some(with) = &items.with {
+        check_items_with(manifest, column, with, &here.key("with"))?;
+    }
+    if entries && column.paths.iter().flatten().any(|p| p.contains('*')) {
+        return Err(at(
+            &here.key("cases"),
+            "go with `paths` that name the maps themselves, without `*`",
+        ));
     }
     if column.format == Some(ColumnFormat::FirstPlus) && items.separator.is_some() {
         return Err(at(
@@ -804,6 +862,51 @@ fn check_items(
     }
     if let Some(separator) = &items.separator {
         check_separator(separator, &here.key("separator"))?;
+    }
+    Ok(())
+}
+
+/// The most maps an entries column's items read by their key (ADR-0169).
+pub const MAX_ITEMS_WITH: usize = 3;
+
+/// An entries column's `items.with` (ADR-0169): 1 to 3 names (a lower-case letter, then letters and digits, not `key`
+/// or `value`), each a field path of the object, without `*`, that reads no secret.
+fn check_items_with(
+    manifest: &ExtensionManifest,
+    column: &ColumnContribution,
+    with: &BTreeMap<String, String>,
+    here: &JsonPath,
+) -> Result<(), ManifestError> {
+    if manifest.sextant_api < super::problems::PARITY_API {
+        return Err(at(
+            here,
+            format!("needs sextantApi {} or later", super::problems::PARITY_API),
+        ));
+    }
+    if column.format != Some(ColumnFormat::Entries) {
+        return Err(at(
+            here,
+            "goes with `format: \"entries\"`: maps read by an entry's key",
+        ));
+    }
+    if with.is_empty() || with.len() > MAX_ITEMS_WITH {
+        return Err(at(here, format!("names 1 to {MAX_ITEMS_WITH} maps")));
+    }
+    for (name, path) in with {
+        let place = here.key(name);
+        let named = name.len() <= 40
+            && name.starts_with(|c: char| c.is_ascii_lowercase())
+            && name.chars().all(|c| c.is_ascii_alphanumeric());
+        if !named || name == "key" || name == "value" {
+            return Err(at(
+                &place,
+                "is named by a lower-case letter and then letters and digits, not `key` or `value`",
+            ));
+        }
+        if path.contains('*') {
+            return Err(at(&place, "names a map of the object, without `*`"));
+        }
+        check_path(path, &column.kind, &place)?;
     }
     Ok(())
 }
