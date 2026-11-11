@@ -929,6 +929,46 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
             &here.key("message"),
             metadata_only,
         )?;
+        if manifest.sextant_api < SOURCES_API {
+            check_plain_syntax(rule, &here)?;
+        }
+    }
+    Ok(())
+}
+
+/// Below `sextantApi` 4, a rule's paths and message keep the grammar Sextant 0.28–0.29 read (#420): paths of names and
+/// indexes only, and placeholders that are such a path. The match steps (`[type="Ready"]`, `[*]`, `[<field]`) and the
+/// placeholders' filters, fallbacks and sums came with `sextantApi` 4; an older Sextant refuses them, so a manifest
+/// that names an older API must not use them, or a catalog would offer it to a Sextant that cannot install it.
+fn check_plain_syntax(rule: &ProblemContribution, here: &JsonPath) -> Result<(), ManifestError> {
+    let plain = |text: &str| {
+        parse_field_path(text.trim())
+            .is_some_and(|steps| steps.iter().all(|s| !matches!(s, PathStep::Match { .. })))
+    };
+    let needs = |path: &JsonPath, what: &str| {
+        Err(at(
+            path,
+            format!("{what} needs sextantApi {SOURCES_API} or later"),
+        ))
+    };
+    if condition_paths(&rule.when).iter().any(|p| !plain(p)) {
+        return needs(
+            &here.key("when"),
+            "a path step that matches list items (`[field=\"value\"]`, `[*]`, `[<field]`)",
+        );
+    }
+    if rule.since.as_deref().is_some_and(|p| !plain(p)) {
+        return needs(
+            &here.key("since"),
+            "a path step that matches list items (`[field=\"value\"]`, `[*]`, `[<field]`)",
+        );
+    }
+    let placeholders = placeholders(&rule.message).unwrap_or_default();
+    if placeholders.iter().any(|p| !plain(p)) {
+        return needs(
+            &here.key("message"),
+            "a placeholder other than a field path of names and indexes",
+        );
     }
     Ok(())
 }

@@ -553,7 +553,7 @@ export function parseFieldPath(path) {
         steps.push({ match: [], pick: { earliest: name } });
         i = end + 1;
       } else if (chars.slice(i + 1, chars.indexOf("]", i + 1) < 0 ? chars.length : chars.indexOf("]", i + 1)).includes("=")) {
-        // `[field="value",…]` (`PathStep::Match` in Rust): up to 4 pairs; a value may hold `]` or `,` (#392).
+        // `[field="value",…]` (`PathStep::Match` in Rust): up to 12 pairs; a value may hold `]` or `,` (#392).
         const pairs = [];
         let pick = "first";
         let at = i + 1;
@@ -1102,6 +1102,7 @@ function checkProblems(manifest) {
       checkRulePath(rule.notifyAs, rule.kind, [...here, "notifyAs"], metadataOnly);
     }
     checkRuleMessage(rule.message, rule, manifest, [...here, "message"], metadataOnly);
+    if (manifest.sextantApi < SOURCES_API) checkPlainSyntax(rule, here);
   });
 }
 
@@ -2064,6 +2065,23 @@ const MAX_ITEM_CASES = 10;
 const isList = (format) => format === "list" || format === "firstPlus";
 
 /** The paths an object condition reads, nested ones included (`condition_paths`). */
+/**
+ * Below sextantApi 4, a rule's paths and message keep the grammar Sextant 0.28–0.29 read (`check_plain_syntax`, #420):
+ * paths of names and indexes only, and placeholders that are such a path. Match steps and the placeholders' filters,
+ * fallbacks and sums came with sextantApi 4, and an older Sextant refuses them.
+ */
+function checkPlainSyntax(rule, here) {
+  const plain = (text) => {
+    const steps = parseFieldPath(text.trim());
+    return steps !== null && steps.every((step) => step.match === undefined);
+  };
+  const needs = (at, what) => fail(at, `${what} needs sextantApi ${SOURCES_API} or later`);
+  const matchStep = 'a path step that matches list items (`[field="value"]`, `[*]`, `[<field]`)';
+  if (conditionPaths(rule.when).some((p) => !plain(p))) needs([...here, "when"], matchStep);
+  if (typeof rule.since === "string" && !plain(rule.since)) needs([...here, "since"], matchStep);
+  if ((placeholders(rule.message) ?? []).some((p) => !plain(p))) needs([...here, "message"], "a placeholder other than a field path of names and indexes");
+}
+
 export function conditionPaths(condition) {
   const out = [];
   const visit = (c) => {

@@ -72,3 +72,8 @@ With these, Argo Rollouts' Weight is the built-in column; the weight the router 
   answered is not `declined`.
 - **`cases[].value`.** A `number` column's case may give the number the column sorts and filters by while it holds;
   its text is what shows ("0%", "100%" of Argo Rollouts' Weight).
+
+## Amendment (#404, eba14970)
+
+The limits of #381 were raised before 0.30.0 shipped: from `sextantApi` 4 a condition nests 6 deep and a rule holds 40
+conditions (`MAX_DEPTH_4`, `MAX_CONDITIONS_4` in `problems.rs` = `conditionLimits`); older manifests keep 3 and 20.

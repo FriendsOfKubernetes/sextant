@@ -442,7 +442,7 @@
                 "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
               },
               "format": {
-                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out), `firstPlus` (a list's first item and `+N` for the rest, every item on a line of its hover).",
+                "description": "How the value is shown, sorted and filtered: `text` (default), `number`, `age` (a time), `duration` (from the time to `endPaths` or now), `ratio` (`value/totalPaths`; with the whole there, a missing value is 0, as Kubernetes leaves zero counts out), `list` (a list's items joined), `count` (how many items a list, or entries a map, has), `sum` (a list's numbers added), `entries` (a map's `key=value` entries in key order), `cpu` and `bytes` (a quantity as Sextant writes CPU and memory), `dateTime` (a date and time in the UI language), `firstPlus` (a list's first item and `+N` for the rest, every item on a line of its hover).",
                 "type": "string",
                 "enum": ["text", "number", "age", "duration", "ratio", "list", "count", "sum", "entries", "cpu", "bytes", "dateTime", "firstPlus"]
               },
@@ -455,7 +455,7 @@
                 "type": "array", "minItems": 1, "maxItems": 8, "items": { "$ref": "#/$defs/fieldPath" }
               },
               "tones": {
-                "description": "A tone per shown value: `ok`, `warning`, `error` or `neutral`.",
+                "description": "A tone per shown value: `ok`, `warning`, `error`, `neutral` or `muted`.",
                 "type": "object",
                 "maxProperties": 20,
                 "additionalProperties": { "type": "string", "enum": ["ok", "warning", "error", "neutral", "muted"] }
@@ -1163,7 +1163,7 @@
       }
     },
     "problemCondition": {
-      "description": "A condition of a problem rule, by `type`; `all` and `any` nest at most 3 deep (4 from sextantApi 4), 20 conditions per rule.",
+      "description": "A condition of a problem rule, by `type`; `all`, `any` and `not` nest at most 3 deep (6 from sextantApi 4), 20 conditions per rule (40 from sextantApi 4).",
       "oneOf": [
         {
           "type": "object",

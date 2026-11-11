@@ -35,3 +35,14 @@ additions to it (ADR-0142).
   section badge text, the progress fallback of controllers before 3.0, and the failed step when several pod nodes
   failed (the first by node id, not by finish time).
 - `enteredWithin` cannot be judged by "Only problems" without `problemWhen` (the filter has no store context).
+
+## Amendment (#404, 007ad751)
+
+A `[field="value",…]` step takes up to 12 pairs (`MAX_MATCH_PAIRS`), not four, as shipped in 0.30.0.
+
+## Amendment (#420)
+
+Below `sextantApi` 4 a problem rule's paths and message keep the grammar of Sextant 0.28–0.29: names and indexes
+only, and placeholders that are such a path (`check_plain_syntax` = `checkPlainSyntax`). Match steps (`[…="…"]`,
+`[*]`, `[<field]`) and the placeholders' filters, fallbacks and sums are refused in an older manifest, since an older
+Sextant refuses them and the catalog would offer such a release to it (ADR-0149).
