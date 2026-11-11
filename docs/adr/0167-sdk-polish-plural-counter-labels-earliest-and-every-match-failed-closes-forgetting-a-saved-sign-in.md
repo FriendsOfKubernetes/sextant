@@ -433,3 +433,6 @@ A problem message may say `{{found}}` (Rust and the SDK accept it as `{{missing}
 objects its `related` lookups found with their fact and its `relatedBy` lookups' matching rows, each once, in the UI
 language's list (`namespace/name` outside the object's own namespace). The built-in VPA problem named the HPA it
 fought with.
+
+The UI kit's collapsible `block` draws Sextant's own chevrons (`chevronDown`/`chevronRight` through `ui.icon`), as the
+details blocks of the window do, and its text triangle only until they come or without a connection.

@@ -170,6 +170,28 @@ describe("a button's icon (since Sextant 0.30)", () => {
   });
 });
 
+describe("a collapsible block's chevron", () => {
+  it("is Sextant's own icon once the window gives it, following open and closed, and the text triangle before", async () => {
+    const host = await startTestHost({ handlers: { "ui.icon": ({ name }: { name: string }) => ({ svg: `<svg data-name="${name}"></svg>` }) } });
+    try {
+      const node = block("Status", "body", { collapsible: true });
+      document.body.append(node);
+      const toggle = node.querySelector<HTMLButtonElement>("button")!;
+      await vi.waitFor(() => expect(toggle.querySelector("svg")?.getAttribute("data-name")).toBe("chevronDown"));
+      expect(toggle.classList.contains("sx-block__toggle--icon")).toBe(true);
+      // The chevron is decoration: the button's name stays the title.
+      expect(toggle.textContent).toBe("Status");
+      toggle.click();
+      await vi.waitFor(() => expect(toggle.querySelector("svg")?.getAttribute("data-name")).toBe("chevronRight"));
+    } finally {
+      host.sextant.disconnect();
+    }
+    const plain = block("Plain", "body", { collapsible: true });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(plain.querySelector("button")!.classList.contains("sx-block__toggle--icon")).toBe(false);
+  });
+});
+
 describe("nested blocks", () => {
   it("are a heading level deeper, as Sextant's nested details blocks, and keep their toggles", () => {
     const inner = block("Sealing keys", "k", { collapsible: true });

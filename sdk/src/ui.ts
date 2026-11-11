@@ -19,6 +19,8 @@ const UI_STYLES = `
 .sx-block__toggle { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font: inherit; font-weight: 600; font-size: 0.8125rem; }
 .sx-block__toggle::before { content: "▾"; display: inline-block; width: 1em; color: var(--color-text-muted); }
 .sx-block__toggle[aria-expanded="false"]::before { content: "▸"; }
+.sx-block__toggle--icon::before, .sx-block__toggle--icon[aria-expanded="false"]::before { content: none; }
+.sx-block__chevron { --icon-size: 14px; color: var(--color-text-muted); }
 .sx-block__toggle:focus-visible { outline: 2px solid var(--color-focus, var(--color-accent)); outline-offset: 1px; border-radius: 2px; }
 .sx-block__body[hidden] { display: none; }
 .sx-fields { display: grid; grid-template-columns: minmax(110px, 30%) 1fr; gap: 4px 12px; margin: 0; }
@@ -135,9 +137,19 @@ export function block(
     const toggle = el("button", "sx-block__toggle", title);
     toggle.type = "button";
     toggle.setAttribute("aria-controls", id);
+    // Sextant's own chevrons, as its details blocks draw them (since Sextant 0.30); the text triangle until they come,
+    // or without a connection.
+    const chevron = el("span", "sx-icon sx-block__chevron");
+    chevron.setAttribute("aria-hidden", "true");
+    toggle.prepend(chevron);
     const set = (open: boolean) => {
       toggle.setAttribute("aria-expanded", String(open));
       body.hidden = !open;
+      void Promise.all([iconMarkup("chevronDown"), iconMarkup("chevronRight")]).then(([down, right]) => {
+        if (down === null || right === null) return;
+        chevron.innerHTML = body.hidden ? right : down;
+        toggle.classList.add("sx-block__toggle--icon");
+      });
     };
     set(!options.collapsed);
     toggle.addEventListener("click", () => {
