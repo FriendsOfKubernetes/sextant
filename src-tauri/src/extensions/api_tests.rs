@@ -3115,3 +3115,300 @@ fn problem_judges_are_neither_an_agent_tool_nor_an_extension_method() {
         "{METHODS:?}"
     );
 }
+
+/// A Kubernetes API server for one k3s node and one HelmChart whose secret fields hold `s3cret`: discovery, the objects,
+/// their lists, and a watch that never answers (a watch's first update is the list). Anything else is 404.
+async fn k3s_cluster() -> String {
+    use axum::http::{StatusCode, Uri, header};
+    const NODE: &str = r#"{"apiVersion":"v1","kind":"Node","metadata":{"name":"k3s-1","uid":"n1","resourceVersion":"5",
+        "annotations":{"k3s.io/node-args":"[\"server\",\"--token=s3cret\",\"--disable\",\"traefik\"]",
+        "k3s.io/node-env":"{\"K3S_TOKEN\":\"s3cret\"}","k3s.io/node-config-hash":"H"}}}"#;
+    const CHART: &str = r#"{"apiVersion":"helm.cattle.io/v1","kind":"HelmChart","metadata":{"name":"app","namespace":"kube-system",
+        "uid":"c1","resourceVersion":"6"},"spec":{"chart":"app","valuesContent":"password: s3cret\nreplicas: 2\n",
+        "set":{"auth.password":"s3cret","ingress.enabled":"true"}}}"#;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let app = axum::Router::new().fallback(|uri: Uri| async move {
+        let watching = uri.query().is_some_and(|q| q.contains("watch=true") || q.contains("watch=1"));
+        if watching {
+            tokio::time::sleep(Duration::from_secs(120)).await;
+        }
+        let list = |kind: &str, item: &str| {
+            format!(r#"{{"apiVersion":"v1","kind":"{kind}","metadata":{{"resourceVersion":"7"}},"items":[{item}]}}"#)
+        };
+        let (status, body) = match uri.path() {
+            "/api" => (
+                StatusCode::OK,
+                r#"{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[]}"#.to_owned(),
+            ),
+            "/api/v1" => (
+                StatusCode::OK,
+                r#"{"kind":"APIResourceList","groupVersion":"v1","resources":[
+                    {"name":"nodes","singularName":"node","namespaced":false,"kind":"Node","verbs":["get","list","watch"]}]}"#
+                    .to_owned(),
+            ),
+            "/apis" => (
+                StatusCode::OK,
+                r#"{"kind":"APIGroupList","apiVersion":"v1","groups":[{"name":"helm.cattle.io",
+                    "versions":[{"groupVersion":"helm.cattle.io/v1","version":"v1"}],
+                    "preferredVersion":{"groupVersion":"helm.cattle.io/v1","version":"v1"}}]}"#
+                    .to_owned(),
+            ),
+            "/apis/helm.cattle.io/v1" => (
+                StatusCode::OK,
+                r#"{"kind":"APIResourceList","groupVersion":"helm.cattle.io/v1","resources":[
+                    {"name":"helmcharts","singularName":"helmchart","namespaced":true,"kind":"HelmChart","verbs":["get","list","watch"]}]}"#
+                    .to_owned(),
+            ),
+            "/api/v1/nodes/k3s-1" => (StatusCode::OK, NODE.to_owned()),
+            "/api/v1/nodes" => (StatusCode::OK, list("NodeList", NODE)),
+            "/apis/helm.cattle.io/v1/namespaces/kube-system/helmcharts/app" => (StatusCode::OK, CHART.to_owned()),
+            "/apis/helm.cattle.io/v1/namespaces/kube-system/helmcharts" | "/apis/helm.cattle.io/v1/helmcharts" => {
+                (StatusCode::OK, list("HelmChartList", CHART))
+            }
+            _ => (
+                StatusCode::NOT_FOUND,
+                r#"{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"NotFound","code":404}"#.to_owned(),
+            ),
+        };
+        (status, [(header::CONTENT_TYPE, "application/json")], body)
+    });
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+    url
+}
+
+/// An extension granted Read everywhere and masked copies of Nodes' and HelmCharts' secret fields, on `k3s_cluster`,
+/// with the agent's own access opened to Read everywhere on `ctx-a`.
+async fn masked_env() -> Env {
+    use sextant_core::access::{AccessPreset, AccessRule, KindScope};
+    let env = Env::at(&k3s_cluster().await);
+    let mut permissions = perms(all_clusters(), &[], &["read"], false);
+    permissions["maskedSecrets"] = json!([
+        { "group": "", "kind": "Node" },
+        { "group": "helm.cattle.io", "kind": "HelmChart" }
+    ]);
+    env.install("k3s", permissions);
+    let id = env.cluster_id("ctx-a");
+    env.settings
+        .update(|s| {
+            s.clusters.entry(id.0.clone()).or_default().agent_access = ClusterAccess {
+                preset: AccessPreset::Custom,
+                rules: vec![AccessRule {
+                    namespaces: NamespaceScope::All,
+                    kinds: KindScope::All,
+                    actions: vec![AccessAction::Read],
+                    confirm: false,
+                }],
+            };
+        })
+        .unwrap();
+    env
+}
+
+fn an_agent() -> Option<AgentLimit> {
+    Some(AgentLimit {
+        client: "claude-code".into(),
+    })
+}
+
+const NODE_ARGS: &str = "k3s.io/node-args";
+
+/// A node and a chart as a frame got them: masked copies, nothing of `s3cret`.
+fn assert_masked(node: &Value, chart: &Value) {
+    let text = format!("{node}{chart}");
+    assert!(!text.contains("s3cret"), "{text}");
+    let annotations = &node["metadata"]["annotations"];
+    assert_eq!(
+        annotations[NODE_ARGS],
+        "[\"server\",\"--token=********\",\"--disable=traefik\"]"
+    );
+    assert_eq!(annotations["k3s.io/node-env"], "");
+    assert_eq!(
+        annotations[sextant_core::resources::masked_secrets::VALUES_MASKED_ANNOTATION],
+        "metadata.annotations[\"k3s.io/node-args\"]"
+    );
+    assert_eq!(
+        chart["spec"]["valuesContent"],
+        "{\"password\":\"<hidden>\",\"replicas\":2}"
+    );
+    assert_eq!(chart["spec"]["set"]["auth.password"], "<hidden>");
+    assert_eq!(chart["spec"]["set"]["ingress.enabled"], "true");
+}
+
+/// A node and a chart as an agent got them: blanked exactly as for any extension, no masked copy.
+fn assert_blanked(node: &Value, chart: &Value) {
+    let text = format!("{node}{chart}");
+    assert!(!text.contains("s3cret"), "{text}");
+    assert!(!text.contains("values-masked"), "{text}");
+    assert!(
+        !text.contains("********") && !text.contains("<hidden>"),
+        "{text}"
+    );
+    assert_eq!(node, &without_inline_secrets(node.clone()));
+    assert_eq!(chart, &without_inline_secrets(chart.clone()));
+    assert_eq!(node["metadata"]["annotations"][NODE_ARGS], "");
+    assert_eq!(chart["spec"]["valuesContent"], "");
+    assert_eq!(chart["spec"]["set"]["auth.password"], "");
+    assert!(
+        node["metadata"]["annotations"]["sextant.dev/values-hidden"]
+            .as_str()
+            .is_some_and(|h| h.contains(NODE_ARGS))
+    );
+}
+
+fn node_ref() -> Value {
+    json!({ "kind": { "group": "", "version": "v1", "kind": "Node" }, "name": "k3s-1" })
+}
+
+fn chart_ref() -> Value {
+    json!({ "kind": { "group": "helm.cattle.io", "version": "v1", "kind": "HelmChart" }, "namespace": "kube-system", "name": "app" })
+}
+
+#[tokio::test]
+async fn a_frame_granted_masked_secrets_gets_masked_copies_and_an_agent_never_does() {
+    let env = masked_env().await;
+    let call = |method: &'static str, params: Value, agent: Option<AgentLimit>| {
+        env.api
+            .call_as(&env.host, "k3s", method, params, None, agent)
+    };
+    for agent in [None, an_agent()] {
+        let for_agent = agent.is_some();
+        // resources.get
+        let node = call(
+            "resources.get",
+            json!({ "clusterId": "ctx-a", "ref": node_ref() }),
+            agent.clone(),
+        )
+        .await
+        .unwrap();
+        let chart = call(
+            "resources.get",
+            json!({ "clusterId": "ctx-a", "ref": chart_ref() }),
+            agent.clone(),
+        )
+        .await
+        .unwrap();
+        // resources.list
+        let nodes = call(
+            "resources.list",
+            json!({ "clusterId": "ctx-a", "kind": { "group": "", "version": "v1", "kind": "Node" } }),
+            agent.clone(),
+        )
+        .await
+        .unwrap();
+        let charts = call(
+            "resources.list",
+            json!({ "clusterId": "ctx-a", "kind": { "group": "helm.cattle.io", "version": "v1", "kind": "HelmChart" }, "namespace": "kube-system" }),
+            agent.clone(),
+        )
+        .await
+        .unwrap();
+        // resources.getMany
+        let many = call(
+            "resources.getMany",
+            json!({ "clusterId": "ctx-a", "refs": [node_ref(), chart_ref()] }),
+            agent.clone(),
+        )
+        .await
+        .unwrap();
+        let answers = [
+            (&node, &chart),
+            (&nodes["items"][0], &charts["items"][0]),
+            (&many["items"][0]["object"], &many["items"][1]["object"]),
+        ];
+        for (node, chart) in answers {
+            assert_eq!(node["metadata"]["name"], "k3s-1", "{node}");
+            assert_eq!(chart["metadata"]["name"], "app", "{chart}");
+            if for_agent {
+                assert_blanked(node, chart);
+            } else {
+                assert_masked(node, chart);
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn a_masked_frames_watch_is_never_shared_with_an_agents() {
+    let env = masked_env().await;
+    let watch = |stream: &'static str, agent: Option<AgentLimit>| {
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<WatchUpdate>();
+        let sink: UpdateSink = Arc::new(move |update| tx.send(update).is_ok());
+        let api = Arc::clone(&env.api);
+        let host = &env.host;
+        async move {
+            api.call_as(
+                host,
+                "k3s",
+                "resources.watch",
+                json!({ "clusterId": "ctx-a", "kind": { "group": "", "version": "v1", "kind": "Node" } }),
+                Some((stream.to_owned(), sink)),
+                agent,
+            )
+            .await
+            .unwrap();
+            rx
+        }
+    };
+    let first = |mut rx: tokio::sync::mpsc::UnboundedReceiver<WatchUpdate>| async move {
+        loop {
+            let update = tokio::time::timeout(Duration::from_secs(10), rx.recv())
+                .await
+                .expect("a first snapshot")
+                .expect("the stream");
+            if let WatchUpdate::Snapshot { items } = update {
+                return items
+                    .iter()
+                    .map(|o| o.to_value())
+                    .find(|o| o["metadata"]["name"] == "k3s-1")
+                    .expect("the node");
+            }
+        }
+    };
+    // The frame first, then the agent on the same list: the agent's must not be the frame's.
+    let frame = first(watch("ext-masked-1", None).await).await;
+    let agent = first(watch("ext-masked-2", an_agent()).await).await;
+    assert!(!frame.to_string().contains("s3cret"), "{frame}");
+    assert_eq!(
+        frame["metadata"]["annotations"][NODE_ARGS],
+        "[\"server\",\"--token=********\",\"--disable=traefik\"]"
+    );
+    assert!(!agent.to_string().contains("s3cret"), "{agent}");
+    assert!(!agent.to_string().contains("values-masked"), "{agent}");
+    assert_eq!(agent["metadata"]["annotations"][NODE_ARGS], "");
+    assert_eq!(agent, without_inline_secrets(agent.clone()));
+    // And the other way round: an agent's list first, then the frame's.
+    let agent = first(watch("ext-masked-3", an_agent()).await).await;
+    let frame = first(watch("ext-masked-4", None).await).await;
+    assert_eq!(agent["metadata"]["annotations"][NODE_ARGS], "");
+    assert_eq!(
+        frame["metadata"]["annotations"][NODE_ARGS],
+        "[\"server\",\"--token=********\",\"--disable=traefik\"]"
+    );
+}
+
+#[test]
+fn a_masked_lists_hub_key_differs_from_a_blanked_ones() {
+    let spec = WatchSpec {
+        kind: KindRef {
+            group: String::new(),
+            version: "v1".into(),
+            kind: "Node".into(),
+        },
+        namespaces: None,
+        label_selector: None,
+        field_selector: None,
+        metadata_only: false,
+    };
+    let id = ClusterId("ctx-a".into());
+    let blanked = watch_key(&id, &spec, None, false).unwrap();
+    let masked = watch_key(&id, &spec, None, true).unwrap();
+    assert_ne!(blanked, masked);
+    assert_eq!(blanked, watch_key(&id, &spec, None, false).unwrap());
+    assert_ne!(
+        watch_key(&id, &spec, Some(10), true).unwrap(),
+        watch_key(&id, &spec, Some(10), false).unwrap()
+    );
+}

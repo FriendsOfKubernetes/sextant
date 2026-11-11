@@ -1504,13 +1504,7 @@ impl<'a> ExtCall<'a> {
             })
             .cloned()
             .collect();
-        let key = format!(
-            "{}\u{0}{}\u{0}{}{}",
-            cluster_id,
-            serde_json::to_string(&spec).map_err(|e| invalid(e.to_string()))?,
-            max_objects.map(|n| n.to_string()).unwrap_or_default(),
-            if masked.is_empty() { "" } else { "\u{0}masked" }
-        );
+        let key = watch_key(&cluster_id, &spec, max_objects, !masked.is_empty())?;
         let open = async move {
             hub.subscribe(key, async move {
                 let options = resources::WatchOptions {
@@ -3034,6 +3028,23 @@ fn take_at(value: &mut Value, steps: &[PathStep]) -> Option<String> {
 fn without_inline_secrets(mut value: Value) -> Value {
     inline_secrets::hide_inline_secrets(&mut value);
     value
+}
+
+/// The key frames watching the same list share one core watch under (ADR-0145): the cluster, the list, its cap, and
+/// whether its inline secret material is masked (ADR-0169) — a masked list is never shared with a blanked one.
+fn watch_key(
+    cluster_id: &ClusterId,
+    spec: &WatchSpec,
+    max_objects: Option<u32>,
+    masked: bool,
+) -> CoreResult<String> {
+    Ok(format!(
+        "{}\u{0}{}\u{0}{}{}",
+        cluster_id,
+        serde_json::to_string(spec).map_err(|e| invalid(e.to_string()))?,
+        max_objects.map(|n| n.to_string()).unwrap_or_default(),
+        if masked { "\u{0}masked" } else { "" }
+    ))
 }
 
 /// An object as an extension gets it: inline secret material blanked, or — for a kind in `masked` (granted

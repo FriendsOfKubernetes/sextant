@@ -476,9 +476,11 @@ pub(crate) mod test_support {
     }
 
     pub fn manifest(id: &str, version: &str, permissions: Value) -> String {
-        // Port forwards and status patches came with sextantApi 4.
+        // Port forwards and status patches came with sextantApi 4, masked secrets with 5.
         let text = permissions.to_string();
-        let api = if text.contains("portForward") || text.contains("statusPatches") {
+        let api = if text.contains("maskedSecrets") {
+            5
+        } else if text.contains("portForward") || text.contains("statusPatches") {
             4
         } else {
             1
