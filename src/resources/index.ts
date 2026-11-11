@@ -51,6 +51,7 @@ export {
 export * as status from "./status";
 export {
   customResourceKinds,
+  listableKinds,
   findKind,
   loadClusterKinds,
   refreshClusterKinds,

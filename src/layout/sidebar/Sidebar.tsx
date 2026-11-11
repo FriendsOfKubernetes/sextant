@@ -14,6 +14,7 @@ import { useAppStore, useClusterView } from "../../app/store";
 import { Badge, Icon, type IconName } from "../../components";
 import {
   customResourceKinds,
+  listableKinds,
   findKind,
   findResourceDef,
   getResourceDefs,
@@ -322,9 +323,10 @@ function buildSections(kinds: ReturnType<typeof useClusterKinds>["kinds"], _regi
   }
   // Header of a section of its own: the first `sectionTitle` its kinds or pages give.
   const titles = new Map<string, string>();
-  // Custom kinds an extension lists in a section of its own (ADR-0152), served ones only.
+  // Kinds an extension lists in a section of its own (ADR-0152), served ones only: custom kinds and kinds of Kubernetes'
+  // own groups Sextant does not describe (Dynamic Resource Allocation's `resource.k8s.io`).
   const placedKinds = new Set<string>();
-  for (const k of customResourceKinds(kinds)) {
+  for (const k of listableKinds(kinds)) {
     const { group, kind } = k.kindRef;
     const placed = findResourceDef({ group, kind }) ? undefined : kindPlacement({ group, kind });
     if (!placed) continue;

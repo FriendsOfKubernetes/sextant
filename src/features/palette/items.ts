@@ -8,6 +8,7 @@ import type { IconName } from "../../components";
 import { getPages } from "../../layout/pages";
 import {
   customResourceKinds,
+  listableKinds,
   findKind,
   findResourceDef,
   getResourceDef,
@@ -17,7 +18,7 @@ import {
   type ResourceDef,
   type SidebarSection,
 } from "../../resources";
-import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, SECTION_ICONS } from "../../resources/registry";
+import { DEFAULT_ENTRY_ICON, DISCOVERED_SECTIONS, kindPlacement, SECTION_ICONS } from "../../resources/registry";
 import { displayNameOf } from "../clusters/clusterSettings";
 import { selectCluster } from "../clusters/clustersStore";
 import { SETTINGS_PAGE_ID } from "../settings/constants";
@@ -155,9 +156,12 @@ export function navigationGroups({ t, clusterId, kinds, clusters, states, settin
         score: 0,
       });
     }
-    for (const rk of customResourceKinds(kinds)) {
+    // Custom kinds, and kinds of Kubernetes' own groups an extension lists in a section of its own (ADR-0152).
+    const custom = new Set(customResourceKinds(kinds).map((k) => kindKey(k.kindRef)));
+    for (const rk of listableKinds(kinds)) {
       const { group, kind } = rk.kindRef;
       if (findResourceDef({ group, kind })) continue;
+      if (!custom.has(kindKey(rk.kindRef)) && !kindPlacement({ group, kind })) continue;
       const view = viewIdOf({ group, kind });
       const key = `kind:${view}`;
       if (items.some((i) => i.key === key)) continue;

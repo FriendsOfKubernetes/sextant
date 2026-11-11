@@ -13,7 +13,7 @@ import {
   unregisterResource,
   type ResourceDef,
 } from "../../resources";
-import { DEFAULT_ENTRY_ICON, placeSection, SECTION_ICONS, SIDEBAR_SECTIONS } from "../../resources/registry";
+import { DEFAULT_ENTRY_ICON, placeKind, placeSection, SECTION_ICONS, SIDEBAR_SECTIONS } from "../../resources/registry";
 import { CRD_REFRESH_DELAY } from "../../resources/useKinds";
 import { getPages, registerPage, unregisterPage } from "../pages";
 import { registerSectionBadge } from "../sectionBadges";
@@ -136,6 +136,27 @@ describe("discovered sections", () => {
     } finally {
       unregisterPage("t-flux-page");
       unregisterPage("t-argo-page");
+    }
+  });
+});
+
+describe("an extension's section of its own", () => {
+  it("lists kinds of Kubernetes' own groups Sextant does not describe, as Dynamic Resource Allocation's", async () => {
+    kinds = [...kinds!, served("resource.k8s.io", "v1", "ResourceClaim"), served("resource.k8s.io", "v1", "DeviceTaintRule")];
+    const undo = [
+      placeSection("dra", { owner: "sextant.dra", title: "Dynamic Resource Allocation", after: "helmController" }),
+      placeKind({ group: "resource.k8s.io", kind: "ResourceClaim" }, { owner: "sextant.dra", section: "dra", label: "Resource Claims", order: 10 }),
+    ];
+    try {
+      render(<Sidebar clusterId="c1" />);
+      await waitFor(() => expect(sections()).toContain("Dynamic Resource Allocation"));
+      fireEvent.click(screen.getByRole("button", { name: /Dynamic Resource Allocation/ }));
+      const dra = screen.getByRole("button", { name: /Dynamic Resource Allocation/ }).closest("li")!;
+      expect(within(dra).getByRole("button", { name: "Resource Claims" })).toBeInTheDocument();
+      // A Kubernetes kind no extension lists is no custom resource either.
+      expect(screen.queryByRole("button", { name: "DeviceTaintRule" })).toBeNull();
+    } finally {
+      for (const u of undo) u();
     }
   });
 });

@@ -295,8 +295,14 @@ const KUBERNETES_GROUPS = new Set([
  * schemas) is downloaded for it.
  */
 export function customResourceKinds(kinds: ResourceKind[] | null): ResourceKind[] {
-  return (kinds ?? []).filter(
-    (k) => !KUBERNETES_GROUPS.has(k.kindRef.group) && k.verbs.includes("list") && k.verbs.includes("watch"),
-  );
+  return listableKinds(kinds).filter((k) => !KUBERNETES_GROUPS.has(k.kindRef.group));
+}
+
+/**
+ * Every discovered kind that can be listed and watched, Kubernetes' own groups included: the kinds an extension may
+ * list in a section of its own (ADR-0152) — Dynamic Resource Allocation's `resource.k8s.io` kinds among them.
+ */
+export function listableKinds(kinds: ResourceKind[] | null): ResourceKind[] {
+  return (kinds ?? []).filter((k) => k.verbs.includes("list") && k.verbs.includes("watch"));
 }
 
