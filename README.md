@@ -10,6 +10,15 @@ Sextant is a desktop application for managing Kubernetes clusters — an alterna
 [Tauri 2](https://tauri.app). It reads your kubeconfig, shows the resources of every cluster in live tables and
 lets you inspect, edit and operate them in one window. Linux, macOS and Windows.
 
+> [!IMPORTANT]
+> **Big changes since 0.30.0.** The views of cluster tools — Flux, Argo CD, Argo Rollouts and Workflows,
+> cert-manager, Trivy, KEDA, Karpenter, Vertical Pod Autoscaler, Velero, Istio and Linkerd, Crossplane, Kyverno and
+> the others, 32 in all — moved out of Sextant into [its own extensions](extensions/README.md) in the extension
+> catalog, which are updated on their own. After updating, install the ones you use: the "What's new" window offers
+> them, and the sidebar offers each one in the clusters that run its tool. Until then their sections are not shown;
+> your notification settings for them are kept. The MCP tool `gitops_action` is gone: agents get the Flux and Argo CD
+> actions from those extensions once you allow their tools in Settings → AI agents (MCP).
+
 ![Sextant: connecting to a cluster, the pods, their details, logs and a shell](docs/demo.gif)
 
 ## Features
