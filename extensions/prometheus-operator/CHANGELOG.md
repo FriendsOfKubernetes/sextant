@@ -1,5 +1,23 @@
 # Changes of Prometheus Operator
 
+## 1.1.0 — 2026-11-12
+
+Needs Sextant 0.30.1 (`sextantApi` 5, ADR-0169); Sextant 0.30.0 keeps 1.0.0 through the catalog. Closes what 1.0.0
+listed as different from the built-in view.
+
+- **Not picked up:** a ServiceMonitor or PodMonitor that no Prometheus or PrometheusAgent picks up by its selectors and
+  namespace selectors (with the Namespaces' labels) is a problem `NotPickedUp` again, listed but not notified and not
+  counted, as the built-in warning (`service-monitor-not-picked-up`, `pod-monitor-not-picked-up`, `selectedByNone`).
+- **Selects nothing** is judged where the monitor's Prometheuses make it look: its own namespace only when every one
+  that picks it up has `ignoreNamespaceSelectors`, its own too when some have, and a monitor of every namespace when
+  every one makes it look in its own (`selectsNone.selectedBy`, `namedOnly`); the message names those namespaces
+  (`{{selectsNone:namespaces}}`).
+- **"Only problems"** of ServiceMonitors and PodMonitors and the section's counter leave the monitors not picked up out,
+  as the built-in filter and counter (the kinds' `problemRules`, the counter's `rules`).
+- **Rules** counts the rules with an `alert` or `record` name, a rule with both twice, as the built-in column.
+- **Namespaces** sorts and filters by `*` or the names joined with `,`, as the built-in column (`|uniqueKey`).
+- Installing or updating asks for consent to look up PrometheusAgents and Namespaces in problem rules too.
+
 ## 1.0.0 — 2026-11-10
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in Prometheus Operator view (ADR-0100)

@@ -415,9 +415,9 @@ export interface MonitorFinding {
 export const MAX_TARGET_NAMESPACES = 40;
 
 /**
- * The built-in provider's judgement of `monitors` of `kind` (`store.ts` `build`), kept as the reference for what the
- * extension API cannot say yet (see README, "Requirements and limits"): `targets` are the labels of the Services (Pods)
- * listed in each namespace a full list covers; `undefined` when they were not listed.
+ * The built-in provider's judgement of `monitors` of `kind` (`store.ts` `build`), kept as the reference the manifest's
+ * rules (`selectsNone` with `selectedBy`, `selectedByNone`) are tested against: `targets` are the labels of the
+ * Services (Pods) listed in each namespace a full list covers; `undefined` when they were not listed.
  */
 export function judgeMonitors(
   kind: { kind: string },

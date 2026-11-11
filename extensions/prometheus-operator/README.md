@@ -5,25 +5,27 @@ language Sextant has. It lists ServiceMonitors, PodMonitors, Probes, PrometheusR
 a sidebar section of their own with Sextant's tables; shows for a monitor the namespaces it looks in, its selector, the
 Services (Pods) it selects right now and whether its endpoints' port names exist on them; tells which Prometheus (or
 PrometheusAgent) picks a monitor, probe or rule up by its selectors; lists a rule's groups; and tells Prometheus and
-Alertmanager readiness from the operator's conditions. Monitors that select nothing and Prometheuses and Alertmanagers
-not available are problems of an opt-in category. It replaces Sextant's former built-in Prometheus Operator view (ADR-0100) with the same behaviour; the
-places where the extension API cannot say exactly the same are in "Requirements and limits". Its id is
+Alertmanager readiness from the operator's conditions. Monitors that select nothing or that no Prometheus picks up, and
+Prometheuses and Alertmanagers not available, are problems of an opt-in category. It replaces Sextant's former built-in
+Prometheus Operator view (ADR-0100) with the same behaviour; what is left different, and why, is in "Requirements and
+limits". Its id is
 `sextant.prometheus-operator`. Why it is built this way: ADR-0100 (the readings and problems), ADR-0139 (Sextant's own
 extensions), ADR-0140 (translations), ADR-0152 (kinds in a section of their own, `not`), ADR-0153 (computed columns),
 ADR-0160 (the section's icon and place, the UI kit), ADR-0161 (printer columns left out, paths picking an item,
 notification groups), ADR-0163 (field values in texts, a problem's reason), ADR-0165 (a kind's own "Only problems") and
 ADR-0167 (the counter's own label, problem categories of the extension's own, a rule's `selectsNone`, column widths,
-sort keys and filters by value, counts, map entries and lists of items, placeholder fallbacks and filters — `|selector`,
-`|countAll` and `|product` among them —, untitled details sections, unreadable times, details blocks in Sextant's own
-memory).
+sort keys and filters by value, counts, map entries and lists of items, placeholder fallbacks and filters — `|selector`
+and `|product` among them —, untitled details sections, unreadable times, details blocks in Sextant's own memory) and
+ADR-0169 (who selects an object, `selectedByNone` and `selectsNone.selectedBy`, `namedOnly`,
+`{{selectsNone:namespaces}}`, a kind's `problemRules`, `|uniqueKey`).
 
 ## At a glance
 
 | | |
 |---|---|
 | Id | `sextant.prometheus-operator` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 5: Sextant 0.30.1 or newer; Sextant 0.30.0 is offered 1.0.0. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `prometheus-operator-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Prometheus Operator |
 | Checked against | Prometheus Operator's own API (`monitoring.coreos.com/v1`, PrometheusAgent `v1alpha1`): the selectors' null and empty meanings, `ignoreNamespaceSelectors` (`getNamespacesFromNamespaceSelector`, `pkg/prometheus/promcfg.go`), the `Available`/`Reconciled` conditions |
@@ -34,21 +36,25 @@ memory).
 with the built-in section's icon and place (after Sealed Secrets): Service Monitors, Pod Monitors, Probes, Prometheus
 Rules, Prometheuses and Alertmanagers, with Sextant's own table, filters, selection bar and details, and Edit and Delete
 as on every kind. The section's counter shows how many objects need attention (monitors that select nothing,
-Prometheuses and Alertmanagers not available), only while the opt-in category below is on.
+Prometheuses and Alertmanagers not available — not the monitors no Prometheus picks up, a warning, as the built-in
+counter left them out), only while the opt-in category below is on.
 
 **"Only problems"** on Prometheuses and Alertmanagers, as the built-in tables had it: not available (`Available`
 False, else `Reconciled` False) or degraded (`Available` Degraded); on ServiceMonitors and PodMonitors, those that
-select nothing, from the problem rules below while their category is on.
+select nothing, from that problem rule alone (the kinds' `problemRules`) while their category is on — not those no
+Prometheus picks up, as the built-in filter.
 
 **Columns**, in place of the CRDs' own printer columns (left out, as the built-in view did), after Namespace, each with
 the built-in column's width:
 - ServiceMonitors and PodMonitors: **Namespaces** (`sm-namespaces`, `pm-namespaces`: "Every namespace", or the names of
-  `namespaceSelector.matchNames`, each once and sorted, else its own namespace), **Selector** (`sm-selector`,
+  `namespaceSelector.matchNames`, each once and sorted, else its own namespace; sorted and filtered, as the built-in
+  column, by `*` or the names joined with `,` — `|uniqueKey`), **Selector** (`sm-selector`,
   `pm-selector`: the selector as the API server writes a label selector, "Everything" for an empty or missing one
   (sorted first), "Nothing" for an operator Kubernetes does not know (sorted last)) and **Ports** (`sm-ports`,
   `pm-ports`: each endpoint's port name, else its target port, else its number).
 - Probes: **Prober** (`probe-prober`), **Module** (`probe-module`) and **Interval** (`probe-interval`).
-- PrometheusRules: **Groups** (`rule-groups`) and **Rules** (`rule-rules`: over every group), numbers.
+- PrometheusRules: **Groups** (`rule-groups`) and **Rules** (`rule-rules`: the rules with an `alert` or `record` name
+  over every group, a rule with both twice, as the built-in counted them), numbers.
 - Prometheuses and Alertmanagers: **Status** (`prom-status`, `am-status`: Available, Degraded, Failed or Pending,
   coloured, the deciding condition's reason and message on hover; sorted and filtered by the state's name, `ready`,
   `degraded`, `failed` or `pending`, in every language), **Replicas** (`prom-replicas`, `am-replicas`: available of
@@ -88,7 +94,9 @@ and Sextant remembers their widths, as the built-in tables did.
   labels, when a Prometheus selects namespaces by labels.
 - Nothing is changed or deleted by the extension; Edit and Delete are Sextant's own actions, under your own rules.
 - Its problem rules judge ServiceMonitors, PodMonitors, Prometheuses and Alertmanagers, and look up Services and Pods
-  by their labels for the monitors; Sextant asks for that separately at install.
+  by their labels, Prometheuses and PrometheusAgents by their selectors and Namespaces by their labels for the
+  monitors; Sextant asks for that separately at install (1.1.0 asks again: it looks up PrometheusAgents and Namespaces
+  too).
 - An update asks for consent again when it needs a new kind or action, or changes a grant.
 
 ## Problems
@@ -99,9 +107,18 @@ deleted) that is not available, not reconciled or degraded is a problem 5 minute
 (5 minutes after it was first seen when the condition has no time), with the operator's reason (else `NotAvailable` or
 `Degraded`) and message; the three are one notification group (`not-ready`). A ServiceMonitor (PodMonitor) whose
 selector (none selects every one) picks no Service (Pod) in the namespaces it looks in —
-`namespaceSelector.matchNames`, else its own — is a problem `SelectsNothing` at once, "Selects no Service in the
-namespaces: default"; it is judged on the cluster's Services (Pods) and only when their list is read in full and covers
-those namespaces, and, as the built-in provider did, never for a monitor of every namespace.
+`namespaceSelector.matchNames`, else its own; its own only when every Prometheus or PrometheusAgent that picks it up has
+`ignoreNamespaceSelectors`, its own too when some have — is a problem `SelectsNothing` at once, "Selects no Service in
+the namespaces: default"; it is judged on the cluster's Services (Pods) and only when their list is read in full and
+covers those namespaces, and, as the built-in provider did, never for a monitor of every namespace (unless every
+Prometheus that picks it up makes it look in its own). A ServiceMonitor (PodMonitor) that no Prometheus or
+PrometheusAgent picks up by its selectors — `serviceMonitorSelector` (`podMonitorSelector`; null selects nothing, empty
+everything) matching its labels and `serviceMonitorNamespaceSelector` (`podMonitorNamespaceSelector`; null: the
+Prometheus' own namespace, empty: every one, else the Namespaces' labels) covering its namespace — is a problem
+`NotPickedUp` at once, "No Prometheus picks it up by its selectors", listed but not notified nor counted (it may be
+meant for another collector), as the built-in warning; never while there is no Prometheus or PrometheusAgent at all,
+and only when their lists are read in full in every namespace (and the Namespaces' labels when a namespace selector
+needs them).
 
 | Id | Kind | When it holds | Grace | Told by another object |
 |---|---|---|---|---|
@@ -113,6 +130,8 @@ those namespaces, and, as the built-in provider did, never for a monitor of ever
 | `alertmanager-degraded` | Alertmanager | `Available` Degraded, `Reconciled` not False | 5 minutes | No |
 | `service-monitor-selects-nothing` | ServiceMonitor | Its selector picks no Service in its namespaces | None | No |
 | `pod-monitor-selects-nothing` | PodMonitor | Its selector picks no Pod in its namespaces | None | No |
+| `service-monitor-not-picked-up` | ServiceMonitor | No Prometheus or PrometheusAgent picks it up by its selectors (not notified) | None | No |
+| `pod-monitor-not-picked-up` | PodMonitor | No Prometheus or PrometheusAgent picks it up by its selectors (not notified) | None | No |
 
 ## Metrics
 
@@ -138,21 +157,17 @@ None: the extension is read-only and has no action of its own (ADR-0100).
 
 - Prometheus Operator's CRDs (`monitoring.coreos.com/v1`); the section shows only where the cluster serves them.
   PrometheusAgents (`v1alpha1`) are read where served.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - **Not picked up.** The built-in category also had a monitor that no Prometheus picks up (`NotPickedUp`, a warning
-    listed only): a rule cannot ask whether any object of another kind (a Prometheus, in any namespace) has a label
-    selector matching the judged object's labels and a namespace selector matching its namespace; `relatedBy` joins
-    equal field texts in the judged object's namespace only. The details still say it.
-  - **Selects nothing** is judged on the namespaces the monitor names, also when every Prometheus that picks it up has
-    `ignoreNamespaceSelectors` (then the built-in judged its own namespace only). The Services' (Pods') metadata is
-    listed for the rules only in the namespaces the ServiceMonitors (PodMonitors) name (`narrowLookups`), as the
-    built-in listed it in the namespaces the monitors looked in, within those the extension may read. Past 40
-    namespaces of a kind it is listed in every namespace the extension may read, at most 5000 (beyond that it cannot
-    tell); the built-in judged no monitor then.
-  - **Rules** counts every rule of every group; the built-in counted those with an `alert` or `record` name, which every
-    rule the operator accepts has.
-  - **Namespaces** sorts by the shown list; the built-in sorted by the names joined with commas (the same order but for
-    the separators). An endpoint with neither a port name, a target port nor a number leaves nothing in **Ports**.
+- Where it still differs from the former built-in view (the rest of what 1.0.0 listed — "not picked up", "selects
+  nothing" with `ignoreNamespaceSelectors`, the Rules count, the Namespaces sort — 1.1.0 says as the built-in did):
+  - **Selects nothing past 40 namespaces.** The Services' (Pods') metadata is listed for the rules only in the
+    namespaces the ServiceMonitors (PodMonitors) name and each one's own (where its Prometheuses'
+    `ignoreNamespaceSelectors` may make it look; the built-in added it only while some Prometheus had it), within those
+    the extension may read (`narrowLookups`). Past 40 namespaces of a kind it is listed in every
+    namespace the extension may read, at most 5000 (beyond that it cannot tell); the built-in judged no monitor then.
+    Left so on purpose: the bounded list of ADR-0144 tells more and is never wrong, and judging nothing would hide what
+    it can tell.
+  - **Ports** leaves out an endpoint with neither a port name, a target port nor a number; the built-in drew an empty
+    item for it (a separator with nothing after it, "web, "). Nothing is lost: there is no port to show.
 - Checked by tests on fixtures of Prometheus Operator's objects (copied from the built-in view) against the built-in
   readings and rules; not yet tried on a live cluster.
 
@@ -164,6 +179,9 @@ None: the extension is read-only and has no action of its own (ADR-0100).
   by labels and the Namespaces could not be listed with your credentials.
 - **"The list could not be read." in "Selects now":** the Services (Pods) could not be listed in the monitor's
   namespaces with your credentials.
+- **A monitor no Prometheus picks up is not listed on the Problems page:** a Prometheus or PrometheusAgent selects
+  namespaces by labels and the Namespaces could not be listed, or the Prometheuses could not be listed in every
+  namespace: the rules cannot tell, so they say nothing. The details' "Picked up by" still tells what it can.
 - **"Sextant refused: …" in the section:** the extension's permissions do not cover the object. Check Settings →
   Extensions → Prometheus Operator.
 
@@ -180,8 +198,9 @@ npx vitest run --config sdk/vitest.config.ts ../extensions/prometheus-operator
   `dom.ts` keeps the blocks in Sextant's memory (`BlockMemory`).
 - `model.ts` reads Prometheus Operator's fields; it is the former built-in view's model, ported, with its problem
   detector (`prometheusOperatorProblems`), "Only problems" (`isServerProblem`) and its monitors' judgement across
-  objects (`judgeMonitors`) kept as the reference the manifest is tested against (`selectsNone` through Sextant's
-  `judgeAcross`).
+  objects (`judgeMonitors`) kept as the reference the manifest is tested against (`selectsNone` and `selectedByNone`
+  through Sextant's `judgeAcross`, on every combination of monitors, Prometheuses, PrometheusAgents and Namespace
+  labels of `model.test.ts`).
 - `model.test.ts` judges the manifest's problem rules, the kinds' "Only problems" and the columns with Sextant's own
   window engine (`src/extensions/problemRules.ts`, `src/extensions/columns.tsx`) and compares them with the model on
   the fixtures in `fixtures/` and variants of them; `views.test.ts` drives the details through the SDK's test host.

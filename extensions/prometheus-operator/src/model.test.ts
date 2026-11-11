@@ -57,9 +57,27 @@ interface Engine {
   evaluate(condition: unknown, obj: KubeObject): Verdict;
   detectRule(rule: unknown, obj: KubeObject): (Detected & { lookups?: unknown[] })[];
 }
+type KeyOf = (kind: { group: string; kind: string }) => string;
 interface Across {
-  rowOf(labelKeys: readonly string[], facts?: readonly unknown[], keepLabels?: boolean): (obj: KubeObject) => unknown;
-  judgeAcross(problems: readonly unknown[], context: unknown, rules: { rules: ReadonlyMap<string, unknown>; targets: readonly unknown[] }): unknown[];
+  rowOf(
+    labelKeys: readonly string[],
+    facts?: readonly unknown[],
+    keepLabels?: boolean,
+    valuePaths?: readonly string[],
+    referrers?: readonly unknown[],
+    rankPath?: string,
+    judgedPaths?: readonly string[],
+    defines?: unknown,
+    selecting?: readonly unknown[],
+  ): (obj: KubeObject) => unknown;
+  judgeAcross(
+    problems: readonly unknown[],
+    context: unknown,
+    rules: { rules: ReadonlyMap<string, unknown>; targets: readonly unknown[]; served?: (kind: { group: string; kind: string }) => boolean; api?: number },
+  ): unknown[];
+  factsOf(rules: readonly unknown[], keyOf: KeyOf): Map<string, unknown[]>;
+  selectedKinds(rules: readonly unknown[], keyOf: KeyOf): Set<string>;
+  selectingPaths(rules: readonly unknown[], keyOf: KeyOf): Map<string, unknown[]>;
 }
 interface WindowColumn {
   width?: string;
@@ -111,6 +129,61 @@ function builtInFound(kind: string, o: KubeObject, now: number) {
   return prometheusOperatorProblems({ group: MONITORING_GROUP, kind }, o)
     .filter((d) => live(startOf(d), undefined, now))
     .map((d) => ({ reason: d.reason, message: d.message ?? "", since: readable(d.since), start: startOf(d), notify: d.notify, category: "prometheus-operator" }));
+}
+
+// ---------- The rules judged across objects, on the cluster's lists ----------
+
+const keyOf: KeyOf = (k) => `${k.group}/${k.kind}`.toLowerCase();
+const DEF = (kind: string, group = "") => ({ kind: { group, version: "v1", kind } });
+
+interface ClusterLists {
+  proms: KubeObject[];
+  agents?: KubeObject[];
+  targets: KubeObject[];
+  /** The namespaces the Services (Pods) are listed in; `null`: every one. */
+  watched: string[] | null;
+  /** The Namespaces' labels; `null`: they could not be listed. */
+  namespaces?: Record<string, Labels> | null;
+  /** How the Prometheuses' list stands, when not read in full of every namespace. */
+  promsRows?: { truncated?: boolean; namespaces?: string[] };
+}
+
+/** What the manifest's monitor rules find of `m` on these lists, judged by Sextant's window engine. */
+function windowJudged(m: KubeObject, lists: ClusterLists): [reason: string, message: string, notify: boolean][] {
+  const rules = rulesOf(m.kind!);
+  const facts = across.factsOf(rules, keyOf);
+  const selected = across.selectedKinds(rules, keyOf);
+  const selecting = across.selectingPaths(rules, keyOf);
+  const rowsOf = (kind: { group: string; kind: string }, objects: KubeObject[], over: Record<string, unknown> = {}) => ({
+    status: "ready",
+    rows: new Map(
+      objects.map((x) => [x.metadata.uid!, across.rowOf([], facts.get(keyOf(kind)) ?? [], selected.has(keyOf(kind)), [], [], undefined, [], undefined, selecting.get(keyOf(kind)) ?? [])(x)]),
+    ),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const targetKind = m.kind === "PodMonitor" ? "Pod" : "Service";
+  const defs = { prom: DEF("Prometheus", MONITORING_GROUP), agent: DEF("PrometheusAgent", MONITORING_GROUP), target: DEF(targetKind), ns: DEF("Namespace") };
+  const nsObjects = Object.entries(lists.namespaces ?? {}).map(([name, labels]) => obj({ apiVersion: "v1", kind: "Namespace", metadata: { name, uid: `ns-${name}`, labels } }));
+  const rows = new Map<unknown, unknown>([
+    [defs.prom, rowsOf({ group: MONITORING_GROUP, kind: "Prometheus" }, lists.proms, lists.promsRows)],
+    [defs.agent, rowsOf({ group: MONITORING_GROUP, kind: "PrometheusAgent" }, lists.agents ?? [])],
+    [defs.target, rowsOf({ group: "", kind: targetKind }, lists.targets, { namespaces: lists.watched })],
+    [defs.ns, lists.namespaces === null ? { status: "error", rows: new Map(), truncated: false, namespaces: null } : rowsOf({ group: "", kind: "Namespace" }, nsObjects)],
+  ]);
+  const context = { rows: undefined, target: (def: unknown) => rows.get(def), problemUids: () => new Set<string>() };
+  const detected = rules.flatMap((rule) =>
+    engine.detectRule(rule, m).map((d) => ({ ...d, rule: rule.id, group: rule.id, uid: m.metadata.uid, object: { namespace: m.metadata.namespace } })),
+  );
+  const targets = [
+    { group: MONITORING_GROUP, kind: "Prometheus", namespaced: true, def: defs.prom },
+    { group: MONITORING_GROUP, kind: "PrometheusAgent", namespaced: true, def: defs.agent },
+    { group: "", kind: targetKind, namespaced: true, def: defs.target },
+    { group: "", kind: "Namespace", namespaced: false, def: defs.ns },
+  ];
+  const kept = across.judgeAcross(detected, context, { rules: new Map(rules.map((r) => [r.id, r])), targets, api: 5 }) as Detected[];
+  return kept.map((d) => [d.reason, d.message ?? "", d.notify]);
 }
 
 // ---------- Variants of the fixtures ----------
@@ -180,6 +253,8 @@ describe("the problem rules, against the built-in category prometheusOperator", 
       ...["prometheus", "alertmanager"].flatMap((k) => ["not-available", "not-reconciled", "degraded"].map((s) => `${k}-${s}`)),
       "service-monitor-selects-nothing",
       "pod-monitor-selects-nothing",
+      "service-monitor-not-picked-up",
+      "pod-monitor-not-picked-up",
     ]);
   });
 
@@ -222,7 +297,7 @@ describe("the problem rules, against the built-in category prometheusOperator", 
         target: () => ({ status: "ready", rows, truncated: false, namespaces: watched }),
         problemUids: () => new Set<string>(),
       };
-      const rules = rulesOf(kind);
+      const rules = rulesOf(kind).filter((r) => r.id.endsWith("selects-nothing"));
       const detected = rules.flatMap((rule) => engine.detectRule(rule, m).map((d) => ({ ...d, uid: m.metadata.uid, object: { namespace: m.metadata.namespace } })));
       const kept = across.judgeAcross(detected, context, { rules: new Map(rules.map((r) => [r.id, r])), targets: [{ group: "", kind: targetKind, namespaced: true, def }] }) as Detected[];
       // The built-in provider, on the same lists.
@@ -235,10 +310,82 @@ describe("the problem rules, against the built-in category prometheusOperator", 
       const partial = { ...context, target: () => ({ status: "ready", rows, truncated: false, namespaces: ["other"] }) };
       expect(across.judgeAcross(detected, partial, { rules: new Map(rules.map((r) => [r.id, r])), targets: [{ group: "", kind: targetKind, namespaced: true, def }] }), label).toEqual([]);
     }
-    // A monitor of every namespace is never judged, as the built-in provider never judged it.
+    // A monitor of every namespace is not judged unless its Prometheuses narrow it (below), as the built-in provider.
     const every = monitor();
     (every.spec as Record<string, unknown>).namespaceSelector = { any: true };
-    expect(rulesOf("ServiceMonitor").flatMap((rule) => engine.detectRule(rule, every))).toEqual([]);
+    expect(windowJudged(every, { proms: [], targets: fixtures.services.map((x) => obj(x)), watched: null })).toEqual([]);
+  });
+
+  it("find what the built-in provider found with Prometheuses: not picked up, and where their namespace selectors make a monitor look", () => {
+    const services = fixtures.services.map((x) => obj(x));
+    const pod = obj({ apiVersion: "v1", kind: "Pod", metadata: { name: "example-app-1", namespace: "default", uid: "p1", labels: { app: "example-app" } } });
+    const appsService = obj({ apiVersion: "v1", kind: "Service", metadata: { name: "web", namespace: "apps", uid: "s-apps", labels: { app: "example-app" } } });
+    let named = 0;
+    const promWith = (spec: Record<string, unknown>, namespace = "default", kind = "Prometheus") => {
+      const o = prometheus();
+      o.kind = kind;
+      o.metadata.namespace = namespace;
+      o.metadata.uid = `${kind}-${namespace}-${JSON.stringify(spec)}`;
+      o.metadata.name = `p${(named += 1)}`;
+      Object.assign(o.spec as Record<string, unknown>, spec);
+      return o;
+    };
+    const all = { serviceMonitorSelector: {}, podMonitorSelector: {}, serviceMonitorNamespaceSelector: {}, podMonitorNamespaceSelector: {} };
+    const ignoring = { ...all, ignoreNamespaceSelectors: true };
+    const promSets: [string, KubeObject[], KubeObject[]][] = [
+      ["no Prometheus", [], []],
+      ["the fixture (frontend, own namespace)", [prometheus()], []],
+      ["one of every namespace", [promWith(all, "monitoring")], []],
+      ["one that ignores namespace selectors", [promWith(ignoring, "monitoring")], []],
+      ["one that ignores them and one that does not", [promWith(ignoring, "monitoring"), promWith(all, "monitoring")], []],
+      ["null selectors", [promWith({ serviceMonitorSelector: null, podMonitorSelector: null }, "monitoring")], []],
+      ["of another namespace with a null namespace selector", [promWith({ serviceMonitorSelector: {}, podMonitorSelector: {} }, "monitoring")], []],
+      ["namespaces by labels", [promWith({ ...all, serviceMonitorNamespaceSelector: { matchLabels: { watch: "yes" } }, podMonitorNamespaceSelector: { matchLabels: { watch: "yes" } } }, "monitoring")], []],
+      ["only a PrometheusAgent", [], [promWith(all, "monitoring", "PrometheusAgent")]],
+      ["a PrometheusAgent that ignores namespace selectors", [prometheus()], [promWith(ignoring, "monitoring", "PrometheusAgent")]],
+    ];
+    const withSpec = (o: KubeObject, spec: Record<string, unknown>) => {
+      Object.assign(o.spec as Record<string, unknown>, spec);
+      return o;
+    };
+    const monitors: [string, KubeObject][] = [
+      ["the example monitor", monitor()],
+      ["the orphan", obj(fixtures.orphanMonitor)],
+      ["a monitor of apps", withSpec(monitor(), { namespaceSelector: { matchNames: ["apps"] } })],
+      ["a monitor of every namespace", withSpec(monitor(), { namespaceSelector: { any: true } })],
+      ["a monitor selecting nothing of apps", withSpec(obj(fixtures.orphanMonitor), { namespaceSelector: { matchNames: ["apps"] } })],
+      ["a PodMonitor", obj(fixtures.podMonitor)],
+      ["a PodMonitor of apps", withSpec(obj(fixtures.podMonitor), { namespaceSelector: { matchNames: ["apps"] } })],
+    ];
+    const labelSets: [string, Record<string, Labels> | null][] = [
+      ["labelled default", { default: { watch: "yes" }, apps: {} }],
+      ["unlabelled", { default: {}, apps: {} }],
+      ["Namespaces unreadable", null],
+    ];
+    let compared = 0;
+    for (const [promLabel, proms, agents] of promSets)
+      for (const [monitorLabel, m] of monitors)
+        for (const [nsLabel, nsLabels] of labelSets) {
+          const label = `${monitorLabel}, ${promLabel}, ${nsLabel}`;
+          const targets = m.kind === "PodMonitor" ? [pod] : [...services, appsService];
+          const watched = ["apps", "default"];
+          const found = windowJudged(m, { proms, agents, targets, watched, namespaces: nsLabels });
+          // The built-in provider on the same lists (its store's `toProblems`).
+          const byNs = new Map<string, Labels[]>(watched.map((ns) => [ns, targets.filter((x) => x.metadata.namespace === ns).map(labelsOf)]));
+          const [finding] = judgeMonitors({ kind: m.kind! }, [m], [...proms, ...agents], byNs, (name) => (nsLabels === null ? undefined : nsLabels[name]));
+          const targetKind = m.kind === "PodMonitor" ? "Pod" : "Service";
+          const expected: [string, string, boolean][] = [];
+          if (finding!.selected === 0) expected.push(["SelectsNothing", `Selects no ${targetKind} in the namespaces: ${formatList(finding!.namespaces ?? [])}`, true]);
+          if (finding!.pickedBy && finding!.pickedBy.length === 0) expected.push(["NotPickedUp", "No Prometheus picks it up by its selectors", false]);
+          expect(found, label).toEqual(expected);
+          compared += 1;
+        }
+    expect(compared).toBe(promSets.length * monitors.length * labelSets.length);
+    // Cannot tell, never a problem: the Prometheuses not read in full or not of every namespace.
+    const orphan = obj(fixtures.orphanMonitor);
+    expect(windowJudged(orphan, { proms: [prometheus()], targets: services, watched: ["default"] }).map(([reason]) => reason)).toEqual(["SelectsNothing", "NotPickedUp"]);
+    expect(windowJudged(orphan, { proms: [prometheus()], targets: services, watched: ["default"], promsRows: { truncated: true } }).map(([reason]) => reason)).toEqual(["SelectsNothing"]);
+    expect(windowJudged(orphan, { proms: [prometheus()], targets: services, watched: ["default"], promsRows: { namespaces: ["default"] } }).map(([reason]) => reason)).toEqual(["SelectsNothing"]);
   });
 
   it("make the kinds' Only problems as the built-in filter, without a grace", () => {
@@ -246,8 +393,17 @@ describe("the problem rules, against the built-in category prometheusOperator", 
       const when = c.kinds.find((k) => k.kind === kind)!.problemWhen;
       for (const [label, o] of serverVariants(kind)) expect(engine.evaluate(when, o).holds, `${kind} ${label}`).toBe(isServerProblem(o));
     }
-    // A monitor's "Only problems" comes from its rules, judged across objects by Sextant's problems store.
+    // A monitor's "Only problems" comes from its rule that it selects nothing, judged across objects by Sextant's
+    // problems store — not from "not picked up", as the built-in filter (`selectsNothing`).
     for (const kind of ["ServiceMonitor", "PodMonitor", "Probe", "PrometheusRule"]) expect(c.kinds.find((k) => k.kind === kind)).not.toHaveProperty("problemWhen");
+    expect(c.kinds.map((k) => [k.kind, (k as { problemRules?: string[] }).problemRules])).toEqual([
+      ["ServiceMonitor", ["service-monitor-selects-nothing"]],
+      ["PodMonitor", ["pod-monitor-selects-nothing"]],
+      ["Probe", undefined],
+      ["PrometheusRule", undefined],
+      ["Prometheus", undefined],
+      ["Alertmanager", undefined],
+    ]);
   });
 });
 
@@ -332,7 +488,8 @@ describe("the columns, against the built-in ones", () => {
       const prefix = o.kind === "PodMonitor" ? "pm" : "sm";
       const where = targetNamespaces(o);
       expect(cell(`${prefix}-namespaces`, o), label).toBe(where.type === "any" ? "Every namespace" : formatList(where.names));
-      expect(sortOf(`${prefix}-namespaces`, o), label).toBe(where.type === "any" ? "*" : formatList(where.names));
+      // Sorted and filtered by the built-in's value: "*", or the names joined with ",".
+      expect(sortOf(`${prefix}-namespaces`, o), label).toBe(where.type === "any" ? "*" : where.names.join(","));
       const text = selectorText(monitorSelector(o));
       expect(cell(`${prefix}-selector`, o), label).toBe(text === "" ? "Everything" : (text ?? "Nothing"));
       // "Everything" sorts first, "Nothing" last (no sort value), as the built-in's "" and null.
@@ -370,6 +527,10 @@ describe("the columns, against the built-in ones", () => {
     add("an empty list", []);
     add("a group without rules", [{ name: "a" }]);
     add("two groups", [{ name: "a", rules: [{ alert: "A", expr: "1" }] }, { name: "b", rules: [{ record: "r", expr: "1" }, { alert: "B", expr: "1" }] }]);
+    // Only rules with an `alert` or `record` name count, a rule with both twice, as the built-in counted them.
+    add("rules without a name", [{ name: "a", rules: [{ expr: "1" }, { alert: "", expr: "1" }, { alert: "A", expr: "1" }] }, { name: "b", rules: [{ record: "", expr: "1" }] }]);
+    add("a rule with both names", [{ name: "a", rules: [{ alert: "A", record: "r", expr: "1" }] }]);
+    add("groups without named rules", [{ name: "a", rules: [{ expr: "1" }] }, { name: "b", rules: [] }]);
     for (const [label, o] of variants) {
       expect(cell("rule-groups", o), label).toBe(String(ruleGroupsOf(o).length));
       expect(sortOf("rule-groups", o), label).toBe(ruleGroupsOf(o).length);
@@ -468,7 +629,14 @@ describe("the manifest", () => {
       ["Prometheus", "Prometheuses", "prometheus", 30],
       ["Alertmanager", "Alertmanagers", "alertmanager", 31],
     ]);
-    expect(c.sectionBadges).toEqual([{ section: "prometheusOperator", label: { one: "{{count}} object needs attention", other: "{{count}} objects need attention" } }]);
+    // The counter counts what the built-in counted: not the monitors no Prometheus picks up (a warning, not notified).
+    expect(c.sectionBadges).toEqual([
+      {
+        section: "prometheusOperator",
+        label: { one: "{{count}} object needs attention", other: "{{count}} objects need attention" },
+        rules: RULES.filter((r) => r.notify).map((r) => r.id),
+      },
+    ]);
     expect(c.detailsSections).toEqual([
       { id: "prometheus-operator", title: "Prometheus Operator", kinds: c.kinds.map((k) => ({ group: k.group, kind: k.kind })), placement: "section", order: 20, heading: false },
     ]);

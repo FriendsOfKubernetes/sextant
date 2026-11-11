@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.prometheus-operator",
   "name": "Prometheus Operator",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Prometheus Operator's ServiceMonitors, PodMonitors, Probes, PrometheusRules, Prometheuses and Alertmanagers: what a monitor selects right now and whether its ports exist, which Prometheus picks an object up, a rule's groups, and Prometheus and Alertmanager readiness; opt-in problems of monitors that select nothing and of Prometheuses and Alertmanagers not available. Read-only.",
   "author": "Sextant",
-  "sextantApi": 4,
+  "sextantApi": 5,
   "entry": "index.html",
   "icon": "prometheusOperator",
   "permissions": {
@@ -77,7 +77,10 @@
         "title": "Service Monitors",
         "icon": "serviceMonitor",
         "order": 10,
-        "printerColumns": false
+        "printerColumns": false,
+        "problemRules": [
+          "service-monitor-selects-nothing"
+        ]
       },
       {
         "group": "monitoring.coreos.com",
@@ -86,7 +89,10 @@
         "title": "Pod Monitors",
         "icon": "podMonitor",
         "order": 11,
-        "printerColumns": false
+        "printerColumns": false,
+        "problemRules": [
+          "pod-monitor-selects-nothing"
+        ]
       },
       {
         "group": "monitoring.coreos.com",
@@ -179,7 +185,17 @@
         "label": {
           "one": "{{count}} object needs attention",
           "other": "{{count}} objects need attention"
-        }
+        },
+        "rules": [
+          "prometheus-not-available",
+          "prometheus-not-reconciled",
+          "prometheus-degraded",
+          "alertmanager-not-available",
+          "alertmanager-not-reconciled",
+          "alertmanager-degraded",
+          "service-monitor-selects-nothing",
+          "pod-monitor-selects-nothing"
+        ]
       }
     ],
     "problemCategories": [
@@ -252,7 +268,8 @@
               "type": "exists",
               "path": ".metadata.name"
             },
-            "text": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+            "text": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+            "value": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|uniqueKey}}"
           }
         ]
       },
@@ -386,7 +403,8 @@
               "type": "exists",
               "path": ".metadata.name"
             },
-            "text": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+            "text": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+            "value": "{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|uniqueKey}}"
           }
         ]
       },
@@ -591,8 +609,8 @@
               "type": "exists",
               "path": ".metadata.name"
             },
-            "text": "{{.spec.groups[*].rules|countAll}}",
-            "value": "{{.spec.groups[*].rules|countAll}}"
+            "text": "{{.spec.groups[*].rules[alert!=\"\",*].alert + .spec.groups[*].rules[record!=\"\",*].record|count}}",
+            "value": "{{.spec.groups[*].rules[alert!=\"\",*].alert + .spec.groups[*].rules[record!=\"\",*].record|count}}"
           }
         ]
       },
@@ -1303,30 +1321,37 @@
         },
         "category": "prometheus-operator",
         "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".spec.namespaceSelector.any",
-                "value": true
-              }
+          "type": "selectsNone",
+          "kind": {
+            "group": "",
+            "kind": "Service"
+          },
+          "selector": ".spec.selector",
+          "anyNamespacesPath": ".spec.namespaceSelector.any",
+          "namespacesPath": ".spec.namespaceSelector.matchNames",
+          "selectedBy": {
+            "kind": {
+              "group": "monitoring.coreos.com",
+              "kind": "Prometheus"
             },
-            {
-              "type": "selectsNone",
-              "kind": {
-                "group": "",
-                "kind": "Service"
-              },
-              "selector": ".spec.selector",
-              "anyNamespacesPath": ".spec.namespaceSelector.any",
-              "namespacesPath": ".spec.namespaceSelector.matchNames"
+            "alsoKinds": [
+              {
+                "group": "monitoring.coreos.com",
+                "kind": "PrometheusAgent"
+              }
+            ],
+            "selector": ".spec.serviceMonitorSelector",
+            "namespaceSelector": ".spec.serviceMonitorNamespaceSelector",
+            "ownNamespaceWhen": {
+              "type": "equals",
+              "path": ".spec.ignoreNamespaceSelectors",
+              "value": true
             }
-          ]
+          },
+          "namedOnly": true
         },
         "reason": "SelectsNothing",
-        "message": "Selects no Service in the namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+        "message": "Selects no Service in the namespaces: {{selectsNone:namespaces}}",
         "notify": true
       },
       {
@@ -1338,31 +1363,92 @@
         },
         "category": "prometheus-operator",
         "when": {
-          "type": "all",
-          "of": [
-            {
-              "type": "not",
-              "of": {
-                "type": "equals",
-                "path": ".spec.namespaceSelector.any",
-                "value": true
-              }
+          "type": "selectsNone",
+          "kind": {
+            "group": "",
+            "kind": "Pod"
+          },
+          "selector": ".spec.selector",
+          "anyNamespacesPath": ".spec.namespaceSelector.any",
+          "namespacesPath": ".spec.namespaceSelector.matchNames",
+          "selectedBy": {
+            "kind": {
+              "group": "monitoring.coreos.com",
+              "kind": "Prometheus"
             },
-            {
-              "type": "selectsNone",
-              "kind": {
-                "group": "",
-                "kind": "Pod"
-              },
-              "selector": ".spec.selector",
-              "anyNamespacesPath": ".spec.namespaceSelector.any",
-              "namespacesPath": ".spec.namespaceSelector.matchNames"
+            "alsoKinds": [
+              {
+                "group": "monitoring.coreos.com",
+                "kind": "PrometheusAgent"
+              }
+            ],
+            "selector": ".spec.podMonitorSelector",
+            "namespaceSelector": ".spec.podMonitorNamespaceSelector",
+            "ownNamespaceWhen": {
+              "type": "equals",
+              "path": ".spec.ignoreNamespaceSelectors",
+              "value": true
             }
-          ]
+          },
+          "namedOnly": true
         },
         "reason": "SelectsNothing",
-        "message": "Selects no Pod in the namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+        "message": "Selects no Pod in the namespaces: {{selectsNone:namespaces}}",
         "notify": true
+      },
+      {
+        "id": "service-monitor-not-picked-up",
+        "title": "ServiceMonitor not picked up",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "ServiceMonitor"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "selectedByNone",
+          "kind": {
+            "group": "monitoring.coreos.com",
+            "kind": "Prometheus"
+          },
+          "alsoKinds": [
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "PrometheusAgent"
+            }
+          ],
+          "selector": ".spec.serviceMonitorSelector",
+          "namespaceSelector": ".spec.serviceMonitorNamespaceSelector"
+        },
+        "reason": "NotPickedUp",
+        "message": "No Prometheus picks it up by its selectors",
+        "notify": false
+      },
+      {
+        "id": "pod-monitor-not-picked-up",
+        "title": "PodMonitor not picked up",
+        "kind": {
+          "group": "monitoring.coreos.com",
+          "kind": "PodMonitor"
+        },
+        "category": "prometheus-operator",
+        "when": {
+          "type": "selectedByNone",
+          "kind": {
+            "group": "monitoring.coreos.com",
+            "kind": "Prometheus"
+          },
+          "alsoKinds": [
+            {
+              "group": "monitoring.coreos.com",
+              "kind": "PrometheusAgent"
+            }
+          ],
+          "selector": ".spec.podMonitorSelector",
+          "namespaceSelector": ".spec.podMonitorNamespaceSelector"
+        },
+        "reason": "NotPickedUp",
+        "message": "No Prometheus picks it up by its selectors",
+        "notify": false
       }
     ],
     "narrowLookups": [
@@ -1433,9 +1519,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager nicht abgeglichen",
       "problems.alertmanager-degraded.title": "Alertmanager beeinträchtigt",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor wählt nichts aus",
-      "problems.service-monitor-selects-nothing.message": "Wählt keinen Service in den Namespaces aus: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Wählt keinen Service in den Namespaces aus: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor wählt nichts aus",
-      "problems.pod-monitor-selects-nothing.message": "Wählt keinen Pod in den Namespaces aus: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Wählt keinen Pod in den Namespaces aus: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor nicht erfasst",
+      "problems.service-monitor-not-picked-up.message": "Kein Prometheus erfasst ihn über seine Selectors",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor nicht erfasst",
+      "problems.pod-monitor-not-picked-up.message": "Kein Prometheus erfasst ihn über seine Selectors"
     },
     "es": {
       "name": "Prometheus Operator",
@@ -1494,9 +1584,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager sin reconciliar",
       "problems.alertmanager-degraded.title": "Alertmanager degradado",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor no selecciona nada",
-      "problems.service-monitor-selects-nothing.message": "No selecciona ningún Service en los namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "No selecciona ningún Service en los namespaces: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor no selecciona nada",
-      "problems.pod-monitor-selects-nothing.message": "No selecciona ningún Pod en los namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "No selecciona ningún Pod en los namespaces: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor no recogido",
+      "problems.service-monitor-not-picked-up.message": "Ningún Prometheus lo recoge con sus selectors",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor no recogido",
+      "problems.pod-monitor-not-picked-up.message": "Ningún Prometheus lo recoge con sus selectors"
     },
     "fr": {
       "name": "Prometheus Operator",
@@ -1555,9 +1649,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager non réconcilié",
       "problems.alertmanager-degraded.title": "Alertmanager dégradé",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor ne sélectionne rien",
-      "problems.service-monitor-selects-nothing.message": "Ne sélectionne aucun Service dans les namespaces : {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Ne sélectionne aucun Service dans les namespaces : {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor ne sélectionne rien",
-      "problems.pod-monitor-selects-nothing.message": "Ne sélectionne aucun Pod dans les namespaces : {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Ne sélectionne aucun Pod dans les namespaces : {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor non pris en compte",
+      "problems.service-monitor-not-picked-up.message": "Aucun Prometheus ne le prend en compte par ses selectors",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor non pris en compte",
+      "problems.pod-monitor-not-picked-up.message": "Aucun Prometheus ne le prend en compte par ses selectors"
     },
     "it": {
       "name": "Prometheus Operator",
@@ -1616,9 +1714,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager non riconciliato",
       "problems.alertmanager-degraded.title": "Alertmanager degradato",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor non seleziona nulla",
-      "problems.service-monitor-selects-nothing.message": "Non seleziona alcun Service nei namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Non seleziona alcun Service nei namespace: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor non seleziona nulla",
-      "problems.pod-monitor-selects-nothing.message": "Non seleziona alcun Pod nei namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Non seleziona alcun Pod nei namespace: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor non raccolto",
+      "problems.service-monitor-not-picked-up.message": "Nessun Prometheus lo raccoglie con i suoi selector",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor non raccolto",
+      "problems.pod-monitor-not-picked-up.message": "Nessun Prometheus lo raccoglie con i suoi selector"
     },
     "ja": {
       "name": "Prometheus Operator",
@@ -1675,9 +1777,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager が調整されていません",
       "problems.alertmanager-degraded.title": "Alertmanager が縮退しています",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor が何も選択していません",
-      "problems.service-monitor-selects-nothing.message": "次の namespace で Service を 1 つも選択していません: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "次の namespace で Service を 1 つも選択していません: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor が何も選択していません",
-      "problems.pod-monitor-selects-nothing.message": "次の namespace で Pod を 1 つも選択していません: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "次の namespace で Pod を 1 つも選択していません: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor が選択されていません",
+      "problems.service-monitor-not-picked-up.message": "どの Prometheus の selector にも選択されていません",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor が選択されていません",
+      "problems.pod-monitor-not-picked-up.message": "どの Prometheus の selector にも選択されていません"
     },
     "ko": {
       "name": "Prometheus Operator",
@@ -1734,9 +1840,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager 조정 실패",
       "problems.alertmanager-degraded.title": "Alertmanager 성능 저하",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor가 아무것도 선택하지 않음",
-      "problems.service-monitor-selects-nothing.message": "다음 namespace에서 Service를 하나도 선택하지 않습니다: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "다음 namespace에서 Service를 하나도 선택하지 않습니다: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor가 아무것도 선택하지 않음",
-      "problems.pod-monitor-selects-nothing.message": "다음 namespace에서 Pod를 하나도 선택하지 않습니다: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "다음 namespace에서 Pod를 하나도 선택하지 않습니다: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor가 선택되지 않음",
+      "problems.service-monitor-not-picked-up.message": "어떤 Prometheus의 selector도 이를 선택하지 않습니다",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor가 선택되지 않음",
+      "problems.pod-monitor-not-picked-up.message": "어떤 Prometheus의 selector도 이를 선택하지 않습니다"
     },
     "pl": {
       "name": "Prometheus Operator",
@@ -1796,9 +1906,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager nieuzgodniony",
       "problems.alertmanager-degraded.title": "Alertmanager zdegradowany",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor nic nie wybiera",
-      "problems.service-monitor-selects-nothing.message": "Nie wybiera żadnego Service w namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Nie wybiera żadnego Service w namespace: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor nic nie wybiera",
-      "problems.pod-monitor-selects-nothing.message": "Nie wybiera żadnego Poda w namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Nie wybiera żadnego Poda w namespace: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor niewybrany",
+      "problems.service-monitor-not-picked-up.message": "Żaden Prometheus nie wybiera go swoimi selectorami",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor niewybrany",
+      "problems.pod-monitor-not-picked-up.message": "Żaden Prometheus nie wybiera go swoimi selectorami"
     },
     "pt-BR": {
       "name": "Prometheus Operator",
@@ -1857,9 +1971,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager não reconciliado",
       "problems.alertmanager-degraded.title": "Alertmanager degradado",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor não seleciona nada",
-      "problems.service-monitor-selects-nothing.message": "Não seleciona nenhum Service nos namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Não seleciona nenhum Service nos namespaces: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor não seleciona nada",
-      "problems.pod-monitor-selects-nothing.message": "Não seleciona nenhum Pod nos namespaces: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Não seleciona nenhum Pod nos namespaces: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor não selecionado",
+      "problems.service-monitor-not-picked-up.message": "Nenhum Prometheus o seleciona pelos seus selectors",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor não selecionado",
+      "problems.pod-monitor-not-picked-up.message": "Nenhum Prometheus o seleciona pelos seus selectors"
     },
     "ru": {
       "name": "Prometheus Operator",
@@ -1919,9 +2037,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager не согласован",
       "problems.alertmanager-degraded.title": "Alertmanager деградирован",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor ничего не выбирает",
-      "problems.service-monitor-selects-nothing.message": "Не выбирает ни одного Service в namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Не выбирает ни одного Service в namespace: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor ничего не выбирает",
-      "problems.pod-monitor-selects-nothing.message": "Не выбирает ни одного Pod в namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Не выбирает ни одного Pod в namespace: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor не подхвачен",
+      "problems.service-monitor-not-picked-up.message": "Ни один Prometheus не подхватывает его своими selector",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor не подхвачен",
+      "problems.pod-monitor-not-picked-up.message": "Ни один Prometheus не подхватывает его своими selector"
     },
     "tr": {
       "name": "Prometheus Operator",
@@ -1979,9 +2101,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager uzlaştırılmadı",
       "problems.alertmanager-degraded.title": "Alertmanager bozulmuş",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor hiçbir şey seçmiyor",
-      "problems.service-monitor-selects-nothing.message": "Şu namespace'lerde hiçbir Service seçmiyor: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Şu namespace'lerde hiçbir Service seçmiyor: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor hiçbir şey seçmiyor",
-      "problems.pod-monitor-selects-nothing.message": "Şu namespace'lerde hiçbir Pod seçmiyor: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Şu namespace'lerde hiçbir Pod seçmiyor: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor seçilmiyor",
+      "problems.service-monitor-not-picked-up.message": "Hiçbir Prometheus selector'larıyla onu seçmiyor",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor seçilmiyor",
+      "problems.pod-monitor-not-picked-up.message": "Hiçbir Prometheus selector'larıyla onu seçmiyor"
     },
     "uk": {
       "name": "Prometheus Operator",
@@ -2041,9 +2167,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager не узгоджений",
       "problems.alertmanager-degraded.title": "Alertmanager деградований",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor нічого не вибирає",
-      "problems.service-monitor-selects-nothing.message": "Не вибирає жодного Service у namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "Не вибирає жодного Service у namespace: {{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor нічого не вибирає",
-      "problems.pod-monitor-selects-nothing.message": "Не вибирає жодного Pod у namespace: {{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "Не вибирає жодного Pod у namespace: {{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor не підхоплено",
+      "problems.service-monitor-not-picked-up.message": "Жоден Prometheus не підхоплює його своїми selector",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor не підхоплено",
+      "problems.pod-monitor-not-picked-up.message": "Жоден Prometheus не підхоплює його своїми selector"
     },
     "zh-CN": {
       "name": "Prometheus Operator",
@@ -2100,9 +2230,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager 未协调",
       "problems.alertmanager-degraded.title": "Alertmanager 已降级",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor 未选择任何对象",
-      "problems.service-monitor-selects-nothing.message": "在以下 namespace 中未选中任何 Service：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "在以下 namespace 中未选中任何 Service：{{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor 未选择任何对象",
-      "problems.pod-monitor-selects-nothing.message": "在以下 namespace 中未选中任何 Pod：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "在以下 namespace 中未选中任何 Pod：{{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor 未被选中",
+      "problems.service-monitor-not-picked-up.message": "没有 Prometheus 通过其 selector 选中它",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor 未被选中",
+      "problems.pod-monitor-not-picked-up.message": "没有 Prometheus 通过其 selector 选中它"
     },
     "zh-TW": {
       "name": "Prometheus Operator",
@@ -2159,9 +2293,13 @@
       "problems.alertmanager-not-reconciled.title": "Alertmanager 未協調",
       "problems.alertmanager-degraded.title": "Alertmanager 已降級",
       "problems.service-monitor-selects-nothing.title": "ServiceMonitor 未選擇任何物件",
-      "problems.service-monitor-selects-nothing.message": "在下列 namespace 中未選取任何 Service：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}",
+      "problems.service-monitor-selects-nothing.message": "在下列 namespace 中未選取任何 Service：{{selectsNone:namespaces}}",
       "problems.pod-monitor-selects-nothing.title": "PodMonitor 未選擇任何物件",
-      "problems.pod-monitor-selects-nothing.message": "在下列 namespace 中未選取任何 Pod：{{.spec.namespaceSelector.matchNames ?? .metadata.namespace|unique}}"
+      "problems.pod-monitor-selects-nothing.message": "在下列 namespace 中未選取任何 Pod：{{selectsNone:namespaces}}",
+      "problems.service-monitor-not-picked-up.title": "ServiceMonitor 未被選取",
+      "problems.service-monitor-not-picked-up.message": "沒有 Prometheus 透過其 selector 選取它",
+      "problems.pod-monitor-not-picked-up.title": "PodMonitor 未被選取",
+      "problems.pod-monitor-not-picked-up.message": "沒有 Prometheus 透過其 selector 選取它"
     }
   }
 }
