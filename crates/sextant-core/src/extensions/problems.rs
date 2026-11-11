@@ -290,6 +290,81 @@ pub(crate) fn check_narrow_lookups(manifest: &ExtensionManifest) -> Result<(), M
     Ok(())
 }
 
+/// How the window lists a kind the rules only look up (`contributes.lookupSources`, ADR-0169).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct LookupSource {
+    pub kind: KindPattern,
+    /// A Kubernetes label selector the watch passes to the API server: only the objects it picks are looked up.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub label_selector: Option<String>,
+    /// The most objects listed: 1 to 20 000, 5000 without it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub max_objects: Option<u32>,
+}
+
+/// `contributes.lookupSources` (ADR-0169): kinds some rule looks up and no rule judges, no `kindsFrom` reads and no
+/// judge reads, each once, with a label selector Kubernetes reads or a cap.
+pub(crate) fn check_lookup_sources(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
+    let list = JsonPath::default().key("contributes").key("lookupSources");
+    let sources = &manifest.contributes.lookup_sources;
+    if sources.is_empty() {
+        return Ok(());
+    }
+    if manifest.sextant_api < PARITY_API {
+        return Err(at(&list, format!("needs sextantApi {PARITY_API} or later")));
+    }
+    let mut looked: Vec<&KindPattern> = Vec::new();
+    for rule in &manifest.contributes.problems {
+        looked_up(&rule.when, &mut looked);
+    }
+    let judged = super::problem_judges::judge_kinds(manifest);
+    for (i, source) in sources.iter().enumerate() {
+        let here = list.index(i);
+        let kind = &source.kind;
+        if sources[..i].iter().any(|s| same_kind(&s.kind, kind)) {
+            return Err(at(&here.key("kind"), "is named twice"));
+        }
+        if !looked.iter().any(|k| same_kind(k, kind)) {
+            return Err(at(
+                &here.key("kind"),
+                "is no kind the rules look up (`missing`, `related`, `relatedBy`, `selectsNone`)",
+            ));
+        }
+        let judges_it = manifest.contributes.problems.iter().any(|rule| {
+            same_kind(&rule.kind, kind)
+                || rule
+                    .kinds_from
+                    .as_ref()
+                    .is_some_and(|f| same_kind(&f.kind, kind))
+        }) || judged.iter().any(|k| same_kind(k, kind));
+        if judges_it {
+            return Err(at(
+                &here.key("kind"),
+                "is a kind a rule or judge reads: its rules' `source` says how it is listed",
+            ));
+        }
+        if source.label_selector.is_none() && source.max_objects.is_none() {
+            return Err(at(&here, "names a `labelSelector`, a `maxObjects` or both"));
+        }
+        if source.max_objects.is_some_and(|n| n == 0 || n > 20_000) {
+            return Err(at(&here.key("maxObjects"), "is 1 to 20 000"));
+        }
+        if let Some(selector) = &source.label_selector
+            && !is_set_selector(selector)
+        {
+            return Err(at(
+                &here.key("labelSelector"),
+                "must be a Kubernetes label selector such as `app=web`, `tier in (a,b)` or `!canary`",
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// `contributes.problemCategories` and each rule's `category` (#410).
 pub(crate) fn check_problem_categories(manifest: &ExtensionManifest) -> Result<(), ManifestError> {
     let list = JsonPath::default()
@@ -611,6 +686,21 @@ pub enum ProblemCondition {
         path: String,
         kind: KindPattern,
         when: Box<ProblemCondition>,
+        /// Never decides whether the rule holds (ADR-0169): when the object is found and `when` holds, its window, its
+        /// `since` (with `givesSince`) and its fields (`{{related:…}}`) apply; otherwise the rule holds without them.
+        /// Not inside `any`; `sextantApi` 5.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        optional: Option<bool>,
+        /// The problem's time is the named object's (ADR-0169): the `lastTransitionTime` of the entry its `when`'s
+        /// `condition` matched, over the rule's own. `sextantApi` 5.
+        #[serde(
+            default,
+            rename = "givesSince",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        gives_since: Option<bool>,
     },
     /// The label selector at `selector` (`matchLabels`, `matchExpressions`) picks no object of `kind` in the
     /// namespaces it covers (#404): every namespace where `anyNamespacesPath` is `true`, the names at `namespacesPath`,
@@ -674,6 +764,41 @@ pub enum ProblemCondition {
         kind: KindPattern,
         pairs: Vec<FieldPair>,
         when: Box<ProblemCondition>,
+        /// As `related`'s (ADR-0169); `sextantApi` 5.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        optional: Option<bool>,
+        /// As `related`'s (ADR-0169); `sextantApi` 5.
+        #[serde(
+            default,
+            rename = "givesSince",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        gives_since: Option<bool>,
+        /// Only one of the objects the pairs find counts (ADR-0169): one that also holds every `prefer` pair, else the
+        /// newest (by `creationTimestamp`, then name) — helm-controller's install Job of a chart. `sextantApi` 5.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        newest: Option<bool>,
+        /// With `newest` (ADR-0169): the object taken before the newest. The first of these whose `ours` reads a text
+        /// on the judged object — a field path, or a text with `{{…}}` placeholders of it — names it: a found object
+        /// whose `theirs` holds that text (the Job a chart's `status.jobName` names, else `helm-install-<name>`).
+        /// 1 to 4; `sextantApi` 5.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        prefer: Option<Vec<FieldPair>>,
+    },
+    /// The cluster serves `kind` (ADR-0169), as discovery says: Addons on a k3s or RKE2 server. Unknown (not holding)
+    /// before discovery answered; not inside `any` or `not`; problem rules only. `sextantApi` 5.
+    Served {
+        kind: KindPattern,
+    },
+    /// The text at `path` fits one of `patterns` (ADR-0169): `*` any text, `#` one or more ASCII digits, every other
+    /// character itself (a kubelet version `*+k3s#`). No pattern language, so no backtracking. `sextantApi` 5.
+    Fits {
+        path: String,
+        patterns: Vec<String>,
     },
     All {
         of: Vec<ProblemCondition>,
@@ -1121,7 +1246,35 @@ fn check_rule_message(
         let after = &tail[start + 2..];
         let Some(end) = after.find("}}") else { break };
         let inner = &after[..end];
-        if inner.trim() == SELECTS_NONE_NAMESPACES {
+        if let Some(paths) = related_placeholder(inner) {
+            // A field of the object the rule's first `related`/`relatedBy` found (ADR-0169), filled by the window.
+            if manifest.sextant_api < PARITY_API {
+                return Err(at(
+                    path,
+                    format!("`{{{{related:…}}}}` needs sextantApi {PARITY_API} or later"),
+                ));
+            }
+            let mut kinds = Vec::new();
+            related_kinds(&rule.when, &mut kinds);
+            if kinds.is_empty() {
+                return Err(at(
+                    path,
+                    "has `{{related:…}}`, which only a rule with `related` or `relatedBy` fills",
+                ));
+            }
+            for one in paths {
+                if one.contains('|') || placeholder_literal(one).is_some() {
+                    return Err(at(
+                        path,
+                        "has `{{related:…}}` with a filter or a literal: it names the found object's fields only",
+                    ));
+                }
+                for kind in &kinds {
+                    check_rule_path(one, kind, path, false)?;
+                }
+            }
+            rest.push_str(&tail[..start]);
+        } else if inner.trim() == SELECTS_NONE_NAMESPACES {
             // The namespaces the rule's `selectsNone` looked in (ADR-0169), filled by the window.
             if manifest.sextant_api < PARITY_API {
                 return Err(at(
@@ -1157,6 +1310,33 @@ fn check_rule_message(
     }
     rest.push_str(tail);
     check_message(&rest, &rule.kind, path, metadata_only)
+}
+
+/// The paths of a `{{related:<path> ?? <path>}}` placeholder (ADR-0169), trimmed; `None` for any other placeholder.
+pub fn related_placeholder(inner: &str) -> Option<Vec<&str>> {
+    let rest = inner.trim().strip_prefix("related:")?;
+    Some(
+        split_outside_quotes(rest, "??")
+            .into_iter()
+            .map(str::trim)
+            .collect(),
+    )
+}
+
+/// The kinds a condition's `related` and `relatedBy` name, each once, in order.
+fn related_kinds<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>) {
+    match condition {
+        ProblemCondition::Related { kind, .. } | ProblemCondition::RelatedBy { kind, .. } => {
+            if !out.iter().any(|k| same_kind(k, kind)) {
+                out.push(kind);
+            }
+        }
+        ProblemCondition::All { of } | ProblemCondition::Any { of } => {
+            of.iter().for_each(|inner| related_kinds(inner, out))
+        }
+        ProblemCondition::Not { of } => related_kinds(of, out),
+        _ => {}
+    }
 }
 
 /// A rule message's placeholder of the namespaces its `selectsNone` looked in (ADR-0169): `{{selectsNone:namespaces}}`,
@@ -1399,6 +1579,21 @@ fn check_condition<'k>(
             &path.key("path"),
             checks.metadata_only,
         ),
+        // Whether an inline secret field is there (ADR-0169): its presence, never its value — what the marker of
+        // hidden values tells an extension anyway.
+        ProblemCondition::Exists { path: field, .. } | ProblemCondition::Absent { path: field }
+            if checks.api >= PARITY_API && is_inline_secret_field(kind, field) =>
+        {
+            if checks.metadata_only
+                && !matches!(parse_field_path(field).as_deref(), Some([PathStep::Key(first), ..]) if first == "metadata")
+            {
+                return Err(at(
+                    &path.key("path"),
+                    "must be under `.metadata`: the rule's source watches metadata only",
+                ));
+            }
+            Ok(())
+        }
         ProblemCondition::Exists { path: field, .. }
         | ProblemCondition::Absent { path: field }
         | ProblemCondition::OlderThan { path: field, .. } => {
@@ -1527,6 +1722,10 @@ fn check_condition<'k>(
             kind: target,
             pairs,
             when,
+            optional,
+            gives_since,
+            newest,
+            prefer,
         } => {
             if checks.single {
                 return Err(at(
@@ -1560,18 +1759,52 @@ fn check_condition<'k>(
                 check_rule_path(&pair.ours, kind, &at_pair.key("ours"), checks.metadata_only)?;
                 check_rule_path(&pair.theirs, target, &at_pair.key("theirs"), false)?;
             }
-            check_object_condition(
-                when,
-                std::slice::from_ref(target),
-                &path.key("when"),
-                checks.api,
-            )?;
-            if uses_time(when) {
-                return Err(at(
-                    &path.key("when"),
-                    "reads no time (`olderThan`): it is judged when that object changes",
-                ));
+            for (key, set) in [("newest", newest.is_some()), ("prefer", prefer.is_some())] {
+                if set && checks.api < PARITY_API {
+                    return Err(at(
+                        &path.key(key),
+                        format!("needs sextantApi {PARITY_API} or later"),
+                    ));
+                }
             }
+            if newest.is_some_and(|n| !n) {
+                return Err(at(&path.key("newest"), "is `true` or left out"));
+            }
+            if let Some(prefer) = prefer {
+                if newest.is_none() {
+                    return Err(at(
+                        &path.key("prefer"),
+                        "goes with `newest`: the object preferred before the newest",
+                    ));
+                }
+                if prefer.is_empty() || prefer.len() > MAX_FIELD_PAIRS {
+                    return Err(at(
+                        &path.key("prefer"),
+                        format!("has 1 to {MAX_FIELD_PAIRS} pairs"),
+                    ));
+                }
+                for (i, pair) in prefer.iter().enumerate() {
+                    let at_pair = path.key("prefer").index(i);
+                    // A text of the judged object's own (`helm-install-{{.metadata.name}}`), or one of its fields.
+                    if pair.ours.contains("{{") {
+                        check_message(
+                            &pair.ours,
+                            kind,
+                            &at_pair.key("ours"),
+                            checks.metadata_only,
+                        )?;
+                    } else {
+                        check_rule_path(
+                            &pair.ours,
+                            kind,
+                            &at_pair.key("ours"),
+                            checks.metadata_only,
+                        )?;
+                    }
+                    check_rule_path(&pair.theirs, target, &at_pair.key("theirs"), false)?;
+                }
+            }
+            check_related_parts(when, target, *optional, *gives_since, path, checks)?;
             if !checks.kinds.iter().any(|k| same_kind(k, target)) {
                 checks.kinds.push(target);
                 let max_kinds = rule_limits(checks.api).1;
@@ -1583,6 +1816,57 @@ fn check_condition<'k>(
                 }
             }
             Ok(())
+        }
+        ProblemCondition::Served { .. } => {
+            if checks.single {
+                return Err(at(
+                    &path.key("type"),
+                    "`served` is told by discovery: only problem rules may use it",
+                ));
+            }
+            if checks.api < PARITY_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`served` needs sextantApi {PARITY_API} or later"),
+                ));
+            }
+            if !matches!(inside, Inside::Top) {
+                return Err(at(
+                    &path.key("type"),
+                    "`served` cannot be inside `any` or `not`: before discovery answers it is unknown",
+                ));
+            }
+            Ok(())
+        }
+        ProblemCondition::Fits {
+            path: field,
+            patterns,
+        } => {
+            if checks.api < PARITY_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`fits` needs sextantApi {PARITY_API} or later"),
+                ));
+            }
+            if patterns.is_empty() || patterns.len() > MAX_PATTERNS {
+                return Err(at(
+                    &path.key("patterns"),
+                    format!("has 1 to {MAX_PATTERNS} patterns"),
+                ));
+            }
+            for (i, pattern) in patterns.iter().enumerate() {
+                let count = pattern.chars().count();
+                if count == 0 || count > MAX_PATTERN_CHARS || pattern.chars().any(char::is_control)
+                {
+                    return Err(at(
+                        &path.key("patterns").index(i),
+                        format!(
+                            "is a pattern of 1 to {MAX_PATTERN_CHARS} characters without control characters"
+                        ),
+                    ));
+                }
+            }
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
         ProblemCondition::SelectsNone {
             kind: target,
@@ -1709,6 +1993,8 @@ fn check_condition<'k>(
             path: field,
             kind: target,
             when,
+            optional,
+            gives_since,
         } => {
             if checks.single {
                 return Err(at(
@@ -1732,20 +2018,15 @@ fn check_condition<'k>(
                 return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
             }
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
-            // The named object's own condition: paths of its kind, nothing across objects, no time (it is judged when
-            // that object changes, not as time passes).
-            check_object_condition(
-                when,
-                std::slice::from_ref(target),
-                &path.key("when"),
-                checks.api,
-            )?;
-            if uses_time(when) {
+            if optional.is_some() && matches!(inside, Inside::AnyOfLookups) {
                 return Err(at(
-                    &path.key("when"),
-                    "reads no time (`olderThan`): it is judged when that object changes",
+                    &path.key("optional"),
+                    "is for a `related` outside `any`: an optional lookup decides nothing",
                 ));
             }
+            // The named object's own condition: paths of its kind, nothing across objects, no time below sextantApi 5
+            // (it is judged when that object changes, not as time passes).
+            check_related_parts(when, target, *optional, *gives_since, path, checks)?;
             if !checks.kinds.iter().any(|k| same_kind(k, target)) {
                 checks.kinds.push(target);
                 let max_kinds = rule_limits(checks.api).1;
@@ -2111,6 +2392,104 @@ fn uses_time(condition: &ProblemCondition) -> bool {
     }
 }
 
+/// The most patterns of a `fits`, and the most characters of one (ADR-0169).
+pub const MAX_PATTERNS: usize = 20;
+pub const MAX_PATTERN_CHARS: usize = 256;
+
+/// Whether `text` fits `pattern` (`fits`, ADR-0169): `*` any text, `#` one or more ASCII digits, every other
+/// character itself. Linear in the text per pattern position, never backtracking past one `*`.
+pub fn fits_pattern(text: &str, pattern: &str) -> bool {
+    let text: Vec<char> = text.chars().collect();
+    let pattern: Vec<char> = pattern.chars().collect();
+    // The text positions each pattern prefix can end at, as a set (a bit per position).
+    let mut at = vec![false; text.len() + 1];
+    at[0] = true;
+    for p in &pattern {
+        let mut next = vec![false; text.len() + 1];
+        match p {
+            '*' => {
+                let mut reached = false;
+                for (i, slot) in next.iter_mut().enumerate() {
+                    reached |= at[i];
+                    *slot = reached;
+                }
+            }
+            '#' => {
+                for i in 0..text.len() {
+                    if (at[i] || next[i]) && text[i].is_ascii_digit() {
+                        next[i + 1] = true;
+                    }
+                }
+            }
+            c => {
+                for i in 0..text.len() {
+                    if at[i] && text[i] == *c {
+                        next[i + 1] = true;
+                    }
+                }
+            }
+        }
+        at = next;
+    }
+    at[text.len()]
+}
+
+/// A `related`'s or `relatedBy`'s `when`, `optional` and `givesSince` (ADR-0169): the named object's own condition,
+/// reading only that object; a time (`olderThan`) only from `sextantApi` 5, never `expiring` (the user's setting moves
+/// it, which the named object's row does not follow).
+fn check_related_parts(
+    when: &ProblemCondition,
+    target: &KindPattern,
+    optional: Option<bool>,
+    gives_since: Option<bool>,
+    path: &JsonPath,
+    checks: &ConditionChecks<'_, '_>,
+) -> Result<(), ManifestError> {
+    for (key, set) in [("optional", optional), ("givesSince", gives_since)] {
+        let Some(set) = set else { continue };
+        if checks.api < PARITY_API {
+            return Err(at(
+                &path.key(key),
+                format!("needs sextantApi {PARITY_API} or later"),
+            ));
+        }
+        if !set {
+            return Err(at(&path.key(key), "is `true` or left out"));
+        }
+    }
+    check_object_condition(
+        when,
+        std::slice::from_ref(target),
+        &path.key("when"),
+        checks.api,
+    )?;
+    if checks.api < PARITY_API && uses_time(when) {
+        return Err(at(
+            &path.key("when"),
+            "reads no time (`olderThan`): it is judged when that object changes",
+        ));
+    }
+    if uses_setting_time(when) {
+        return Err(at(
+            &path.key("when"),
+            "reads no `expiring`: the user's setting moves it, and the named object's row is judged when it changes",
+        ));
+    }
+    Ok(())
+}
+
+/// Whether a condition reads a time the user's setting moves (`expiring`).
+fn uses_setting_time(condition: &ProblemCondition) -> bool {
+    match condition {
+        ProblemCondition::Expiring { .. } => true,
+        ProblemCondition::All { of } | ProblemCondition::Any { of } => {
+            of.iter().any(uses_setting_time)
+        }
+        ProblemCondition::Not { of } => uses_setting_time(of),
+        _ => false,
+    }
+}
+
 /// Whether a condition reads other objects than the judged one: a looked-up kind (`missing`, `related`,
 /// `relatedBy`, `selectsNone`) or a judge's answer (`judged`).
 pub(crate) fn looks_across(condition: &ProblemCondition) -> bool {
@@ -2467,6 +2846,12 @@ pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), M
                     if filters.contains(&"quantity") {
                         found = found.or(Some("`|quantity` in a text"));
                     }
+                    if filters.iter().any(|f| f.starts_with("cut:")) {
+                        found = found.or(Some("`|cut:<n>`"));
+                    }
+                    if related_placeholder(inner).is_some() {
+                        found = found.or(Some("`{{related:…}}`"));
+                    }
                     if inner.trim() == SELECTS_NONE_NAMESPACES {
                         found = found.or(Some("`{{selectsNone:namespaces}}`"));
                     }
@@ -2525,6 +2910,12 @@ fn check_filters(
             .strip_prefix("clip:")
             .and_then(|n| n.parse::<u32>().ok())
             .is_some_and(|n| (1..=1000).contains(&n));
+        // `cut:<n>` (ADR-0169): the first characters without "…", as a built-in column cut a checksum.
+        let clip = clip
+            || filter
+                .strip_prefix("cut:")
+                .and_then(|n| n.parse::<u32>().ok())
+                .is_some_and(|n| (1..=1000).contains(&n));
         // `after:<marker>` (#404): the text after the marker's last place, `Kind=` of a composed job's GVK.
         let after = filter.strip_prefix("after:").is_some_and(|marker| {
             (1..=20).contains(&marker.chars().count())
@@ -2541,7 +2932,7 @@ fn check_filters(
             return Err(at(
                 path,
                 format!(
-                    "has a filter `{filter}`: one of {}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>",
+                    "has a filter `{filter}`: one of {}, clip:<1 to 1000>, cut:<1 to 1000>, after:<marker>, fqdn:<namespace path>",
                     PLACEHOLDER_FILTERS.join(", ")
                 ),
             ));
@@ -2838,6 +3229,28 @@ pub fn reads_secret(kind: &KindPattern, steps: &[PathStep]) -> bool {
                     PathStep::Match { .. } => true,
                 })
             })
+}
+
+/// Whether a field path names exactly one inline secret field of `kind` (a k3s node's `node-args` annotation), by names
+/// only: what `exists`/`absent` may ask of from `sextantApi` 5 (ADR-0169). A path into it, or through `*`, is not.
+pub fn is_inline_secret_field(kind: &KindPattern, text: &str) -> bool {
+    let Some(steps) = parse_field_path(text.trim()) else {
+        return false;
+    };
+    INLINE_SECRETS
+        .iter()
+        .filter(|k| {
+            k.group.eq_ignore_ascii_case(&kind.group) && k.kind.eq_ignore_ascii_case(&kind.kind)
+        })
+        .flat_map(|k| k.paths.iter())
+        .any(|secret| {
+            secret.len() == steps.len()
+                && !secret.contains(&"*")
+                && secret
+                    .iter()
+                    .zip(&steps)
+                    .all(|(want, got)| matches!(got, PathStep::Key(key) if key == want))
+        })
 }
 
 /// The kinds the rules of `manifest` judge or look up (`missing`), and then those its judges read (ADR-0168), each
@@ -3232,5 +3645,32 @@ mod tests {
         let own = super::super::contributions::own_text_placeholders;
         assert_eq!(own("{{ value }} ({{.a}})"), (true, " ({{.a}})".to_owned()));
         assert_eq!(own("{{.value}} {{"), (false, "{{.value}} {{".to_owned()));
+    }
+
+    #[test]
+    fn a_pattern_reads_any_text_and_digits_as_the_window_does() {
+        // The same cases as `fitsPattern` in src/extensions/relatedFound.test.ts.
+        for (text, pattern, fits) in [
+            ("v1.33.4+k3s1", "*+k3s#", true),
+            ("v1.33.4+k3s12", "*+k3s#", true),
+            ("v1.33.4+k3sx", "*+k3s#", false),
+            ("v1.33.4+k3s", "*+k3s#", false),
+            ("v1.33.4+rke2r1", "*+rke2r#", true),
+            ("", "*", true),
+            ("a", "", false),
+            ("ab12cd", "a*#*d", true),
+        ] {
+            assert_eq!(fits_pattern(text, pattern), fits, "{text} {pattern}");
+        }
+    }
+
+    #[test]
+    fn a_related_placeholder_names_paths_and_nothing_else_reads_like_it() {
+        assert_eq!(
+            related_placeholder(" related:.a ?? .b[x=\"?? \"] "),
+            Some(vec![".a", ".b[x=\"?? \"]"])
+        );
+        assert_eq!(related_placeholder(".related"), None);
+        assert_eq!(related_placeholder("missing"), None);
     }
 }

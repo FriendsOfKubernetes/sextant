@@ -1,4 +1,4 @@
-// The consent block of services (ADR-0158) and the status patches of the permissions (ADR-0155).
+// The consent block of services (ADR-0158), the status patches of the permissions (ADR-0155) and their masked secrets (ADR-0169).
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import "../../i18n";
@@ -30,5 +30,26 @@ describe("services and status patches on the consent screen", () => {
     );
     expect(screen.getByText("May change the status of: Rollout (argoproj.io) (where it may modify them).")).toBeInTheDocument();
     expect(screen.getByText("May read every kind of the API groups under cluster.x-k8s.io, in every namespace.")).toBeInTheDocument();
+  });
+
+  it("name the kinds whose secret fields the extension sees masked (ADR-0169)", async () => {
+    const { container } = render(
+      <PermissionsView
+        permissions={{
+          clusters: { type: "all" },
+          rules: [],
+          maskedSecrets: [
+            { group: "", kind: "Node" },
+            { group: "helm.cattle.io", kind: "HelmChart" },
+          ],
+        }}
+      />,
+    );
+    expect(
+      screen.getByText(
+        "Sees masked copies of the fields of Node, HelmChart (helm.cattle.io) that may hold secrets: Sextant hides every secret value in them before the extension gets them.",
+      ),
+    ).toBeInTheDocument();
+    expect(await axeViolations(container)).toEqual([]);
   });
 });

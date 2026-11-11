@@ -66,6 +66,7 @@ export const MANIFEST_SHAPES = {
     clusters: "required",
     statusPatches: "optional",
     readGroups: "optional",
+    maskedSecrets: "optional",
     rules: "required",
   }),
   ManifestRule: described<ManifestRule>("/$defs/rule", {
@@ -88,6 +89,7 @@ export const MANIFEST_SHAPES = {
     problemCategories: "optional",
     problemsTitle: "optional",
     narrowLookups: "optional",
+    lookupSources: "optional",
     commands: "optional",
     kinds: "optional",
     menuItems: "optional",

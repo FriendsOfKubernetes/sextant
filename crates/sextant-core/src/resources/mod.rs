@@ -9,6 +9,7 @@ mod dry_run;
 mod get;
 pub mod inline_secrets;
 mod list;
+pub mod masked_secrets;
 mod mutate;
 pub mod openshift;
 pub mod rollouts;

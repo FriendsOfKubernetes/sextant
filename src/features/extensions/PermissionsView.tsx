@@ -94,6 +94,13 @@ export function PermissionsView({ permissions }: { permissions: ExtensionPermiss
           {t("extensions:permissions.readGroups", { groups: formatList((permissions.readGroups ?? []).map((g) => g.replace(/^\*\./, ""))) })}
         </p>
       )}
+      {(permissions.maskedSecrets ?? []).length > 0 && (
+        <p className="ext-perms__line">
+          {t("extensions:permissions.maskedSecrets", {
+            kinds: formatList((permissions.maskedSecrets ?? []).map((k) => (k.group === "" ? k.kind : `${k.kind} (${k.group})`))),
+          })}
+        </p>
+      )}
       {(permissions.statusPatches ?? []).length > 0 && (
         <p className="ext-perms__line">
           {t("extensions:permissions.statusPatches", {

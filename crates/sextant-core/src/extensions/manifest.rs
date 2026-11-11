@@ -175,6 +175,12 @@ pub struct Contributions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[ts(as = "Option<Vec<crate::access::KindPattern>>", optional)]
     pub narrow_lookups: Vec<crate::access::KindPattern>,
+    /// How the window lists kinds the rules only look up (ADR-0169): a label selector the API server picks them by and
+    /// a cap, as a rule's `source` lists the kind it judges — a chart's install Jobs by helm-controller's label.
+    /// `sextantApi` 5.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<super::problems::LookupSource>>", optional)]
+    pub lookup_sources: Vec<super::problems::LookupSource>,
     /// The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
     pub sections: Vec<SectionContribution>,
     /// A tab of the extension's in a cluster's settings (ADR-0160); `sextantApi` 4.
@@ -738,6 +744,7 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     contributions::check_details_sections(&manifest)?;
     super::problems::check_problem_categories(&manifest)?;
     super::problems::check_narrow_lookups(&manifest)?;
+    super::problems::check_lookup_sources(&manifest)?;
     contributions::check_columns(&manifest)?;
     contributions::check_kinds(&manifest)?;
     contributions::check_permissions(&manifest)?;

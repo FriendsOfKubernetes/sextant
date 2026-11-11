@@ -25,4 +25,10 @@ statusPatches?: Array<KindPattern>,
  * covered clusters (`sextantApi` 4): the kinds providers define, unknown in advance. Custom resource groups only;
  * never more than Read, and never wider for an agent, whose own access decides apart.
  */
-readGroups?: Array<string>, };
+readGroups?: Array<string>, 
+/**
+ * Kinds whose inline secret material the extension gets masked by Sextant instead of blanked (ADR-0169,
+ * ADR-0123): a k3s/RKE2 node's arguments, a HelmChart's or HelmChartConfig's values, with every secret value
+ * hidden in Rust before the object leaves (`resources::masked_secrets`). `sextantApi` 5; only those kinds.
+ */
+maskedSecrets?: Array<KindPattern>, };

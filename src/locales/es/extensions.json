@@ -146,7 +146,8 @@
       "portForward": "reenvío de puertos"
     },
     "readGroups": "Puede leer todos los kinds de los grupos de API bajo {{groups}}, en todos los namespaces.",
-    "statusPatches": "Puede cambiar el status de: {{kinds}} (donde puede modificarlos)."
+    "statusPatches": "Puede cambiar el status de: {{kinds}} (donde puede modificarlos).",
+    "maskedSecrets": "Ve copias enmascaradas de los campos de {{kinds}} que pueden contener secretos: Sextant oculta cada valor secreto antes de que la extensión los reciba."
   },
   "state": {
     "active": "Activa",

@@ -136,7 +136,8 @@
       "portForward": "转发端口"
     },
     "readGroups": "可以读取 {{groups}} 下所有 API 组的全部 kind，在所有 namespace 中。",
-    "statusPatches": "可以更改以下资源的 status：{{kinds}}（在允许修改的位置）。"
+    "statusPatches": "可以更改以下资源的 status：{{kinds}}（在允许修改的位置）。",
+    "maskedSecrets": "可查看 {{kinds}} 中可能包含机密的字段的掩码副本：Sextant 会在扩展收到之前隐藏其中的每个机密值。"
   },
   "state": {
     "active": "已启用",

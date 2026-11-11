@@ -64,6 +64,13 @@ export interface ManifestPermissions {
    * every namespace; custom resource groups only (sextantApi 4).
    */
   readGroups?: string[];
+  /**
+   * Kinds whose inline secret material the extension gets as Sextant's masked copy instead of an empty text — a k3s
+   * or RKE2 Node's `node-args`, a HelmChart's `valuesContent` and `set`, a HelmChartConfig's `valuesContent`, every
+   * secret value hidden by Sextant before the object leaves it, named in `sextant.dev/values-masked`; sextantApi 5
+   * (since Sextant 0.30.1). Shown on the consent screen.
+   */
+  maskedSecrets?: KindPattern[];
   rules: ManifestRule[];
 }
 
@@ -417,6 +424,11 @@ export interface ManifestContributions {
    * most 40; past that every namespace) instead of the whole cluster; needs `sextantApi` 4 (since Sextant 0.30).
    */
   narrowLookups?: KindPattern[];
+  /**
+   * How kinds the rules only look up are listed: a label selector the API server picks them by, a cap (1 to 20 000,
+   * 5000 without it), or both, as a rule's `source` lists its own kind; needs `sextantApi` 5 (since Sextant 0.30.1).
+   */
+  lookupSources?: { kind: KindPattern; labelSelector?: string; maxObjects?: number }[];
   /** The extension's own sidebar sections: title, header icon, place; needs `sextantApi` 4. */
   sections?: ManifestSection[];
   /** A tab in a cluster's settings (`view=settings` with the contribution `clusterSettings`, that cluster in the context); needs `sextantApi` 4. */
@@ -619,6 +631,9 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       ...(file.permissions.readGroups !== undefined && file.permissions.readGroups.length > 0
         ? { readGroups: file.permissions.readGroups }
         : {}),
+      ...(file.permissions.maskedSecrets !== undefined && file.permissions.maskedSecrets.length > 0
+        ? { maskedSecrets: file.permissions.maskedSecrets }
+        : {}),
     },
     contributes: {
       pages: c.pages ?? [],
@@ -651,6 +666,7 @@ export function normalizeManifest(file: ManifestFile): ExtensionManifest {
       problemCategories: (c.problemCategories ?? []).map((pc) => ({ id: pc.id, title: pc.title, optIn: pc.optIn ?? false })),
       ...(c.problemsTitle !== undefined ? { problemsTitle: c.problemsTitle } : {}),
       ...(c.narrowLookups !== undefined && c.narrowLookups.length > 0 ? { narrowLookups: c.narrowLookups } : {}),
+      ...(c.lookupSources !== undefined && c.lookupSources.length > 0 ? { lookupSources: c.lookupSources } : {}),
       sectionBadges: (c.sectionBadges ?? []).map((b) => ({
         section: b.section,
         rules: b.rules ?? [],

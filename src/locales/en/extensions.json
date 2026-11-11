@@ -141,7 +141,8 @@
       "portForward": "forward ports"
     },
     "readGroups": "May read every kind of the API groups under {{groups}}, in every namespace.",
-    "statusPatches": "May change the status of: {{kinds}} (where it may modify them)."
+    "statusPatches": "May change the status of: {{kinds}} (where it may modify them).",
+    "maskedSecrets": "Sees masked copies of the fields of {{kinds}} that may hold secrets: Sextant hides every secret value in them before the extension gets them."
   },
   "state": {
     "active": "Active",

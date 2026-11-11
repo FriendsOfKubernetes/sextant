@@ -1,6 +1,7 @@
 // The masking of a k3s/RKE2 node's arguments (ADR-0123), kept from the former built-in k3s view's tests.
 import { describe, expect, it } from "vitest";
 import { nodeArgs, secretFlag } from "./nodeArgs";
+import maskingCases from "./masking-cases.json";
 
 const SERVER = JSON.stringify([
   "server",
@@ -57,4 +58,16 @@ describe("node arguments", () => {
   ])("%s %s → secret %s", (flag, value, secret) => {
     expect(secretFlag(flag, value)).toBe(secret);
   });
+});
+
+// The cases Rust masks node arguments by for an extension that may have them masked (ADR-0169,
+// `crates/sextant-core/src/resources/masked_secrets.rs`): the window reads the annotation and what Rust gives alike.
+
+describe("the masking Sextant gives extensions (masking-cases.json)", () => {
+  for (const c of maskingCases.nodeArgs) {
+    it(c.name, () => {
+      expect(nodeArgs(c.text)).toEqual(c.args);
+      if (c.masked !== null) expect(nodeArgs(c.masked)).toEqual(c.args);
+    });
+  }
 });

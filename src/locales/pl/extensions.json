@@ -151,7 +151,8 @@
       "portForward": "przekierowanie portów"
     },
     "readGroups": "Może odczytywać wszystkie kindy grup API pod {{groups}}, we wszystkich namespace'ach.",
-    "statusPatches": "Może zmieniać status: {{kinds}} (tam, gdzie może je modyfikować)."
+    "statusPatches": "Może zmieniać status: {{kinds}} (tam, gdzie może je modyfikować).",
+    "maskedSecrets": "Widzi zamaskowane kopie pól {{kinds}}, które mogą zawierać sekrety: Sextant ukrywa w nich każdą tajną wartość, zanim rozszerzenie je otrzyma."
   },
   "state": {
     "active": "Aktywne",

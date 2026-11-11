@@ -136,7 +136,8 @@
       "portForward": "ポートフォワード"
     },
     "readGroups": "{{groups}} 配下の API グループのすべての kind を、すべての namespace で読み取れます。",
-    "statusPatches": "次の status を変更できます: {{kinds}}（変更が許可されている場所で）。"
+    "statusPatches": "次の status を変更できます: {{kinds}}（変更が許可されている場所で）。",
+    "maskedSecrets": "{{kinds}} のシークレットを含む可能性のあるフィールドのマスク済みコピーを参照できます。拡張機能が受け取る前に、Sextant がその中のすべてのシークレット値を隠します。"
   },
   "state": {
     "active": "有効",

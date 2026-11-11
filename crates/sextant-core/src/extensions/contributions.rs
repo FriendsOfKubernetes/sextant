@@ -1113,6 +1113,33 @@ pub(crate) fn check_permissions(manifest: &ExtensionManifest) -> Result<(), Mani
             return Err(at(&groups.index(i), "is named twice"));
         }
     }
+    // Masked copies of inline secret material (ADR-0169): only the kinds Sextant masks, each once.
+    let masked = permissions.key("maskedSecrets");
+    let kinds = &manifest.permissions.masked_secrets;
+    if !kinds.is_empty() && manifest.sextant_api < super::problems::PARITY_API {
+        return Err(at(
+            &masked,
+            format!("needs sextantApi {} or later", super::problems::PARITY_API),
+        ));
+    }
+    for (i, kind) in kinds.iter().enumerate() {
+        let here = masked.index(i);
+        if !crate::resources::masked_secrets::can_mask(&kind.group, &kind.kind) {
+            return Err(at(
+                &here.key("kind"),
+                format!(
+                    "is no kind Sextant masks: one of {}",
+                    crate::resources::masked_secrets::maskable_kinds().join(", ")
+                ),
+            ));
+        }
+        if let Some(first) = kinds[..i].iter().position(|other| same_kind(other, kind)) {
+            return Err(at(
+                &here.key("kind"),
+                format!("duplicate kind (also {})", masked.index(first)),
+            ));
+        }
+    }
     let list = permissions.key("statusPatches");
     let kinds = &manifest.permissions.status_patches;
     if kinds.is_empty() {

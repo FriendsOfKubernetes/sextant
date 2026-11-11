@@ -2143,6 +2143,41 @@ fn objects_reach_an_extension_without_their_inline_secret_material() {
     assert_eq!(without_inline_secrets(config_map.clone()), config_map);
 }
 
+#[test]
+fn objects_reach_an_extension_granted_masked_secrets_masked_and_others_blanked() {
+    let node = json!({
+        "apiVersion": "v1", "kind": "Node",
+        "metadata": { "name": "n", "annotations": {
+            "k3s.io/node-args": "[\"server\",\"--token\",\"join-me\",\"--disable\",\"traefik\"]",
+            "k3s.io/node-env": "{\"K3S_TOKEN\":\"join-me\"}",
+        } },
+    });
+    let granted = [KindPattern {
+        group: String::new(),
+        kind: "Node".into(),
+    }];
+    let masked = for_extension(node.clone(), &granted);
+    assert_eq!(
+        masked["metadata"]["annotations"]["k3s.io/node-args"],
+        "[\"server\",\"--token=********\",\"--disable=traefik\"]"
+    );
+    assert_eq!(masked["metadata"]["annotations"]["k3s.io/node-env"], "");
+    assert!(!masked.to_string().contains("join-me"), "{masked}");
+    // Without the grant, or for another kind, as before.
+    assert_eq!(
+        for_extension(node.clone(), &[]),
+        without_inline_secrets(node.clone())
+    );
+    let chart = [KindPattern {
+        group: "helm.cattle.io".into(),
+        kind: "HelmChart".into(),
+    }];
+    assert_eq!(
+        for_extension(node.clone(), &chart),
+        without_inline_secrets(node)
+    );
+}
+
 /// Agrees to the metric query `ceph_health_status{namespace="{{ns}}"}` of `id` and points `context`'s metrics at a
 /// Prometheus Service.
 fn agree_to_metric_query(env: &Env, id: &str, context: &str) {

@@ -21,6 +21,8 @@ import {
   MAX_VALUE_CHARS,
   MISSING_MARK,
   numberOf,
+  RELATED_MARK,
+  relatedMarkPaths,
   SELECTS_IN_MARK,
   selectingKey,
   selectorMatches,
@@ -28,6 +30,7 @@ import {
   type LabelSelector,
   type Lookup,
   type SelectingLookup,
+  relatedPaths,
 } from "./problemRules";
 
 /** The extension API whose additions the window applies only to manifests that name it (ADR-0169). */
@@ -50,6 +53,11 @@ export interface AcrossRow {
   labels: Record<string, string>;
   /** Whether each `related` condition's own `when` on this kind holds for it (#409), by `factKey`. */
   facts?: Record<string, boolean>;
+  /**
+   * Where a fact holds only from or until a time, or tells when its state began (ADR-0169): the window and `since`
+   * of its verdict, by `factKey`. A rule's `related` applies them to its problem.
+   */
+  windows?: Record<string, FactWindow>;
   /** The texts at the paths a `relatedBy` compares on this kind (#404), by path. */
   values?: Record<string, string>;
   /** `namespace/name` of the objects it names in a `toldThroughReferrer` list (#404), at most `MAX_ROW_REFS`. */
@@ -68,6 +76,13 @@ export interface AcrossRow {
    * texts, so a change of them makes the window ask Rust again which kinds are defined.
    */
   defines?: string[];
+}
+
+/** When a fact of a row holds (ADR-0169): from, until, and since when its state began, as its verdict says. */
+export interface FactWindow {
+  activeFrom?: number;
+  until?: number;
+  since?: string;
 }
 
 /** A selecting object's selectors, as Prometheus Operator reads them (ADR-0169). */
@@ -121,7 +136,23 @@ export function rowOf(
     }
     const created = Date.parse(meta.creationTimestamp ?? "");
     const row: AcrossRow = { namespace: meta.namespace ?? "", name: meta.name ?? "", created: Number.isNaN(created) ? undefined : created, labels };
-    if (facts.length > 0) row.facts = Object.fromEntries(facts.map((when) => [factKey(when), evaluate(when, obj).holds]));
+    if (facts.length > 0) {
+      row.facts = {};
+      for (const when of facts) {
+        const key = factKey(when);
+        const verdict = evaluate(when, obj);
+        row.facts[key] = verdict.holds;
+        // Its window and since (ADR-0169): times inside a `related` from sextantApi 5, `givesSince`.
+        if (verdict.holds && (verdict.activeFrom !== undefined || verdict.until !== undefined || verdict.since !== undefined)) {
+          row.windows ??= {};
+          row.windows[key] = {
+            ...(verdict.activeFrom !== undefined ? { activeFrom: verdict.activeFrom } : {}),
+            ...(verdict.until !== undefined ? { until: verdict.until } : {}),
+            ...(verdict.since !== undefined ? { since: verdict.since } : {}),
+          };
+        }
+      }
+    }
     if (rankPath !== undefined) {
       const rank = numberOf(valueAt(obj, rankPath));
       if (rank !== undefined) row.rank = rank;
@@ -339,6 +370,8 @@ export function judgeAcross(
   const tell = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean | undefined => {
     // `judged` (ADR-0168) is told apart, by `factsOf`.
     if (lookup.judged) return true;
+    // `served` (ADR-0169): discovery says; before it answered, cannot tell.
+    if (lookup.served) return served === undefined ? undefined : served(lookup);
     // `selectedByNone` (ADR-0169): some object of the kinds exists and none selects it.
     if (lookup.selectedBy) {
       const found = selecting(lookup.selectedBy);
@@ -390,12 +423,27 @@ export function judgeAcross(
     const namespace = target.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
     if (target.namespaced && watched !== null && !watched?.includes(namespace)) return [];
     const by = lookup.by;
-    return [...known.values()].filter(
-      (row) =>
-        (!target.namespaced || row.namespace === namespace) &&
-        by.every(([path, value]) => row.values?.[path] === value) &&
-        (lookup.fact === undefined || row.facts?.[lookup.fact] === true),
+    const holding = (row: AcrossRow) => lookup.fact === undefined || row.facts?.[lookup.fact] === true;
+    const matching = [...known.values()].filter(
+      (row) => (!target.namespaced || row.namespace === namespace) && by.every(([path, value]) => row.values?.[path] === value),
     );
+    // `newest` (ADR-0169): one of them counts — the one holding `prefer`, else the newest — and its fact decides.
+    if (lookup.newest) {
+      const prefer = lookup.newest.prefer;
+      const preferred = prefer ? matching.find((row) => prefer.every(([path, value]) => row.values?.[path] === value)) : undefined;
+      const one = preferred ?? matching.reduce<AcrossRow | undefined>((best, row) => (!best || newer(row, best) ? row : best), undefined);
+      return one && holding(one) ? [one] : [];
+    }
+    return matching.filter(holding);
+  };
+  /** The row a `related` or `relatedBy` lookup found, its fact holding (ADR-0169); none while it cannot tell. */
+  const foundRow = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): AcrossRow | undefined => {
+    if (lookup.fact === undefined || lookup.served || lookup.selects || lookup.selectedBy || lookup.judged) return undefined;
+    if (lookup.by) return relatedRows(p, lookup)[0];
+    if (tell(p, lookup) !== true) return undefined;
+    const target = targets.find((t) => sameKind(t, lookup));
+    const namespace = target?.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
+    return target ? namesOf(target)?.get(`${namespace}/${lookup.name}`) : undefined;
   };
   /** The names the `related` and `relatedBy` lookups found (`{{found}}`), each once, in their order. */
   const foundNames = (p: Problem): string[] => {
@@ -420,12 +468,14 @@ export function judgeAcross(
     const shown = (lookup: NonNullable<Problem["lookups"]>[number]) =>
       lookup.namespace && lookup.namespace !== p.object.namespace ? `${lookup.namespace}/${lookup.name}` : lookup.name;
     for (const lookup of p.lookups ?? []) {
+      // An optional `related` (ADR-0169) decides nothing.
+      if (lookup.optional) continue;
       const told = tell(p, lookup);
       if (lookup.anyOf === undefined) {
         if (told === undefined) untold?.add(p.uid);
         if (told !== true) return null;
         // From sextantApi 5 `{{missing}}` names it too, with its namespace (ADR-0169).
-        if ((api ?? 0) >= PARITY_API && lookup.fact === undefined && !lookup.by && !lookup.selects && !lookup.selectedBy && !lookup.judged) plain.push(shown(lookup));
+        if ((api ?? 0) >= PARITY_API && lookup.fact === undefined && !lookup.by && !lookup.selects && !lookup.selectedBy && !lookup.judged && !lookup.served) plain.push(shown(lookup));
         continue;
       }
       const found = lists.get(lookup.anyOf) ?? [];
@@ -533,8 +583,75 @@ export function judgeAcross(
     // `{{found}}` (ADR-0167 amendment): the objects a `related` or `relatedBy` found, an HPA fighting a VPA.
     if (out.message?.includes(FOUND_MARK)) out = { ...out, message: out.message.split(FOUND_MARK).join(formatList(foundNames(out))) };
     if (facts.judged) out = { ...out, lookups: facts.lookups, ...(out.message !== undefined ? { message: withFacts(out.message, facts.values) } : {}) };
+    // What the `related` lookups found (ADR-0169): their windows and since, and their fields in the message.
+    const found = (p.lookups ?? []).flatMap((lookup) => {
+      const row = foundRow(p, lookup);
+      return row ? [{ lookup, row }] : [];
+    });
+    out = foundTimes(out, found);
+    if (out.message !== undefined && out.message.includes("\uE000")) {
+      const first = found[0]?.row;
+      out = { ...out, message: withRelated(out.message, first) };
+    }
     return [out];
   });
+}
+
+/** A found object's window and since (ADR-0169) applied to its problem, which then counts from and until them. */
+function foundTimes(p: Problem, found: readonly { lookup: NonNullable<Problem["lookups"]>[number]; row: AcrossRow }[]): Problem {
+  let activeFrom = p.activeFrom;
+  let until = p.until;
+  let since = p.since;
+  let changed = false;
+  for (const { lookup, row } of found) {
+    const window = lookup.fact === undefined ? undefined : row.windows?.[lookup.fact];
+    if (!window) continue;
+    if (window.activeFrom !== undefined) {
+      activeFrom = Math.max(activeFrom ?? window.activeFrom, window.activeFrom);
+      changed = true;
+    }
+    if (window.until !== undefined) {
+      until = Math.min(until ?? window.until, window.until);
+      changed = true;
+    }
+    if (lookup.givesSince && window.since !== undefined && !Number.isNaN(Date.parse(window.since))) {
+      since = window.since;
+      changed = true;
+    }
+  }
+  if (!changed) return p;
+  const parsed = since !== undefined ? Date.parse(since) : NaN;
+  const start = Number.isNaN(parsed) ? p.firstSeen : parsed;
+  const activeAt = activeFrom ?? (p.graceMs ? start + p.graceMs : Math.min(start, p.firstSeen));
+  return {
+    ...p,
+    ...(since !== undefined ? { since } : {}),
+    ...(activeFrom !== undefined ? { activeFrom } : {}),
+    ...(until !== undefined ? { until } : {}),
+    activeAt,
+  };
+}
+
+/**
+ * A message with each `{{related:<path> ?? …}}` filled from the found object's row (ADR-0169): the first of its paths
+ * with a text, cleaned and clipped; nothing when none is, or nothing was found. Filled last, so no cluster text in a
+ * value is read as a placeholder.
+ */
+function withRelated(message: string, row: AcrossRow | undefined): string {
+  const filled = message.replace(RELATED_MARK, (_, hex: string) => {
+    for (const path of relatedMarkPaths(hex)) {
+      const value = row?.values?.[path];
+      if (value === undefined || value === "") continue;
+      const text = cleanText(value) ?? "";
+      const chars = Array.from(text);
+      return chars.length > MAX_VALUE_CHARS ? `${chars.slice(0, MAX_VALUE_CHARS).join("")}…` : text;
+    }
+    return "";
+  });
+  // A mark cut by the message's clip goes too.
+  const whole = filled.replace(/\uE000[0-9a-f]*\uE001?/g, "");
+  const chars = Array.from(whole);
+  return chars.length > MAX_MESSAGE_CHARS ? `${chars.slice(0, MAX_MESSAGE_CHARS).join("")}…` : whole;
 }
 
 /**
@@ -648,8 +765,17 @@ export function judgedAcross(rule: ProblemContribution): boolean {
     rule.toldThroughReferrer !== undefined ||
     rule.newestPer !== undefined ||
     lookedUp(rule.when).length > 0 ||
-    judgesOf(rule.when).length > 0
+    judgesOf(rule.when).length > 0 ||
+    servesIn(rule.when)
   );
+}
+
+/** Whether a condition asks whether the cluster serves a kind (`served`, ADR-0169). */
+export function servesIn(condition: ProblemCondition): boolean {
+  if (condition.type === "served") return true;
+  if (condition.type === "all" || condition.type === "any") return condition.of.some(servesIn);
+  if (condition.type === "not") return servesIn(condition.of);
+  return false;
 }
 
 /** The judges a condition's `judged` conditions name (ADR-0168), each once. */
@@ -697,14 +823,30 @@ export function selectedKinds(rules: readonly ProblemContribution[], keyOf: (kin
 /** The paths `relatedBy` compares on each kind, by the `group/kind` key (`keyOf`) it names (#404). */
 export function comparedPaths(rules: readonly ProblemContribution[], keyOf: (kind: { group: string; kind: string }) => string): Map<string, string[]> {
   const out = new Map<string, string[]>();
-  const visit = (condition: ProblemCondition) => {
-    if (condition.type === "relatedBy") {
-      const key = keyOf(condition.kind);
-      out.set(key, [...new Set([...(out.get(key) ?? []), ...condition.pairs.map((p) => p.theirs)])]);
-    } else if (condition.type === "all" || condition.type === "any") condition.of.forEach(visit);
+  const add = (kind: { group: string; kind: string }, paths: readonly string[]) => {
+    const key = keyOf(kind);
+    out.set(key, [...new Set([...(out.get(key) ?? []), ...paths])]);
   };
-  for (const rule of rules) visit(rule.when);
+  const visit = (condition: ProblemCondition, related: string[]) => {
+    // `prefer` (ADR-0169) compares on the found object too; `{{related:…}}` reads its fields.
+    if (condition.type === "relatedBy") add(condition.kind, [...condition.pairs.map((p) => p.theirs), ...(condition.prefer ?? []).map((p) => p.theirs), ...related]);
+    else if (condition.type === "related") {
+      if (related.length > 0) add(condition.kind, related);
+    } else if (condition.type === "all" || condition.type === "any") condition.of.forEach((c) => visit(c, related));
+    else if (condition.type === "not") visit(condition.of, related);
+  };
+  for (const rule of rules) visit(rule.when, relatedPathsOf(rule));
   return out;
+}
+
+/** The paths a rule's messages read of the object its `related` found (`{{related:…}}`, ADR-0169). */
+export function relatedPathsOf(rule: ProblemContribution): string[] {
+  const texts = [rule.message, ...Object.values(rule.messageForms ?? {})];
+  const out = new Set<string>();
+  for (const text of texts) {
+    for (const match of text.matchAll(/\{\{([\s\S]*?)\}\}/g)) for (const path of relatedPaths(match[1] ?? "") ?? []) out.add(path);
+  }
+  return [...out];
 }
 
 /**

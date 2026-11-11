@@ -25,6 +25,7 @@ import {
   type ProblemJudgeContribution,
   type ProblemScope,
   type ResourceKind,
+  type LookupSource,
   type RuleSource,
 } from "../../api";
 import { compileRules, kindKeyOf, type Lookup, type RuleContext } from "../../extensions/problemRules";
@@ -199,6 +200,7 @@ export function registerExtensionProblems(
   manifestJudges: readonly ProblemJudgeContribution[] = [],
   narrowLookups: readonly { group: string; kind: string }[] = [],
   api = 4,
+  lookupSources: readonly LookupSource[] = [],
 ): () => void {
   const category = categoryOfExtension(extensionId, own?.id);
   // Rules of kinds from definitions are one detector, applied to the sources of the kinds Rust says are defined.
@@ -228,6 +230,11 @@ export function registerExtensionProblems(
   if (kindsFrom) across.add(kindKeyOf(kindsFrom.kind));
   const sources = new Map<string, RuleSource>();
   for (const rule of rules) if (rule.source) sources.set(rule.kindsFrom ? FROM_KEY : kindKeyOf(rule.kind), rule.source);
+  // How kinds the rules only look up are listed (`lookupSources`, ADR-0169): Rust checked no rule judges them.
+  for (const { kind, labelSelector, maxObjects } of lookupSources) {
+    if (!across.has(kindKeyOf(kind)) || sources.has(kindKeyOf(kind))) continue;
+    sources.set(kindKeyOf(kind), { metadataOnly: false, ...(labelSelector !== undefined ? { labelSelector } : {}), ...(maxObjects !== undefined ? { maxObjects } : {}) });
+  }
   const entry: Entry = {
     category,
     extensionId,

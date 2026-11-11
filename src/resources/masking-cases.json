@@ -1,0 +1,96 @@
+{
+  "$comment": "How Sextant masks inline secret material it gives an extension that may have it masked (ADR-0169, ADR-0123): shared by crates/sextant-core/src/resources/masked_secrets.rs (what Rust gives), src/resources/nodeArgs.ts (the window's reading of node arguments) and extensions/k3s/src/mask.ts (what the k3s extension shows). `args` is what the window reads from `text` and from `masked` alike; `masked` is what Rust gives (null: blanked, as for any extension).",
+  "nodeArgs": [
+    {
+      "name": "a k3s server: k3s's own mask, a secret flag, a secret setting of an `-arg` flag, flags without values",
+      "text": "[\"server\",\"--cluster-init\",\"--disable\",\"traefik\",\"--token\",\"********\",\"--etcd-s3-secret-key\",\"plain-old-secret\",\"--kube-apiserver-arg\",\"oidc-client-secret=abc123\",\"--tls-san\",\"k3s.example.com\",\"--write-kubeconfig-mode=0644\"]",
+      "args": [
+        { "value": "server", "hidden": false },
+        { "flag": "--cluster-init", "hidden": false },
+        { "flag": "--disable", "value": "traefik", "hidden": false },
+        { "flag": "--token", "hidden": true },
+        { "flag": "--etcd-s3-secret-key", "hidden": true },
+        { "flag": "--kube-apiserver-arg", "hidden": true },
+        { "flag": "--tls-san", "value": "k3s.example.com", "hidden": false },
+        { "flag": "--write-kubeconfig-mode", "value": "0644", "hidden": false }
+      ],
+      "masked": "[\"server\",\"--cluster-init\",\"--disable=traefik\",\"--token=********\",\"--etcd-s3-secret-key=********\",\"--kube-apiserver-arg=********\",\"--tls-san=k3s.example.com\",\"--write-kubeconfig-mode=0644\"]"
+    },
+    {
+      "name": "an agent: a server URL's credentials cleaned",
+      "text": "[\"agent\",\"--server\",\"https://k3s:k3s-pass@10.0.0.11:6443\",\"--token\",\"********\"]",
+      "args": [
+        { "value": "agent", "hidden": false },
+        { "flag": "--server", "value": "https://10.0.0.11:6443", "hidden": false },
+        { "flag": "--token", "hidden": true }
+      ],
+      "masked": "[\"agent\",\"--server=https://10.0.0.11:6443\",\"--token=********\"]"
+    },
+    {
+      "name": "RKE2: a datastore endpoint, a flag whose name looks secret, an `-arg` flag of a plain setting",
+      "text": "[\"server\",\"--cni\",\"canal\",\"--datastore-endpoint\",\"postgres://rke2:hunter2@db.example.com:5432/rke2\",\"--vpn-auth-file\",\"/etc/vpn\",\"--kubelet-arg=max-pods=200\",\"--etcdS3AccessKey\",\"AKIA\"]",
+      "args": [
+        { "value": "server", "hidden": false },
+        { "flag": "--cni", "value": "canal", "hidden": false },
+        { "flag": "--datastore-endpoint", "hidden": true },
+        { "flag": "--vpn-auth-file", "hidden": true },
+        { "flag": "--kubelet-arg", "value": "max-pods=200", "hidden": false },
+        { "flag": "--etcdS3AccessKey", "hidden": true }
+      ],
+      "masked": "[\"server\",\"--cni=canal\",\"--datastore-endpoint=********\",\"--vpn-auth-file=********\",\"--kubelet-arg=max-pods=200\",\"--etcdS3AccessKey=********\"]"
+    },
+    {
+      "name": "words that are flags follow flags; a bare mask; a word after a value",
+      "text": "[\"--node-label\",\"-x\",\"********\",\"--a=b\",\"c\"]",
+      "args": [
+        { "flag": "--node-label", "hidden": false },
+        { "flag": "-x", "hidden": true },
+        { "flag": "--a", "value": "b", "hidden": false },
+        { "value": "c", "hidden": false }
+      ],
+      "masked": "[\"--node-label\",\"-x=********\",\"--a=b\",\"c\"]"
+    },
+    { "name": "not JSON", "text": "server --token abc", "args": null, "masked": null },
+    { "name": "not a list", "text": "{\"server\":true}", "args": null, "masked": null },
+    { "name": "not a list of texts", "text": "[\"server\",1]", "args": null, "masked": null },
+    { "name": "an empty list", "text": "[]", "args": [], "masked": "[]" }
+  ],
+  "set": [
+    {
+      "name": "a secret-looking key by any part of its path, a plain one",
+      "set": { "auth.password": "inline-pass", "ingress.enabled": "true", "global.apiToken": "t" },
+      "masked": { "auth.password": "<hidden>", "ingress.enabled": "true", "global.apiToken": "<hidden>" }
+    },
+    {
+      "name": "values cleaned of credentials, numbers and flags as texts, an empty value",
+      "set": { "repo.url": "https://u:p@example.com/x?token=1", "replicas": 3, "debug": true, "global.systemDefaultRegistry": "" },
+      "masked": { "repo.url": "https://example.com/x", "replicas": "3", "debug": "true", "global.systemDefaultRegistry": "" }
+    },
+    { "name": "not a mapping", "set": ["a=b"], "masked": null },
+    { "name": "a text", "set": "a=b", "masked": null }
+  ],
+  "values": [
+    {
+      "name": "a chart's values: secret-looking keys hidden, a URL's credentials cleaned",
+      "text": "replicaCount: 2\nimage:\n  tag: 1.2.3\napiToken: s3cr3t-value\ndatabase:\n  url: postgres://app:dbpass@db.apps:5432/app\n  password: hunter2\n",
+      "masked": { "replicaCount": 2, "image": { "tag": "1.2.3" }, "apiToken": "<hidden>", "database": { "url": "postgres://db.apps:5432/app", "password": "<hidden>" } }
+    },
+    {
+      "name": "everything under a secret-looking key hidden, its shape kept; null left as it is",
+      "text": "auth:\n  user: a\n  list: [1, 2]\n  none: null\npassword: null\nplain: [x, {secretKey: y}]\n",
+      "masked": { "auth": { "user": "<hidden>", "list": ["<hidden>", "<hidden>"], "none": null }, "password": null, "plain": ["x", { "secretKey": "<hidden>" }] }
+    },
+    {
+      "name": "numbers and flags as keys",
+      "text": "1: one\ntrue: yes\nport: 8080\nratio: 0.5\n",
+      "masked": { "1": "one", "true": "yes", "port": 8080, "ratio": 0.5 }
+    },
+    { "name": "empty", "text": "", "masked": "" },
+    { "name": "blank", "text": "  \n\n", "masked": "" },
+    { "name": "a null document", "text": "~\n", "masked": "" },
+    { "name": "a list", "text": "- a\n- b\n", "masked": null },
+    { "name": "a text", "text": "just some text", "masked": null },
+    { "name": "not YAML", "text": "a: [1, 2\nb: c\n", "masked": null },
+    { "name": "a key twice", "text": "a: 1\na: 2\n", "masked": null }
+  ]
+}

@@ -74,6 +74,12 @@ pub struct ExtensionPermissions {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     #[ts(as = "Option<Vec<String>>", optional)]
     pub read_groups: Vec<String>,
+    /// Kinds whose inline secret material the extension gets masked by Sextant instead of blanked (ADR-0169,
+    /// ADR-0123): a k3s/RKE2 node's arguments, a HelmChart's or HelmChartConfig's values, with every secret value
+    /// hidden in Rust before the object leaves (`resources::masked_secrets`). `sextantApi` 5; only those kinds.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[ts(as = "Option<Vec<KindPattern>>", optional)]
+    pub masked_secrets: Vec<KindPattern>,
 }
 
 impl ExtensionPermissions {
@@ -84,6 +90,7 @@ impl ExtensionPermissions {
             rules: Vec::new(),
             status_patches: Vec::new(),
             read_groups: Vec::new(),
+            masked_secrets: Vec::new(),
         }
     }
 
@@ -126,6 +133,14 @@ impl ExtensionPermissions {
     /// namespace. Permissions too large to compare that way (more than [`MAX_COMPARED_POINTS`]) count as wider, so the
     /// user is asked again.
     pub fn is_within(&self, granted: &ExtensionPermissions) -> bool {
+        // Masked copies of a kind's inline secrets only where they were agreed to (ADR-0169).
+        if !self
+            .masked_secrets
+            .iter()
+            .all(|asked| granted.masked_secrets.iter().any(|k| same_kind(k, asked)))
+        {
+            return false;
+        }
         let status_within = self
             .status_patches
             .iter()
@@ -299,6 +314,8 @@ struct PermissionsRepr {
     status_patches: Vec<KindPattern>,
     #[serde(default)]
     read_groups: Vec<String>,
+    #[serde(default)]
+    masked_secrets: Vec<KindPattern>,
 }
 
 impl<'de> Deserialize<'de> for ExtensionPermissions {
@@ -317,6 +334,7 @@ impl ExtensionPermissions {
             rules,
             status_patches,
             read_groups,
+            masked_secrets,
         }) = serde_json::from_value::<PermissionsRepr>(value.clone())
         else {
             return None;
@@ -326,6 +344,7 @@ impl ExtensionPermissions {
             rules,
             status_patches,
             read_groups,
+            masked_secrets,
         };
         let only_extension_actions = permissions
             .rules
@@ -433,6 +452,7 @@ mod tests {
             rules,
             status_patches: Vec::new(),
             read_groups: Vec::new(),
+            masked_secrets: Vec::new(),
         }
     }
 

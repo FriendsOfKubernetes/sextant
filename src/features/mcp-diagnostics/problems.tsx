@@ -79,6 +79,8 @@ function clusterScoped(def: SourceDef, kinds: ResourceKind[] | null | undefined)
  */
 export function lookupRefs(p: Pick<Problem, "lookups" | "object">, kinds: ResourceKind[] | null | undefined): ListRef[] {
   return (p.lookups ?? []).flatMap((lookup): ListRef[] => {
+    // `served` (ADR-0169) reads no object: discovery says.
+    if (lookup.served) return [];
     if (lookup.judged?.needs) {
       return lookup.judged.needs.map(({ group, kind, namespace, name }): ListRef => {
         const namespaced = kinds ? findKind(kinds, { group, kind })?.namespaced !== false : true;

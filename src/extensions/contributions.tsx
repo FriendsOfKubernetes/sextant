@@ -185,10 +185,12 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   const judges = contributes.problemJudges ?? [];
   const narrow = contributes.narrowLookups ?? [];
   const api = info.manifest!.sextantApi;
-  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow, api));
+  // How kinds the rules only look up are listed (ADR-0169).
+  const lookupSources = contributes.lookupSources ?? [];
+  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow, api, lookupSources));
   for (const own of contributes.problemCategories ?? []) {
     const rules = contributes.problems.filter((rule) => rule.category === own.id);
-    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges, narrow, api));
+    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges, narrow, api, lookupSources));
   }
   const allCategories = [
     ...(mainRules.length > 0 ? [categoryOfExtension(extensionId)] : []),

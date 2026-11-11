@@ -159,6 +159,20 @@ export interface Lookup {
   /** `relatedBy` (#404): an object of the kind in the judged object's namespace with these texts at these paths. */
   by?: [path: string, value: string][];
   /**
+   * `relatedBy.newest` (ADR-0169): only one of the objects `by` finds counts — one holding the text `prefer` names
+   * (the judged object's first alternative that reads one), else the newest; its fact then decides.
+   */
+  newest?: { prefer?: [path: string, value: string][] };
+  /**
+   * `related`/`relatedBy` `optional` (ADR-0169): it decides nothing; when it holds, its window, since and fields
+   * apply.
+   */
+  optional?: boolean;
+  /** `related`/`relatedBy` `givesSince` (ADR-0169): the problem's time is the found object's. */
+  givesSince?: boolean;
+  /** `served` (ADR-0169): the cluster serves the kind (`group`, `kind`), as discovery says. */
+  served?: boolean;
+  /**
    * `missing` with `alsoKinds` (ADR-0169): more kinds the name is looked up in; missing only when none of them the
    * cluster serves has it, a kind it does not serve having no objects.
    */
@@ -425,6 +439,14 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const namespace = at(obj, condition.namespacePath);
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, ...(namespace !== undefined ? { namespace } : {}), ...also }] };
     }
+    case "served":
+      // Discovery tells (ADR-0169): `judgeAcross` keeps the problem only where the cluster serves the kind.
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", served: true }] };
+    case "fits": {
+      // `*` any text, `#` digits (ADR-0169): no pattern language, so no backtracking.
+      const value = valueAt(obj, condition.path);
+      return { holds: typeof value === "string" && condition.patterns.some((pattern) => fitsPattern(value, pattern)) };
+    }
     case "problem":
       // What the extension's rules say of the row (a computed column's case, ADR-0169); nothing outside a table.
       return { holds: ctx.problemState !== undefined && ctx.problemState(obj) === (condition.state ?? "found") };
@@ -436,7 +458,32 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
         if (!isScalar(value) || String(value) === "") return NO;
         by.push([theirs, String(value)]);
       }
-      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", by, fact: factKey(condition.when) }] };
+      // `newest` with `prefer` (ADR-0169): the first alternative whose `ours` reads a text names the found object
+      // taken first — a field, or a text of the object's own (`helm-install-{{.metadata.name}}`); none, the newest.
+      let newest: Lookup["newest"];
+      if (condition.newest === true) {
+        newest = {};
+        for (const { theirs, ours } of condition.prefer ?? []) {
+          const value = ours.includes("{{") ? fillTemplate(ours, obj, { emptyIsMissing: true }) : valueAt(obj, ours);
+          if (!isScalar(value) || String(value) === "") continue;
+          newest = { prefer: [[theirs, String(value)]] };
+          break;
+        }
+      }
+      return {
+        holds: true,
+        lookups: [
+          {
+            group: condition.kind.group,
+            kind: condition.kind.kind,
+            name: "",
+            by,
+            fact: factKey(condition.when),
+            ...(newest !== undefined ? { newest } : {}),
+            ...relatedFlags(condition),
+          },
+        ],
+      };
     }
     case "selectsNone": {
       // Nothing to select with, nothing judged; the rows of the kind tell whether it selects any (#404).
@@ -495,7 +542,7 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       // Nothing named, nothing related; the named object's own condition is judged on its row (#409).
       const name = valueAt(obj, condition.path);
       if (typeof name !== "string" || name.trim() === "") return NO;
-      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, fact }] };
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, fact, ...relatedFlags(condition) }] };
     }
     case "all": {
       let activeFrom: number | undefined;
@@ -553,6 +600,37 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       return NO;
     }
   }
+}
+
+/** A `related`'s or `relatedBy`'s `optional` and `givesSince` as a lookup carries them (ADR-0169). */
+function relatedFlags(condition: { optional?: boolean; givesSince?: boolean }): Pick<Lookup, "optional" | "givesSince"> {
+  return { ...(condition.optional === true ? { optional: true } : {}), ...(condition.givesSince === true ? { givesSince: true } : {}) };
+}
+
+/**
+ * Whether `text` fits `pattern` (`matches`, ADR-0169; `fits_pattern` in Rust): `*` any text, `#` one or more ASCII
+ * digits, every other character itself. The positions each pattern prefix can end at, one step per pattern character.
+ */
+export function fitsPattern(text: string, pattern: string): boolean {
+  const chars = Array.from(text);
+  let at: boolean[] = new Array<boolean>(chars.length + 1).fill(false);
+  at[0] = true;
+  for (const p of Array.from(pattern)) {
+    const next: boolean[] = new Array<boolean>(chars.length + 1).fill(false);
+    if (p === "*") {
+      let reached = false;
+      for (let i = 0; i <= chars.length; i++) {
+        reached ||= at[i]!;
+        next[i] = reached;
+      }
+    } else if (p === "#") {
+      for (let i = 0; i < chars.length; i++) if ((at[i] || next[i]) && chars[i]! >= "0" && chars[i]! <= "9") next[i + 1] = true;
+    } else {
+      for (let i = 0; i < chars.length; i++) if (at[i] && chars[i] === p) next[i + 1] = true;
+    }
+    at = next;
+  }
+  return at[chars.length]!;
 }
 
 /** The items of a list read by a path (none for anything else), without a holder. */
@@ -673,7 +751,7 @@ export function placeholderText(obj: unknown, inner: string, root?: unknown, sib
   // `fqdn:<path>` (ADR-0167 amendment): a short name completed with the namespace at the path, after the other filter.
   const fqdn = rest.find((f) => f.startsWith("fqdn:"))?.slice(5);
   const filters = rest.filter((f) => !f.startsWith("fqdn:"));
-  const filter = filters.find((f) => !f.startsWith("clip:") && !f.startsWith("after:"));
+  const filter = filters.find((f) => !f.startsWith("clip:") && !f.startsWith("cut:") && !f.startsWith("after:"));
   const valueAt = (from: unknown, p: string) => valueAtIn(from, p, root);
   const clipped = (whole: string, list: readonly string[]) =>
     clippedText(fqdn === undefined ? whole : fqdnOf(whole, valueAtIn(obj, fqdn, root)), list);
@@ -741,9 +819,12 @@ function clippedText(whole: string, filters: readonly string[]): string | undefi
   // Only what follows a marker can come out empty and then be nothing: an empty value stays an empty text.
   if (marker !== undefined && text === "") return undefined;
   const clips = filters.filter((f) => f.startsWith("clip:"));
-  if (clips.length === 0) return text;
-  const keep = Math.min(...clips.map((c) => Number(c.slice(5))));
+  // `cut:<n>` (ADR-0169): the first characters, without "…".
+  const cuts = filters.filter((f) => f.startsWith("cut:"));
   const chars = [...text];
+  const cut = cuts.length === 0 ? Infinity : Math.min(...cuts.map((c) => Number(c.slice(4))));
+  const keep = clips.length === 0 ? Infinity : Math.min(...clips.map((c) => Number(c.slice(5))));
+  if (cut <= keep) return chars.length <= cut ? text : chars.slice(0, cut).join("");
   return chars.length <= keep ? text : `${chars.slice(0, keep).join("")}…`;
 }
 
@@ -898,6 +979,26 @@ export const FOUND_MARK = "{{found}}";
 /** Where a message names the namespaces a `selectsNone` looked in (ADR-0169); `judgeAcross` fills it. */
 export const SELECTS_IN_MARK = "{{selectsNone:namespaces}}";
 
+/**
+ * Where a message shows a field of the object a rule's `related` or `relatedBy` found (`{{related:<path>}}`,
+ * ADR-0169): `judgeAcross` fills it. Written between private-use characters so no placeholder reads like it.
+ */
+export const RELATED_MARK = /\uE000([0-9a-f]*)\uE001/g;
+/** The mark of a `{{related:…}}` placeholder: its text in hexadecimal UTF-8, which the cleaning of URIs leaves alone. */
+const relatedMark = (inner: string) => `\uE000${Array.from(new TextEncoder().encode(inner.trim()), (b) => b.toString(16).padStart(2, "0")).join("")}\uE001`;
+/** The paths of a `{{related:…}}` mark's placeholder (`RELATED_MARK`'s group). */
+export function relatedMarkPaths(hex: string): string[] {
+  const bytes = new Uint8Array((hex.match(/../g) ?? []).map((b) => parseInt(b, 16)));
+  return relatedPaths(new TextDecoder().decode(bytes)) ?? [];
+}
+
+/** The paths of `{{related:<path> ?? <path>}}` (ADR-0169), trimmed; `undefined` for any other placeholder. */
+export function relatedPaths(inner: string): string[] | undefined {
+  const trimmed = inner.trim();
+  if (!trimmed.startsWith("related:")) return undefined;
+  return splitOutsideQuotes(trimmed.slice("related:".length), "??").map((p) => p.trim());
+}
+
 /** Where a message shows a text of a judge's fact (`{{fact:<name>}}`, ADR-0168); `judgeAcross` fills it. */
 export const FACT_MARK = /\{\{\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*\}\}/g;
 
@@ -907,6 +1008,8 @@ export function renderMessage(template: string, obj: KubeObject): string {
     if (inner.trim() === "missing") return MISSING_MARK;
     if (inner.trim() === "found") return FOUND_MARK;
     if (inner.trim() === "selectsNone:namespaces") return SELECTS_IN_MARK;
+    // `{{related:<path>}}` (ADR-0169) once the rows say which object the rule's `related` found.
+    if (relatedPaths(inner)) return relatedMark(inner);
     // `{{fact:<name>}}` (ADR-0168) once the judge's answer gives it.
     const fact = /^\s*fact:\s*([A-Za-z][A-Za-z0-9-]*)\s*$/.exec(inner);
     if (fact) return `{{fact:${fact[1]}}}`;

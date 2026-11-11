@@ -180,6 +180,106 @@ digits, any other with two, without grouping (`1k` → `1000`, `1500m` → `1.50
 a resource that is neither cpu nor memory nor storage. Before 5 a text could not have it (a compared path's
 `|quantity` reads the amount as before).
 
+### The one object a `relatedBy` finds (`newest`, `prefer`)
+
+The built-in k3s view judged a HelmChart with its install Job: among the Jobs labelled for the chart in its namespace,
+the one `status.jobName` names, else the one helm-controller would name (`helm-install-<name>`, chart.go `jobName`),
+else the newest (`jobOfChart`). A `relatedBy` held when any object it found held its `when`. With `newest: true` only one
+of the objects its `pairs` find counts, and its `when` decides: the one `prefer` names, else the newest (by
+`creationTimestamp`, then name, as `newestPer` ranks). `prefer` (1 to 4, with `newest`) are alternatives tried in order on
+the judged object: the first whose `ours` — a field path, or a text with `{{…}}` placeholders of the judged object
+(`helm-install-{{.metadata.name}}`), checked as a message — reads a text names the preferred object by `theirs`; one
+that reads nothing gives way to the next, a named object that is not there to the newest, as the built-in did. The
+`theirs` paths are kept on the rows like the pairs'.
+
+### Lookups that decide nothing (`optional`), and the found object's window, time and fields
+
+The built-in category judged a Failed chart by its own condition whatever its Job said, and took the Job's failure time
+and its day from the Job where it had failed — also while the Jobs could not be read. A `related` or `relatedBy` with
+`optional: true` (at the top, not in an `any` of lookups) never decides whether the rule holds and is never "cannot
+tell": when the object is found and its `when` holds, what it says applies, otherwise the rule holds without it. What
+it says, also for a required lookup:
+
+- **Times inside its `when`.** From `sextantApi` 5 a `related`'s or `relatedBy`'s `when` may read `olderThan` (never
+  `expiring`, which the user's setting moves while the named object's row stays). The row keeps the verdict's window
+  — absolute times, so it stays right as time passes without the object changing — and the problem counts only within
+  it (`AcrossRow.windows`, `foundTimes`): `not olderThan(…, 1440)` ends it a day after the Job's failure. Below 5 a
+  time is refused there as before.
+- **`givesSince: true`**: the problem's time is the found object's — the `lastTransitionTime` of the entry its `when`'s
+  `condition` matched — and its start is redated from it (as the store dates one: the time, else first seen, plus the
+  grace).
+- **`{{related:<path> ?? <path>}}`** in a rule's message (and `messageForms`): a field of the object the rule's first
+  `related`/`relatedBy` (in the order written) found, the first path with a text; nothing when none was found. Only in a
+  rule with one; the paths are field paths of every such kind, reading no secret, without filters or literals. The rows
+  keep those paths' texts. The window marks it in the rendered message by its text in hexadecimal UTF-8 between
+  private-use characters (so the cleaning of URIs leaves it alone) and fills it last, cleaned and clipped, so cluster
+  text in a value is never read as a placeholder. No field path reads like it, so it meant nothing before 5.
+
+An optional lookup's kind is a looked-up kind like any (agreed to, a source, what an agent must be able to read): a
+problem may carry its time or its fields.
+
+### Whether the cluster serves a kind (`served`)
+
+The built-in category judged the bundled components wherever the cluster served k3s Addons. `{"type": "served", "kind"}`
+holds while discovery says the cluster serves the kind and cannot tell before it answered; problem rules only, not
+inside `any` or `not`. It reads no object: no source, nothing agreed to, nothing an agent must read.
+
+### A text read by a pattern (`fits`)
+
+The built-in view recognised a k3s kubelet by `/\+k3s\d+$/`. `{"type": "fits", "path", "patterns"}` holds when the text
+fits one of 1 to 20 patterns (1 to 256 characters, no control characters): `*` any text, `#` one or more ASCII digits,
+every other character itself. It is no pattern language: Rust (`fits_pattern`) and the window (`fitsPattern`) walk the
+positions a pattern prefix can end at, one step per pattern character, so nothing backtracks. Anywhere a text condition
+goes. (`matches` named an unknown condition type in a shared case since API 2, so the name stays free.)
+
+### Whether an inline secret field is there
+
+The built-in view showed its Node section on a node with any of k3s's annotations, `node-args` and `node-env` included,
+which no rule path may read (ADR-0123). From `sextantApi` 5 `exists` and `absent` may name exactly one inline secret
+field of the kind, by names only (`is_inline_secret_field`): its presence is what the marker of hidden values tells an
+extension anyway. Any other condition, a path into the field or through `*`, and every placeholder stay refused.
+
+### `|cut:<n>`
+
+A placeholder filter: the first 1 to 1000 characters without "…", as the built-in Addon column cut a checksum; with a
+`clip:` the shorter decides.
+
+### How kinds only looked up are listed (`lookupSources`)
+
+The built-in category listed the charts' Jobs by helm-controller's label, at most 1000; a kind the rules only look up
+was listed whole, capped at 5000. `contributes.lookupSources` (1 to 20) gives such a kind — one no rule judges, no
+`kindsFrom` reads and no judge reads — a `labelSelector` the API server picks it by, a `maxObjects`, or both, as a
+rule's `source` lists its own kind. Only the objects it picks are looked up: an object outside it is "not there".
+
+### Masked copies of inline secret material (`permissions.maskedSecrets`)
+
+The built-in view showed a node's arguments and a chart's values masked; an extension gets them blanked
+(`without_inline_secrets`), and a masked view needs Sextant to mask them before they leave it. `permissions.maskedSecrets`
+(sextantApi 5) names some of the kinds Sextant can mask — a Node, a HelmChart, a HelmChartConfig, nothing else — and the
+consent screen names them; a grant is within another only with these kinds agreed to (`is_within`). For an extension
+with the grant, every object it reads of such a kind (`resources.get|getMany|list|watch` and what a patch answers)
+carries a masked copy computed in Rust (`sextant_core::resources::masked_secrets`) instead of the empty text:
+
+- a node's `k3s.io/node-args`/`rke2.io/node-args`: read as the window reads them (`src/resources/nodeArgs.ts`) and
+  written back as k3s writes them, a flag and its value as one `--flag=value` word, every hidden value — k3s's own
+  secret flags, every flag whose name looks secret (`looksSecret`, ported), every `*-arg` flag naming a secret-looking
+  setting, k3s's own mask — as `********`, every other value cleaned of URI credentials (`clean_text` = `cleanText`);
+- a HelmChart's and HelmChartConfig's `spec.valuesContent`: one YAML mapping (serde_yaml, its repetition limit, ≤ 256
+  KiB), every value under a secret-looking key `<hidden>` (its shape kept), every other text cleaned, written as JSON
+  text, which YAML reads;
+- a HelmChart's `spec.set`: each value as text, `<hidden>` under a key any `.`-part of which looks secret, else cleaned.
+
+Anything that does not read — not k3s's JSON list of texts, not one mapping, a YAML tag, a key that is no text, number
+or flag, two keys that read alike, a number JSON cannot hold, too long — is blanked as for any extension, never passed
+on. Every other inline secret (a node's `node-env`, a Route's key, …) stays blanked. The copies are computed from the
+object as read, then the object is blanked as before and only the copies go back, so the raw value never leaves Rust;
+`sextant.dev/values-hidden` still names every path that held something (a copy is never saved over the real object) and
+`sextant.dev/values-masked` names the masked ones. The extension's watches share one core watch with other frames only
+under a key that says masked. Never for an agent: an agent tool's call through the extension's backend (ADR-0159) gets
+the fields blanked; agents, the timeline and every other path are untouched. The rules are shared as cases
+(`src/resources/masking-cases.json`) that Rust, the window's `nodeArgs` and the k3s extension's `mask.ts` each pass —
+what Sextant gives reads, in the window's and the extension's rules, as the original does.
+
 ## Consequences
 
 - Sextant's own extensions that use these additions need Sextant 0.30.1; on 0.30.0 they stay at their API-4 releases.
@@ -202,3 +302,13 @@ a resource that is neither cpu nor memory nor storage. Before 5 a text could not
   Usage / limits writes every limited resource as the built-in column did and is red when one is reached, and "Only
   problems" compares every limited resource. Its README lists no difference left; the resources are written in key
   order, as the API server writes the map.
+- k3s / RKE2 1.1.0 (`sextantApi` 5) uses all of them: a node's arguments and a chart's values shown masked again, the
+  chart's problems judged on the chart with its install Job found as the built-in found it (`newest`, `prefer`), its
+  message, time and day as the built-in category gave them (`optional`, `givesSince`, `{{related:…}}`, times inside a
+  `relatedBy`), also while its Jobs cannot be read, those Jobs listed by helm-controller's label (`lookupSources`), the
+  components judged where Addons are served (`served`), the Node section on k3s's kubelet versions (`fits`) and on a node
+  whose only sign is its `node-args` or `node-env` annotation, and the Checksum cut silently (`|cut`). (Its Size column
+  needed no addition: a case on `|quantity` writes it as the built-in did.) What stays different is in its README: the
+  ServiceLB Services read in one call, agents' choice of the category, and a values text Sextant reads more strictly.
+- An extension can now see masked copies of some inline secret fields, only where the user agreed to it on the consent
+  screen; the masking is Rust's, fails closed, and never reaches an agent.

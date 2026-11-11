@@ -141,7 +141,8 @@
       "portForward": "bağlantı noktası yönlendirme"
     },
     "readGroups": "{{groups}} altındaki API gruplarının tüm kind'larını her namespace'te okuyabilir.",
-    "statusPatches": "Şunların status'unu değiştirebilir: {{kinds}} (değiştirebildiği yerlerde)."
+    "statusPatches": "Şunların status'unu değiştirebilir: {{kinds}} (değiştirebildiği yerlerde).",
+    "maskedSecrets": "{{kinds}} türlerinin gizli bilgi içerebilecek alanlarının maskelenmiş kopyalarını görür: Sextant, eklenti almadan önce içlerindeki her gizli değeri gizler."
   },
   "state": {
     "active": "Etkin",

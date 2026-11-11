@@ -7,6 +7,7 @@ import type { DetailsSectionContribution } from "./DetailsSectionContribution";
 import type { DockActionContribution } from "./DockActionContribution";
 import type { KindContribution } from "./KindContribution";
 import type { KindPattern } from "./KindPattern";
+import type { LookupSource } from "./LookupSource";
 import type { MenuItemContribution } from "./MenuItemContribution";
 import type { MetricQuery } from "./MetricQuery";
 import type { PageContribution } from "./PageContribution";
@@ -71,6 +72,12 @@ problemJudges: Array<ProblemJudgeContribution>,
  * (ADR-0167 amendment); `sextantApi` 4.
  */
 narrowLookups?: Array<KindPattern>, 
+/**
+ * How the window lists kinds the rules only look up (ADR-0169): a label selector the API server picks them by and
+ * a cap, as a rule's `source` lists the kind it judges — a chart's install Jobs by helm-controller's label.
+ * `sextantApi` 5.
+ */
+lookupSources?: Array<LookupSource>, 
 /**
  * The extension's own sidebar sections: title, icon and place (ADR-0160); `sextantApi` 4.
  */

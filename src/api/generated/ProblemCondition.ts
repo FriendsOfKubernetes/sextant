@@ -76,7 +76,18 @@ enclosingNamespacePath?: string,
  * `enclosingNamespacePath` counts only where this holds of the holding object (ADR-0169). Reads only that
  * object, no time. `sextantApi` 5.
  */
-enclosingNamespaceWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, 
+enclosingNamespaceWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, 
+/**
+ * Never decides whether the rule holds (ADR-0169): when the object is found and `when` holds, its window, its
+ * `since` (with `givesSince`) and its fields (`{{related:…}}`) apply; otherwise the rule holds without them.
+ * Not inside `any`; `sextantApi` 5.
+ */
+optional?: boolean, 
+/**
+ * The problem's time is the named object's (ADR-0169): the `lastTransitionTime` of the entry its `when`'s
+ * `condition` matched, over the rule's own. `sextantApi` 5.
+ */
+givesSince?: boolean, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, 
 /**
  * The objects that select the judged one decide where its selector looks (ADR-0169), as Prometheus Operator's
  * `ignoreNamespaceSelectors`: when `ownNamespaceWhen` holds for every one of them, in its own namespace
@@ -88,7 +99,27 @@ selectedBy?: SelectingObjects,
  * `selectedBy`) is not judged and widens no `narrowLookups` list, as the built-in view never judged a monitor
  * of every namespace. `sextantApi` 5.
  */
-namedOnly?: boolean, } | { "type": "selectedByNone", kind: KindPattern, alsoKinds?: Array<KindPattern>, selector: string, namespaceSelector: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
+namedOnly?: boolean, } | { "type": "selectedByNone", kind: KindPattern, alsoKinds?: Array<KindPattern>, selector: string, namespaceSelector: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, 
+/**
+ * As `related`'s (ADR-0169); `sextantApi` 5.
+ */
+optional?: boolean, 
+/**
+ * As `related`'s (ADR-0169); `sextantApi` 5.
+ */
+givesSince?: boolean, 
+/**
+ * Only one of the objects the pairs find counts (ADR-0169): one that also holds every `prefer` pair, else the
+ * newest (by `creationTimestamp`, then name) — helm-controller's install Job of a chart. `sextantApi` 5.
+ */
+newest?: boolean, 
+/**
+ * With `newest` (ADR-0169): the object taken before the newest. The first of these whose `ours` reads a text
+ * on the judged object — a field path, or a text with `{{…}}` placeholders of it — names it: a found object
+ * whose `theirs` holds that text (the Job a chart's `status.jobName` names, else `helm-install-<name>`).
+ * 1 to 4; `sextantApi` 5.
+ */
+prefer?: Array<FieldPair>, } | { "type": "served", kind: KindPattern, } | { "type": "fits", path: string, patterns: Array<string>, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
 /**
  * One problem for each time the answer gives the fact for the object, each with its own texts and an
  * identity of them (notifications, "Only new since"), not one for the first; only as a rule's whole `when`.

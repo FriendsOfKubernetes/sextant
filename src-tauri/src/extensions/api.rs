@@ -11,7 +11,9 @@
 //! As for agents (ADR-0043, ADR-0045): Secrets come without their values from `resources.get/list/watch`; one value
 //! needs `secret.value` and the "Secret values" action; secret material other kinds hold inline (a Route's key, a
 //! node's k3s arguments, …: `sextant_core::resources::inline_secrets`) comes emptied from `resources.get/list/watch`
-//! and `resources.patch`, whatever was granted (no method reads one such value); a JSON patch on a Secret that is not only add/replace/remove
+//! and `resources.patch`, whatever was granted (no method reads one such value) — but for the kinds granted in
+//! `permissions.maskedSecrets` (ADR-0169), whose masked copy Sextant computes (`sextant_core::resources::masked_secrets`),
+//! never for an agent's call; a JSON patch on a Secret that is not only add/replace/remove
 //! needs "Secret values" too; node shell pods are never changed or deleted, whatever the rules, and a pod that cannot
 //! be read to make sure is refused.
 //!
@@ -45,7 +47,7 @@ use sextant_core::extensions::services::{
 use sextant_core::extensions::{ExtensionPermissions, InstalledExtension, decide_extension};
 use sextant_core::portforward::{ForwardInfo, ForwardSource, ForwardTarget, PodFilter};
 use sextant_core::resources::{
-    self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets,
+    self, KindRef, PatchType, ResourceKind, WatchUpdate, inline_secrets, masked_secrets,
 };
 use sextant_core::settings::custom_columns::{MatchPick, PathStep, parse_field_path};
 use sextant_core::{
@@ -851,6 +853,9 @@ pub struct ExtCluster {
     pub name: String,
     /// The kubeconfig context: what the permissions name.
     pub context: String,
+    /// The kinds whose inline secret material this call's objects carry masked, not blanked (`maskedSecrets`,
+    /// ADR-0169): as granted when the call was checked.
+    pub masked: Vec<KindPattern>,
 }
 
 /// What the journal learns about a call while it runs.
@@ -995,6 +1000,13 @@ impl<'a> ExtCall<'a> {
             id: found.id.clone(),
             name: self.api.cluster_name(&found.id, &found.context),
             context: found.context.clone(),
+            // Never for an agent's call (ADR-0159): an agent gets inline secret material blanked, as from its own
+            // tools, whatever the extension may have.
+            masked: if self.agent.is_some() {
+                Vec::new()
+            } else {
+                granted.masked_secrets.clone()
+            },
         };
         lock(&self.record).cluster = Some(target.clone());
         if !granted.clusters.covers(&target.context) {
@@ -1338,7 +1350,10 @@ impl<'a> ExtCall<'a> {
                 (items, truncated, Some(namespaces))
             }
         };
-        let items: Vec<Value> = items.into_iter().map(without_inline_secrets).collect();
+        let items: Vec<Value> = items
+            .into_iter()
+            .map(|item| for_extension(item, &cluster.masked))
+            .collect();
         let mut out = json!({ "items": items, "truncated": truncated });
         if let Some(namespaces) = namespaces.filter(|_| namespace.is_none()) {
             out["namespaces"] = json!(namespaces);
@@ -1360,7 +1375,7 @@ impl<'a> ExtCall<'a> {
             resources::get(&self.api.clusters, &cluster.id, &object),
         )
         .await
-        .map(without_inline_secrets)
+        .map(|value| for_extension(value, &cluster.masked))
     }
 
     /// Named reads in one call (#334, ADR-0145): at most [`MAX_GET_MANY`], [`GET_MANY_AT_ONCE`] at a time, each answered
@@ -1392,6 +1407,7 @@ impl<'a> ExtCall<'a> {
         }
         let mgr = &self.api.clusters;
         let cluster_id = &cluster.id;
+        let masked = &cluster.masked;
         let items: Vec<Value> = futures::stream::iter(resolved)
             .map(|object| async move {
                 let answer = match object {
@@ -1400,7 +1416,7 @@ impl<'a> ExtCall<'a> {
                         resources::get(mgr, cluster_id, &object),
                     )
                     .await
-                    .map(without_inline_secrets),
+                    .map(|value| for_extension(value, masked)),
                     Err(err) => Err(err),
                 };
                 match answer {
@@ -1478,11 +1494,22 @@ impl<'a> ExtCall<'a> {
         // values, like `watch_start`; inline secret material is emptied here, object by object, before the hub.
         let hub = Arc::clone(&self.api.watches);
         // A capped watch is another list: its key carries the cap.
+        // So is one whose inline secret material is masked rather than blanked (ADR-0169): its key carries the kind.
+        let masked: Vec<KindPattern> = cluster
+            .masked
+            .iter()
+            .filter(|k| {
+                k.group.eq_ignore_ascii_case(&spec.kind.group)
+                    && k.kind.eq_ignore_ascii_case(&spec.kind.kind)
+            })
+            .cloned()
+            .collect();
         let key = format!(
-            "{}\u{0}{}\u{0}{}",
+            "{}\u{0}{}\u{0}{}{}",
             cluster_id,
             serde_json::to_string(&spec).map_err(|e| invalid(e.to_string()))?,
-            max_objects.map(|n| n.to_string()).unwrap_or_default()
+            max_objects.map(|n| n.to_string()).unwrap_or_default(),
+            if masked.is_empty() { "" } else { "\u{0}masked" }
         );
         let open = async move {
             hub.subscribe(key, async move {
@@ -1492,7 +1519,15 @@ impl<'a> ExtCall<'a> {
                 };
                 resources::watch_with_options(&mgr, &cluster_id, spec, options)
                     .await
-                    .map(|updates| updates.map(inline_secrets::hide_in_watch_update))
+                    .map(|updates| {
+                        updates.map(move |update| {
+                            if masked.is_empty() {
+                                inline_secrets::hide_in_watch_update(update)
+                            } else {
+                                masked_secrets::mask_in_watch_update(update, &masked)
+                            }
+                        })
+                    })
             })
             .await
         };
@@ -1700,7 +1735,7 @@ impl<'a> ExtCall<'a> {
                 ),
             )
             .await
-            .map(without_inline_secrets);
+            .map(|value| for_extension(value, &cluster.masked));
         }
         with_timeout(
             CHANGE_TIMEOUT,
@@ -1714,7 +1749,7 @@ impl<'a> ExtCall<'a> {
             ),
         )
         .await
-        .map(without_inline_secrets)
+        .map(|value| for_extension(value, &cluster.masked))
     }
 
     async fn delete(&self, params: Value) -> CoreResult<Value> {
@@ -2998,6 +3033,16 @@ fn take_at(value: &mut Value, steps: &[PathStep]) -> Option<String> {
 /// ([`inline_secrets::hide_inline_secrets`]; a Secret's values are already gone in the core).
 fn without_inline_secrets(mut value: Value) -> Value {
     inline_secrets::hide_inline_secrets(&mut value);
+    value
+}
+
+/// An object as an extension gets it: inline secret material blanked, or — for a kind in `masked` (granted
+/// `maskedSecrets`, ADR-0169) — given as Sextant's masked copy ([`masked_secrets::mask_inline_secrets`]).
+fn for_extension(mut value: Value, masked: &[KindPattern]) -> Value {
+    if masked.is_empty() {
+        return without_inline_secrets(value);
+    }
+    masked_secrets::mask_inline_secrets(&mut value, masked);
     value
 }
 

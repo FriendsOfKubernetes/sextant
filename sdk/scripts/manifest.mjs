@@ -766,6 +766,24 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (!judge.reads.some((r) => sameKind(r.kind, kind))) fail([...segments, "judge"], `does not read the rule's kind ${kindName(kind)}`);
     return;
   }
+  if (condition.type === "served") {
+    // Discovery tells (ADR-0169): Addons on a k3s or RKE2 server.
+    if (counter.single) fail([...segments, "type"], "`served` is told by discovery: only problem rules may use it");
+    if (counter.api < PARITY_API) fail([...segments, "type"], `\`served\` needs sextantApi ${PARITY_API} or later`);
+    if (inside !== "top") fail([...segments, "type"], "`served` cannot be inside `any` or `not`: before discovery answers it is unknown");
+    return;
+  }
+  if (condition.type === "fits") {
+    // A pattern without a pattern language (ADR-0169): `*` any text, `#` digits.
+    if (counter.api < PARITY_API) fail([...segments, "type"], `\`fits\` needs sextantApi ${PARITY_API} or later`);
+    if (condition.patterns.length === 0 || condition.patterns.length > 20) fail([...segments, "patterns"], "has 1 to 20 patterns");
+    condition.patterns.forEach((pattern, i) => {
+      const n = Array.from(pattern).length;
+      if (n === 0 || n > 256 || Array.from(pattern).some(isControl)) fail([...segments, "patterns", i], "is a pattern of 1 to 256 characters without control characters");
+    });
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+    return;
+  }
   if (condition.type === "relatedBy") {
     // An object of a kind in the namespace with the same field texts (#404), judged across objects like `related`.
     if (counter.single) fail([...segments, "type"], "`relatedBy` judges across objects: only problem rules may use it");
@@ -777,8 +795,22 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
       checkRulePath(pair.ours, kind, [...segments, "pairs", i, "ours"], counter.metadataOnly);
       checkRulePath(pair.theirs, condition.kind, [...segments, "pairs", i, "theirs"], false);
     });
-    checkObjectCondition(condition.when, [condition.kind], [...segments, "when"], counter.api);
-    if (usesTime(condition.when)) fail([...segments, "when"], "reads no time (`olderThan`): it is judged when that object changes");
+    // Only one found object counts, the preferred else the newest (ADR-0169).
+    for (const key of ["newest", "prefer"]) {
+      if (condition[key] !== undefined && counter.api < PARITY_API) fail([...segments, key], `needs sextantApi ${PARITY_API} or later`);
+    }
+    if (condition.newest !== undefined && condition.newest !== true) fail([...segments, "newest"], "is `true` or left out");
+    if (condition.prefer !== undefined) {
+      if (condition.newest === undefined) fail([...segments, "prefer"], "goes with `newest`: the object preferred before the newest");
+      if (condition.prefer.length === 0 || condition.prefer.length > 4) fail([...segments, "prefer"], "has 1 to 4 pairs");
+      condition.prefer.forEach((pair, i) => {
+        // A text of the judged object's own (`helm-install-{{.metadata.name}}`), or one of its fields.
+        if (pair.ours.includes("{{")) checkMessage(pair.ours, kind, [...segments, "prefer", i, "ours"], counter.metadataOnly);
+        else checkRulePath(pair.ours, kind, [...segments, "prefer", i, "ours"], counter.metadataOnly);
+        checkRulePath(pair.theirs, condition.kind, [...segments, "prefer", i, "theirs"], false);
+      });
+    }
+    checkRelatedParts(condition, segments, counter);
     if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
       counter.kinds.push(condition.kind);
       const maxKinds = ruleLimits(counter.api)[1];
@@ -827,8 +859,8 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (inside !== "top" && inside !== "lookups") fail([...segments, "type"], "`related` cannot be inside `any` or `not`: a list not read would make it unknown (but in an `any` of `missing` and `related` only)");
     if (condition.kind.group === "" && condition.kind.kind.toLowerCase() === "secret") fail([...segments, "kind"], "Secrets are never listed for rules");
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
-    checkObjectCondition(condition.when, [condition.kind], [...segments, "when"], counter.api);
-    if (usesTime(condition.when)) fail([...segments, "when"], "reads no time (`olderThan`): it is judged when that object changes");
+    if (condition.optional !== undefined && inside === "lookups") fail([...segments, "optional"], "is for a `related` outside `any`: an optional lookup decides nothing");
+    checkRelatedParts(condition, segments, counter);
     if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
       counter.kinds.push(condition.kind);
       const maxKinds = ruleLimits(counter.api)[1];
@@ -894,7 +926,24 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     });
     return;
   }
+  // Whether an inline secret field is there (ADR-0169): its presence, never its value.
+  if ((condition.type === "exists" || condition.type === "absent") && counter.api >= PARITY_API && isInlineSecretField(kind, condition.path)) {
+    const steps = parseFieldPath(condition.path);
+    if (counter.metadataOnly && !(steps && steps.length > 0 && steps[0].key === "metadata")) {
+      fail([...segments, "path"], "must be under `.metadata`: the rule's source watches metadata only");
+    }
+    return;
+  }
   checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+}
+
+/** `is_inline_secret_field`: a path naming exactly one inline secret field of the kind, by names only (ADR-0169). */
+function isInlineSecretField(kind, text) {
+  const steps = parseFieldPath(text.trim());
+  if (!steps) return false;
+  return inlineSecrets()
+    .filter((k) => sameKind(k, kind))
+    .some((k) => k.paths.some((secret) => secret.length === steps.length && !secret.includes("*") && secret.every((want, i) => steps[i].key === want)));
 }
 
 /** The kind Namespaces are looked up as for their labels (`namespace_kind`, ADR-0169). */
@@ -1233,6 +1282,65 @@ const hasSelectsNone = (condition) =>
   ((condition.type === "all" || condition.type === "any") && condition.of.some(hasSelectsNone)) ||
   (condition.type === "not" && hasSelectsNone(condition.of));
 
+/** `related_placeholder`: the paths of `{{related:<path> ?? <path>}}` (ADR-0169), trimmed; `undefined` otherwise. */
+function relatedPlaceholder(inner) {
+  const trimmed = inner.trim();
+  if (!trimmed.startsWith("related:")) return undefined;
+  return splitOutsideQuotes(trimmed.slice("related:".length), "??").map((p) => p.trim());
+}
+
+/** `related_kinds`: the kinds a condition's `related` and `relatedBy` name, each once, in order. */
+function relatedKinds(condition) {
+  if (condition.type === "related" || condition.type === "relatedBy") return [condition.kind];
+  const inner = condition.type === "all" || condition.type === "any" ? condition.of : condition.type === "not" ? [condition.of] : [];
+  const out = [];
+  for (const kind of inner.flatMap(relatedKinds)) if (!out.some((k) => sameKind(k, kind))) out.push(kind);
+  return out;
+}
+
+/** `check_related_parts` (ADR-0169): a `related`'s or `relatedBy`'s `when`, `optional` and `givesSince`. */
+function checkRelatedParts(condition, segments, counter) {
+  for (const key of ["optional", "givesSince"]) {
+    if (condition[key] === undefined) continue;
+    if (counter.api < PARITY_API) fail([...segments, key], `needs sextantApi ${PARITY_API} or later`);
+    if (condition[key] !== true) fail([...segments, key], "is `true` or left out");
+  }
+  checkObjectCondition(condition.when, [condition.kind], [...segments, "when"], counter.api);
+  if (counter.api < PARITY_API && usesTime(condition.when)) fail([...segments, "when"], "reads no time (`olderThan`): it is judged when that object changes");
+  if (usesSettingTime(condition.when)) fail([...segments, "when"], "reads no `expiring`: the user's setting moves it, and the named object's row is judged when it changes");
+}
+
+/** `uses_setting_time`: an `expiring` anywhere in the condition. */
+function usesSettingTime(condition) {
+  if (condition.type === "expiring") return true;
+  if (condition.type === "all" || condition.type === "any") return condition.of.some(usesSettingTime);
+  if (condition.type === "not") return usesSettingTime(condition.of);
+  return false;
+}
+
+/** `fits_pattern` (ADR-0169): `*` any text, `#` one or more ASCII digits, every other character itself. */
+export function fitsPattern(text, pattern) {
+  const chars = Array.from(text);
+  let at = new Array(chars.length + 1).fill(false);
+  at[0] = true;
+  for (const p of Array.from(pattern)) {
+    const next = new Array(chars.length + 1).fill(false);
+    if (p === "*") {
+      let reached = false;
+      for (let i = 0; i <= chars.length; i++) {
+        reached ||= at[i];
+        next[i] = reached;
+      }
+    } else if (p === "#") {
+      for (let i = 0; i < chars.length; i++) if ((at[i] || next[i]) && /[0-9]/.test(chars[i])) next[i + 1] = true;
+    } else {
+      for (let i = 0; i < chars.length; i++) if (at[i] && chars[i] === p) next[i + 1] = true;
+    }
+    at = next;
+  }
+  return at[chars.length];
+}
+
 function checkRuleMessage(text, rule, manifest, segments, metadataOnly) {
   const found = placeholders(text);
   if (found === null) fail(segments, "has a `{{` without its `}}`");
@@ -1250,7 +1358,18 @@ function checkRuleMessage(text, rule, manifest, segments, metadataOnly) {
     const end = after.indexOf("}}");
     if (end < 0) break;
     const name = factPlaceholder(after.slice(0, end));
-    if (after.slice(0, end).trim() === SELECTS_NONE_NAMESPACES) {
+    const related = relatedPlaceholder(after.slice(0, end));
+    if (related !== undefined) {
+      // A field of the object the rule's first `related`/`relatedBy` found (ADR-0169), filled by the window.
+      if (manifest.sextantApi < PARITY_API) fail(segments, `\`{{related:…}}\` needs sextantApi ${PARITY_API} or later`);
+      const kinds = relatedKinds(rule.when);
+      if (kinds.length === 0) fail(segments, "has `{{related:…}}`, which only a rule with `related` or `relatedBy` fills");
+      for (const one of related) {
+        if (one.includes("|") || placeholderLiteral(one) !== undefined) fail(segments, "has `{{related:…}}` with a filter or a literal: it names the found object's fields only");
+        for (const kind of kinds) checkRulePath(one, kind, segments, false);
+      }
+      rest += tail.slice(0, start);
+    } else if (after.slice(0, end).trim() === SELECTS_NONE_NAMESPACES) {
       // The namespaces the rule's `selectsNone` looked in (ADR-0169), filled by the window.
       if (manifest.sextantApi < PARITY_API) fail(segments, `\`{{${SELECTS_NONE_NAMESPACES}}}\` needs sextantApi ${PARITY_API} or later`);
       if (!hasSelectsNone(rule.when)) fail(segments, `has \`{{${SELECTS_NONE_NAMESPACES}}}\`, which only a rule with \`selectsNone\` fills`);
@@ -1363,7 +1482,8 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
         if (!item || index !== 0) fail(segments, "has `|share` only first in a list column's item text: an item's share of the list");
         continue;
       }
-      const clip = /^clip:([0-9]{1,4})$/.exec(filter);
+      // `cut:<n>` (ADR-0169): the first characters without "…".
+      const clip = /^(?:clip|cut):([0-9]{1,4})$/.exec(filter);
       const clipOk = clip !== null && Number(clip[1]) >= 1 && Number(clip[1]) <= 1000;
       // `after:<marker>` (#404): the text after the marker's last place.
       const marker = filter.startsWith("after:") ? filter.slice(6) : undefined;
@@ -1373,7 +1493,7 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
         checkRulePath(filter.slice(5), kind, segments, metadataOnly);
         continue;
       }
-      if (!clipOk && !afterOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>`);
+      if (!clipOk && !afterOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>, cut:<1 to 1000>, after:<marker>, fqdn:<namespace path>`);
     }
     for (const one of added) {
       checkRulePath(one.trim(), kind, segments, metadataOnly);
@@ -1455,6 +1575,8 @@ function checkParitySyntax(manifest) {
         if (filters.some((f) => f.trim() === "positions")) found ??= "`|positions`";
         if (filters.some((f) => f.trim() === "uniqueKey")) found ??= "`|uniqueKey`";
         if (filters.some((f) => f.trim() === "quantity")) found ??= "`|quantity` in a text";
+        if (filters.some((f) => f.trim().startsWith("cut:"))) found ??= "`|cut:<n>`";
+        if (relatedPlaceholder(inner) !== undefined) found ??= "`{{related:…}}`";
         if (inner.trim() === SELECTS_NONE_NAMESPACES) found ??= "`{{selectsNone:namespaces}}`";
         for (const one of splitOutsideQuotes(field, "??").flatMap((p) => splitOutsideQuotes(p, "+")).flatMap((p) => splitOutsideQuotes(p, " * "))) found ??= newIn(one);
       }
@@ -1599,6 +1721,28 @@ function checkNarrowLookups(manifest) {
     if (!looked.some((k) => sameKind(k, kind))) fail(here, "is no kind the rules look up (`missing`, `related`, `relatedBy`, `selectsNone`)");
     const judgesIt = rules.some((rule) => (rule.kind && sameKind(rule.kind, kind)) || (rule.kindsFrom && sameKind(rule.kindsFrom.kind, kind))) || judged.some((k) => sameKind(k, kind));
     if (judgesIt) fail(here, "is a kind the rules or judges read whole: only a kind they only look up is listed in part");
+  });
+}
+
+/** `check_lookup_sources` (ADR-0169): kinds the rules only look up, each once, with a label selector, a cap or both. */
+function checkLookupSources(manifest) {
+  const sources = manifest.contributes?.lookupSources ?? [];
+  const list = ["contributes", "lookupSources"];
+  if (sources.length === 0) return;
+  if (manifest.sextantApi < PARITY_API) fail(list, `needs sextantApi ${PARITY_API} or later`);
+  const rules = manifest.contributes?.problems ?? [];
+  const looked = rules.flatMap((rule) => lookedUpKinds(rule.when));
+  const judged = (manifest.contributes?.problemJudges ?? []).flatMap((judge) => (judge.reads ?? []).map((read) => read.kind));
+  sources.forEach((source, i) => {
+    const here = [...list, i];
+    const kind = source.kind;
+    if (sources.slice(0, i).some((s) => sameKind(s.kind, kind))) fail([...here, "kind"], "is named twice");
+    if (!looked.some((k) => sameKind(k, kind))) fail([...here, "kind"], "is no kind the rules look up (`missing`, `related`, `relatedBy`, `selectsNone`)");
+    const judgesIt = rules.some((rule) => (rule.kind && sameKind(rule.kind, kind)) || (rule.kindsFrom && sameKind(rule.kindsFrom.kind, kind))) || judged.some((k) => sameKind(k, kind));
+    if (judgesIt) fail([...here, "kind"], "is a kind a rule or judge reads: its rules' `source` says how it is listed");
+    if (source.labelSelector === undefined && source.maxObjects === undefined) fail(here, "names a `labelSelector`, a `maxObjects` or both");
+    if (source.maxObjects !== undefined && (source.maxObjects < 1 || source.maxObjects > 20000)) fail([...here, "maxObjects"], "is 1 to 20 000");
+    if (source.labelSelector !== undefined && !isSetSelector(source.labelSelector)) fail([...here, "labelSelector"], "must be a Kubernetes label selector such as `app=web`, `tier in (a,b)` or `!canary`");
   });
 }
 
@@ -1856,6 +2000,13 @@ function isGroupDomainPattern(pattern) {
 }
 
 /** `portForward`, `readGroups` and `statusPatches` (`check_permissions`). */
+/** The kinds Sextant gives masked (`MASKED` in crates/sextant-core/src/resources/masked_secrets.rs). */
+const MASKABLE_KINDS = [
+  { group: "", kind: "Node" },
+  { group: "helm.cattle.io", kind: "HelmChart" },
+  { group: "helm.cattle.io", kind: "HelmChartConfig" },
+];
+
 function checkPermissions(manifest) {
   const permissions = manifest.permissions ?? {};
   if (manifest.sextantApi < WINDOW_API) {
@@ -1871,6 +2022,15 @@ function checkPermissions(manifest) {
       fail(["permissions", "readGroups", i], "is `*.` and a domain of custom resource groups, such as `*.cluster.x-k8s.io` (not Kubernetes' own)");
     }
     if (permissions.readGroups.slice(0, i).includes(pattern)) fail(["permissions", "readGroups", i], "is named twice");
+  });
+  // Masked copies of inline secret material (ADR-0169): only the kinds Sextant masks (`can_mask`), each once.
+  const masked = permissions.maskedSecrets ?? [];
+  if (masked.length > 0 && manifest.sextantApi < PARITY_API) fail(["permissions", "maskedSecrets"], `needs sextantApi ${PARITY_API} or later`);
+  masked.forEach((kind, i) => {
+    const here = ["permissions", "maskedSecrets", i];
+    if (!MASKABLE_KINDS.some((k) => sameKind(k, kind))) fail([...here, "kind"], `is no kind Sextant masks: one of ${MASKABLE_KINDS.map((k) => (k.group === "" ? k.kind : `${k.group}/${k.kind}`)).join(", ")}`);
+    const first = masked.slice(0, i).findIndex((other) => sameKind(other, kind));
+    if (first >= 0) fail([...here, "kind"], `duplicate kind (also ${pathText(["permissions", "maskedSecrets", first])})`);
   });
   const kinds = permissions.statusPatches ?? [];
   const list = ["permissions", "statusPatches"];
@@ -2535,6 +2695,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     checkSectionBadges(value);
     checkProblemCategories(value);
     checkNarrowLookups(value);
+    checkLookupSources(value);
     checkCommands(value);
     checkActions(value);
     checkDetailsSections(value);

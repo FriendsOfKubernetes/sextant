@@ -141,7 +141,8 @@
       "portForward": "Ports weiterleiten"
     },
     "readGroups": "Darf jede Art (kind) der API-Gruppen unter {{groups}} lesen, in jedem Namespace.",
-    "statusPatches": "Darf den Status ändern von: {{kinds}} (wo sie diese ändern darf)."
+    "statusPatches": "Darf den Status ändern von: {{kinds}} (wo sie diese ändern darf).",
+    "maskedSecrets": "Sieht maskierte Kopien der Felder von {{kinds}}, die Geheimnisse enthalten können: Sextant verbirgt jeden geheimen Wert darin, bevor die Erweiterung sie erhält."
   },
   "state": {
     "active": "Aktiv",
