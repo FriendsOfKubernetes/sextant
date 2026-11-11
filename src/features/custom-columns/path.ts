@@ -39,12 +39,14 @@ export type PathStep =
 
 /** Pairs one `[field="value",…]` step takes at most (Rust `MAX_MATCH_PAIRS`). */
 export const MAX_MATCH_PAIRS = 12;
+/** `[*]`-like steps one path takes at most (Rust `MAX_LISTS`, ADR-0169). */
+export const MAX_LISTS = 3;
 
 const NAME = /^[A-Za-z0-9_-]+/;
 /** The field `[<field]` ranks by (#404): a name, or names joined by `.` (`timestamp.seconds`). */
 const EARLIEST_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
-/** A match step's field: names joined by single dots, optionally ending in `!` (#404). */
-const MATCH_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*!?$/;
+/** A match step's field: names joined by single dots, optionally ending in `~` (ADR-0169) and then `!` (#404). */
+const MATCH_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*~?!?$/;
 
 /**
  * Whether an entry has every pair (#404): a field may name a nested one (`connector.state`) and end in `!` for "not
@@ -57,6 +59,8 @@ function pairsFit(item: unknown, pairs: readonly (readonly [string, string])[]):
   return pairs.every(([raw, want]) => {
     const negated = raw.endsWith("!");
     const field = negated ? raw.slice(0, -1) : raw;
+    // `~` (ADR-0169): the text trimmed, a field that leads nowhere as "" (Rust's `trimmed_fits`).
+    if (field.endsWith("~")) return trimmedFits(item, field.slice(0, -1).split("."), want.trim()) !== negated;
     // Through a list on the way, any of its items will do (#404): `tasks.state` of a connector with a failed task.
     const reaches = (at: unknown, parts: readonly string[]): boolean => {
       if (Array.isArray(at)) return at.some((item) => reaches(item, parts));
@@ -67,6 +71,23 @@ function pairsFit(item: unknown, pairs: readonly (readonly [string, string])[]):
     return reaches(item, field.split(".")) !== negated;
   });
 }
+/**
+ * A `~` pair (ADR-0169): the text at `parts` trimmed is `want`; nothing there, `null` or a text on the way reads as "";
+ * through a list on the way, any of its items will do (an empty list is nothing there).
+ */
+function trimmedFits(at: unknown, parts: readonly string[], want: string): boolean {
+  if (Array.isArray(at)) return at.length === 0 ? want === "" : at.some((item) => trimmedFits(item, parts, want));
+  if (at === undefined || at === null) return want === "";
+  if (typeof at === "object") {
+    if (parts.length === 0) return false;
+    const own = Object.prototype.hasOwnProperty.call(at, parts[0]!) ? (at as Record<string, unknown>)[parts[0]!] : undefined;
+    return trimmedFits(own, parts.slice(1), want);
+  }
+  if (parts.length > 0) return want === "";
+  if (typeof at === "string") return at.trim() === want;
+  return (typeof at === "boolean" || typeof at === "number") && String(at) === want;
+}
+
 const LABEL_NAME = /^[A-Za-z0-9]([A-Za-z0-9_.-]*[A-Za-z0-9])?$/;
 const DNS_LABEL = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 // eslint-disable-next-line no-control-regex
@@ -175,9 +196,8 @@ export function parseFieldPath(path: string): PathStep[] | null {
     i += name.length;
     expectName = false;
   }
-  // `*` gives a list; the steps after it read each item (#404). One list per path.
-  // Two lists at most (#404), flattened into one.
-  if (steps.filter((s) => "match" in s && s.all).length > 2) return null;
+  // `*` gives a list; the steps after it read each item (#404). Lists three deep at most (ADR-0169), flattened into one.
+  if (steps.filter((s) => "match" in s && s.all).length > MAX_LISTS) return null;
   return steps.length > 0 ? steps : null;
 }
 

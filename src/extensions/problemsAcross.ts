@@ -12,6 +12,9 @@
 //   judgeAcross(problems, context, { rules, targets })   // the problems that stand
 import type { JudgedNeed, KubeObject, ProblemCondition, ProblemContribution } from "../api";
 import { evaluate, FACT_MARK, factKey, FOUND_MARK, MAX_MESSAGE_CHARS, MAX_VALUE_CHARS, MISSING_MARK, numberOf, selectorMatches, valueAt, type Lookup } from "./problemRules";
+
+/** The extension API whose additions the window applies only to manifests that name it (ADR-0169). */
+export const PARITY_API = 5;
 import type { JudgedEntry, JudgedRowPart } from "./problemJudges";
 import { cleanText } from "../resources/uri";
 import { formatList } from "../i18n/format";
@@ -149,6 +152,13 @@ export interface AcrossRules {
   rules: ReadonlyMap<string, ProblemContribution>;
   targets: readonly AcrossTarget[];
   /**
+   * Whether the cluster serves a kind (discovery said), for a `missing` with `alsoKinds` (ADR-0169): a kind it does not
+   * serve has no objects. Without it every kind counts as served (a kind without a target cannot tell).
+   */
+  served?: (kind: { group: string; kind: string }) => boolean;
+  /** The extension's `sextantApi`: from 5 `{{missing}}` names what a plain `missing` did not find too (ADR-0169). */
+  api?: number;
+  /**
    * The texts of a judge's fact for an object by the judge's latest answer (ADR-0168), `null` when it gives none or
    * cannot tell; and what the judge read (each kind and the namespaces its source watched).
    */
@@ -166,8 +176,17 @@ const usable = (rows: JudgedRows | undefined): rows is JudgedRows =>
 const sameKind = (a: { group: string; kind: string }, b: { group: string; kind: string }) =>
   a.group.toLowerCase() === b.group.toLowerCase() && a.kind.toLowerCase() === b.kind.toLowerCase();
 
-/** The problems of `problems` that stand once the rows of the cluster say what their rules look up. */
-export function judgeAcross(problems: readonly Problem[], context: JudgeContext, { rules, targets, judges }: AcrossRules): Problem[] {
+/**
+ * The problems of `problems` that stand once the rows of the cluster say what their rules look up. `untold` gets the
+ * uids of the objects whose problems the rows cannot tell yet (a list not read in full, not served where it must be,
+ * not watched there): a table's `problem` case says "cannot tell" for them (ADR-0169).
+ */
+export function judgeAcross(
+  problems: readonly Problem[],
+  context: JudgeContext,
+  { rules, targets, judges, served, api }: AcrossRules,
+  untold?: Set<string>,
+): Problem[] {
   // Rows per target by `namespace/name`, built once per look.
   const names = new Map<AcrossTarget, Map<string, AcrossRow> | null>();
   const namesOf = (target: AcrossTarget): Map<string, AcrossRow> | null => {
@@ -178,31 +197,59 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
     return names.get(target)!;
   };
   /** Whether one lookup holds: `missing` not there, `related` there with its fact, … (`false`: cannot tell, or not). */
-  const holds = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean => {
+  const holds = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean => tell(p, lookup) === true;
+  /**
+   * `missing` with `alsoKinds` (ADR-0169): not there in any kind the cluster serves (one it does not serve has no
+   * objects); `undefined` while a served kind's list cannot tell.
+   */
+  const missingInAll = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean | undefined => {
+    let unknown = false;
+    for (const kind of [lookup, ...(lookup.also ?? [])]) {
+      // Not served: no objects of it.
+      if (served !== undefined && !served(kind)) continue;
+      const target = targets.find((t) => sameKind(t, kind));
+      if (!target) {
+        unknown = true;
+        continue;
+      }
+      const known = namesOf(target);
+      const watched = context.target(target.def)?.namespaces;
+      const namespace = target.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
+      if (known?.has(`${namespace}/${lookup.name}`)) return false;
+      if (!known || (target.namespaced && watched !== null && !watched?.includes(namespace))) unknown = true;
+    }
+    return unknown ? undefined : true;
+  };
+  /** Whether one lookup holds; `undefined` when the rows cannot tell (a list not read in full, not watched there). */
+  const tell = (p: Problem, lookup: NonNullable<Problem["lookups"]>[number]): boolean | undefined => {
     // `judged` (ADR-0168) is told apart, by `factsOf`.
     if (lookup.judged) return true;
+    if (lookup.also !== undefined) return missingInAll(p, lookup);
     {
       const target = targets.find((t) => sameKind(t, lookup));
-      if (!target) return false;
+      if (!target) return undefined;
       const known = namesOf(target);
-      if (!known) return false;
+      if (!known) return undefined;
       const watched = context.target(target.def)?.namespaces;
       // `selectsNone` (#404): no row in the namespaces it covers has labels its selector picks; a source that does not
       // watch all of them cannot tell.
       if (lookup.selects) {
         const { selector, namespaces } = lookup.selects;
-        if (target.namespaced && watched !== null && (namespaces === null || namespaces.some((ns) => !watched?.includes(ns)))) return false;
+        if (target.namespaced && watched !== null && (namespaces === null || namespaces.some((ns) => !watched?.includes(ns)))) return undefined;
         for (const row of known.values()) {
           if (target.namespaced && namespaces !== null && !namespaces.includes(row.namespace)) continue;
-          if (row.allLabels === undefined) return false;
+          if (row.allLabels === undefined) return undefined;
           if (selectorMatches(selector, row.allLabels)) return false;
         }
         return true;
       }
       const namespace = target.namespaced ? (lookup.namespace ?? p.object.namespace ?? "") : "";
       // `relatedBy` (#404): a row of the namespace holding every text, with its fact holding.
-      if (lookup.by) return relatedRows(p, lookup).length > 0;
-      if (target.namespaced && watched !== null && !watched?.includes(namespace)) return false;
+      if (lookup.by) {
+        if (target.namespaced && watched !== null && !watched?.includes(namespace)) return undefined;
+        return relatedRows(p, lookup).length > 0;
+      }
+      if (target.namespaced && watched !== null && !watched?.includes(namespace)) return undefined;
       const row = known.get(`${namespace}/${lookup.name}`);
       // `related` (#409): there, with its fact holding; `missing`: not there.
       if (lookup.fact !== undefined) return row?.facts?.[lookup.fact] === true;
@@ -241,18 +288,32 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
    */
   const missingNames = (p: Problem): string[] | null => {
     const lists = new Map<string, string[]>();
+    /** The lists some of whose lookups cannot tell. */
+    const unsure = new Set<string>();
+    const plain: string[] = [];
+    // The namespace only when it is not the object's own (#404).
+    const shown = (lookup: NonNullable<Problem["lookups"]>[number]) =>
+      lookup.namespace && lookup.namespace !== p.object.namespace ? `${lookup.namespace}/${lookup.name}` : lookup.name;
     for (const lookup of p.lookups ?? []) {
+      const told = tell(p, lookup);
       if (lookup.anyOf === undefined) {
-        if (!holds(p, lookup)) return null;
+        if (told === undefined) untold?.add(p.uid);
+        if (told !== true) return null;
+        // From sextantApi 5 `{{missing}}` names it too, with its namespace (ADR-0169).
+        if ((api ?? 0) >= PARITY_API && lookup.fact === undefined && !lookup.by && !lookup.selects && !lookup.judged) plain.push(shown(lookup));
         continue;
       }
       const found = lists.get(lookup.anyOf) ?? [];
-      // The namespace only when it is not the object's own (#404).
-      if (holds(p, lookup)) found.push(lookup.namespace && lookup.namespace !== p.object.namespace ? `${lookup.namespace}/${lookup.name}` : lookup.name);
+      if (told === true) found.push(shown(lookup));
+      else if (told === undefined) unsure.add(lookup.anyOf);
       lists.set(lookup.anyOf, found);
     }
-    for (const found of lists.values()) if (found.length === 0) return null;
-    return [...new Set([...lists.values()].flat())];
+    for (const [key, found] of lists) {
+      if (found.length > 0) continue;
+      if (unsure.has(key)) untold?.add(p.uid);
+      return null;
+    }
+    return [...new Set([...plain, ...[...lists.values()].flat()])];
   };
 
   let newest: Map<string, string> | null | undefined;
@@ -278,7 +339,10 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
   const isNewest = (p: Problem, key: string): boolean => {
     const index = newestOf();
     const row = context.rows?.rows.get(p.uid) as AcrossRow | undefined;
-    if (!index || !row) return false;
+    if (!index || !row) {
+      untold?.add(p.uid);
+      return false;
+    }
     const label = row.labels[key];
     return label === undefined || index.get(`${row.namespace}|${key}|${label}`) === p.uid;
   };
@@ -300,7 +364,10 @@ export function judgeAcross(problems: readonly Problem[], context: JudgeContext,
   const toldByReferrer = (p: Problem, ref: ReferrerRule): boolean => {
     const index = referrersIndex();
     // Not read in full: cannot tell, so not told on its own either.
-    if (!index) return true;
+    if (!index) {
+      untold?.add(p.uid);
+      return true;
+    }
     const fact = factKey(ref.when);
     const start = `${p.object.namespace ?? ""}/${p.object.name}`;
     const seen = new Set([start]);
@@ -463,9 +530,10 @@ export function judgesOf(condition: ProblemCondition): string[] {
   return [];
 }
 
-/** The kinds a condition looks up (`missing`). */
+/** The kinds a condition looks up (`missing`, with its `alsoKinds`). */
 export function lookedUp(condition: ProblemContribution["when"]): { group: string; kind: string }[] {
-  if (condition.type === "missing" || condition.type === "related" || condition.type === "relatedBy" || condition.type === "selectsNone") return [condition.kind];
+  if (condition.type === "missing") return [condition.kind, ...(condition.alsoKinds ?? [])];
+  if (condition.type === "related" || condition.type === "relatedBy" || condition.type === "selectsNone") return [condition.kind];
   if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUp);
   return [];
 }

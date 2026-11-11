@@ -3,12 +3,14 @@
 // text whose condition holds. No extension code runs; Rust checked the paths read no secret.
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import type { ColumnCase, ColumnContribution, ColumnLookup, ColumnTone, KubeObject } from "../api";
+import type { ColumnCase, ColumnContribution, ColumnLookup, ColumnTone, KubeObject, ProblemCondition } from "../api";
 import { Age, ageParts } from "../components";
-import type { ColumnDef } from "../resources/registry";
+import type { CellContext, ColumnDef } from "../resources/registry";
 import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
-import { evaluate, fillTemplate, numberOf, sumOf, valueAt } from "./problemRules";
+import { evaluate, fillTemplate, numberOf, sumOf, valueAt, type RuleContext } from "./problemRules";
+import { rowProblemStateNow, useRowProblemState } from "./rowProblems";
+import { extensionCategories } from "../features/problems/extensionCategories";
 import { cleanText } from "../resources/uri";
 import { currentLanguage, formatDateTime, formatList } from "../i18n/format";
 import { formatBytes, formatCpu, parseQuantity } from "../features/metrics/format";
@@ -105,8 +107,8 @@ function caseText(c: ColumnCase, obj: KubeObject): string {
 }
 
 /** Whether a case's condition holds at `now` (a condition holding only from or until a time counts within it). */
-function holdsNow(c: Pick<ColumnCase, "when">, obj: KubeObject, now: number): boolean {
-  const verdict = evaluate(c.when, obj);
+function holdsNow(c: Pick<ColumnCase, "when">, obj: KubeObject, now: number, ctx: RuleContext = {}): boolean {
+  const verdict = evaluate(c.when, obj, ctx);
   if (!verdict.holds) return false;
   if (verdict.activeFrom !== undefined && verdict.activeFrom > now) return false;
   return verdict.until === undefined || verdict.until > now;
@@ -116,9 +118,9 @@ function holdsNow(c: Pick<ColumnCase, "when">, obj: KubeObject, now: number): bo
  * The case that replaces the value, if one holds, with its text filled from the object (#368): a case whose
  * placeholder has no value does not hold.
  */
-function caseOf(column: ColumnContribution, obj: KubeObject, now: number): ColumnCase | undefined {
+function caseOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: RuleContext = {}): ColumnCase | undefined {
   for (const c of column.cases ?? []) {
-    if (!holdsNow(c, obj, now)) continue;
+    if (!holdsNow(c, obj, now, ctx)) continue;
     const template = caseText(c, obj);
     const filled = template.includes("{{") ? fillTemplate(template, obj) : template;
     if (filled === null) continue;
@@ -183,8 +185,8 @@ function firstPlusTooltip(column: ColumnContribution, obj: KubeObject, now: numb
   return shown && textOf(shown.join("\n"), MAX_TOOLTIP_CHARS);
 }
 
-function cellOf(column: ColumnContribution, obj: KubeObject, now: number): Cell {
-  const replaced = caseOf(column, obj, now);
+function cellOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: RuleContext = {}): Cell {
+  const replaced = caseOf(column, obj, now, ctx);
   const tone = (value: string | undefined): Tone | undefined => {
     // `"*"`: the tone of any other value (#403).
     const named = value !== undefined ? (column.tones?.[value] ?? column.tones?.["*"]) : undefined;
@@ -311,12 +313,69 @@ export function placement(column: Pick<ColumnContribution, "after" | "afterColum
   return column.after !== undefined ? { afterTitle: column.after } : {};
 }
 
-/** The table column of a computed contribution, under the registry id `id`. */
-export function computedColumn(id: string, column: ColumnContribution, ownIds?: (id: string) => string | undefined): ColumnDef {
+/** Whether a condition asks what the extension's rules say of the row (`problem`, ADR-0169). */
+function asksProblems(condition: ProblemCondition): boolean {
+  if (condition.type === "problem") return true;
+  if (condition.type === "all" || condition.type === "any") return condition.of.some(asksProblems);
+  return condition.type === "not" && asksProblems(condition.of);
+}
+
+/** A cell drawn with its hover. */
+function drawCell(column: ColumnContribution, obj: KubeObject, now: number, ruleCtx: RuleContext = {}): ReactNode {
+  const format = column.format ?? "text";
+  const cell = cellOf(column, obj, now, ruleCtx);
+  // Cluster text is cleaned wherever it shows, as case texts are: no credentials of a URI in a hover.
+  const tooltip = textOf(cleanText(textOf(firstValue(obj, column.tooltipPaths), MAX_TOOLTIP_CHARS)), MAX_TOOLTIP_CHARS);
+  // A list's hover is its whole text when it has none of its own (#404): a cell may cut it.
+  const title =
+    caseOf(column, obj, now, ruleCtx)?.tooltip ??
+    tooltip ??
+    (column.tooltipPaths !== undefined || column.listTooltip === false ? undefined : format === "list" ? cell.text : format === "firstPlus" && cell.text !== undefined ? firstPlusTooltip(column, obj, now) : undefined);
+  return title === undefined ? cell.draw : <span title={title}>{cell.draw}</span>;
+}
+
+/** A cell of a column whose cases ask what the extension's rules say of the row (ADR-0169). */
+function ProblemCaseCell({ column, obj, ctx, extensionId }: { column: ColumnContribution; obj: KubeObject; ctx: CellContext; extensionId: string }) {
+  const problemState = useRowProblemState(ctx.clusterId, extensionId, ctx.kind);
+  return <>{drawCell(column, obj, ctx.now, { problemState })}</>;
+}
+
+/** Holds the extension's problem sources while a filter needs a `problem` column's values (ADR-0169). */
+function problemObserver(extensionId: string) {
+  return function ProblemObserver({ context, onChange }: { context: CellContext; onChange: () => void }) {
+    useRowProblemState(context.clusterId, extensionId, context.kind, onChange);
+    return null;
+  };
+}
+
+/**
+ * The table column of a computed contribution, under the registry id `id`. A column whose cases ask what the
+ * extension's rules say (`problem`, ADR-0169) reads the problems of the extension `extensionId`: it holds them while
+ * shown, does not sort (as the built-in "References" column), and is searched by nothing.
+ */
+export function computedColumn(id: string, column: ColumnContribution, ownIds?: (id: string) => string | undefined, extensionId?: string): ColumnDef {
   const format = column.format ?? "text";
   const timed = format === "age" || format === "duration" || (column.cases ?? []).length > 0;
-  // Cluster text is cleaned wherever it shows, as case texts are: no credentials of a URI in a hover.
-  const tooltip = (obj: KubeObject) => textOf(cleanText(textOf(firstValue(obj, column.tooltipPaths), MAX_TOOLTIP_CHARS)), MAX_TOOLTIP_CHARS);
+  if (extensionId !== undefined && (column.cases ?? []).some((c) => asksProblems(c.when))) {
+    const ruleCtx = (ctx: CellContext): RuleContext => ({
+      problemState: (obj) => rowProblemStateNow(ctx.clusterId, extensionId, extensionCategories(), ctx.kind, obj),
+    });
+    return {
+      id,
+      title: column.title,
+      ...placement(column, ownIds),
+      ...(column.width !== undefined ? { width: column.width } : {}),
+      fallback: "end",
+      sortable: false,
+      value: () => undefined,
+      render: (obj, ctx) => <ProblemCaseCell column={column} obj={obj} ctx={ctx} extensionId={extensionId} />,
+      filter: {
+        type: "string",
+        value: (obj, ctx) => (column.filterBy === "value" ? filterValue(cellOf(column, obj, ctx.now, ruleCtx(ctx))) : cellOf(column, obj, ctx.now, ruleCtx(ctx)).text),
+        observer: problemObserver(extensionId),
+      },
+    };
+  }
   return {
     id,
     title: column.title,
@@ -326,15 +385,7 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     fallback: "end",
     // Sorting and the default text; a time-dependent cell sorts as of now.
     value: (obj) => cellOf(column, obj, Date.now()).sort,
-    render: (obj, ctx) => {
-      const cell = cellOf(column, obj, ctx.now);
-      // A list's hover is its whole text when it has none of its own (#404): a cell may cut it.
-      const title =
-        caseOf(column, obj, ctx.now)?.tooltip ??
-        tooltip(obj) ??
-        (column.tooltipPaths !== undefined || column.listTooltip === false ? undefined : format === "list" ? cell.text : format === "firstPlus" && cell.text !== undefined ? firstPlusTooltip(column, obj, ctx.now) : undefined);
-      return title === undefined ? cell.draw : <span title={title}>{cell.draw}</span>;
-    },
+    render: (obj, ctx) => drawCell(column, obj, ctx.now),
     searchText: (obj, ctx) => {
       const cell = cellOf(column, obj, ctx.now);
       // A column searched by its cases' values is found by them, not the words shown (a state's name in every

@@ -559,12 +559,25 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             ));
         }
         for (j, case) in column.cases.iter().flatten().enumerate() {
-            check_object_condition(
+            super::problems::check_case_condition(
                 &case.when,
                 std::slice::from_ref(&column.kind),
                 &here.key("cases").index(j).key("when"),
                 manifest.sextant_api,
             )?;
+            // What the rules say of a row (ADR-0169): of a kind they judge.
+            if super::problems::asks_problems(&case.when)
+                && !manifest.contributes.problems.iter().any(|rule| {
+                    rule.kinds_from.is_none()
+                        && rule.kind.group.eq_ignore_ascii_case(&column.kind.group)
+                        && rule.kind.kind.eq_ignore_ascii_case(&column.kind.kind)
+                })
+            {
+                return Err(at(
+                    &here.key("cases").index(j).key("when"),
+                    "asks what the extension's rules say (`problem`) of a kind no rule of it judges",
+                ));
+            }
             // The text by plural form (#404), as a rule's message.
             let case_at = here.key("cases").index(j);
             match (&case.plural_by, &case.text_forms) {

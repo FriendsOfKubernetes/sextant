@@ -2,6 +2,7 @@
 import type { FieldPair } from "./FieldPair";
 import type { KindPattern } from "./KindPattern";
 import type { ProblemScalar } from "./ProblemScalar";
+import type { ProblemState } from "./ProblemState";
 
 /**
  * A condition of a rule, tagged by `type`.
@@ -45,9 +46,31 @@ namespacePath?: string,
  * With a list, the items that count (#404): a reference to another provider (`name@provider`) left out.
  * Reads only the item, no time. `sextantApi` 4.
  */
-itemWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
+itemWhen?: ProblemCondition, 
+/**
+ * More kinds the name is looked up in (ADR-0169): it is missing only when none of `kind` and these that the
+ * cluster serves has it, and a kind the cluster does not serve has no objects (a Traefik target in either of
+ * Traefik's groups). 1 to 3; `sextantApi` 5.
+ */
+alsoKinds?: Array<KindPattern>, 
+/**
+ * With a list, `namespacePath` counts only for the items this holds of (ADR-0169): a reference to another
+ * provider (`name@provider`) is looked up where its object is, whatever namespace it names. Reads only the
+ * item, no time. `sextantApi` 5.
+ */
+namespaceWhen?: ProblemCondition, 
+/**
+ * With a list, the namespace of the object holding it (the value the path reads the list's field from) when
+ * the item names none (ADR-0169): a load balancer's middlewares are looked up in its namespace. `sextantApi` 5.
+ */
+enclosingNamespacePath?: string, 
+/**
+ * `enclosingNamespacePath` counts only where this holds of the holding object (ADR-0169). Reads only that
+ * object, no time. `sextantApi` 5.
+ */
+enclosingNamespaceWhen?: ProblemCondition, } | { "type": "related", path: string, kind: KindPattern, when: ProblemCondition, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, } | { "type": "relatedBy", kind: KindPattern, pairs: Array<FieldPair>, when: ProblemCondition, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
 /**
  * One problem for each time the answer gives the fact for the object, each with its own texts and an
  * identity of them (notifications, "Only new since"), not one for the first; only as a rule's whole `when`.
  */
-each?: boolean, };
+each?: boolean, } | { "type": "problem", state?: ProblemState, };

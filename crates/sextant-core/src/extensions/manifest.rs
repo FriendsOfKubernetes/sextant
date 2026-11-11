@@ -707,6 +707,12 @@ pub fn parse_manifest(bytes: &[u8]) -> Result<ExtensionManifest, ManifestError> 
     }
     schema::validate(&schema::manifest_schema(), &value)?;
     check_unique_ids(&value)?;
+    if let (Some(api), Some(contributes)) = (
+        value.get("sextantApi").and_then(Value::as_u64),
+        value.get("contributes"),
+    ) {
+        problems::check_parity_syntax(u32::try_from(api).unwrap_or(0), contributes)?;
+    }
     apply_defaults(&mut value);
     let manifest: ExtensionManifest =
         serde_json::from_value(value).map_err(|err| whole(format!("cannot be read: {err}")))?;

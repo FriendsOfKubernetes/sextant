@@ -503,7 +503,7 @@ function checkUniqueIds(manifest) {
 
 const PROBLEMS_API = 2;
 /** `rule_limits`: rules and the kinds they judge, more from sextantApi 4. */
-const ruleLimits = (api) => (api >= 4 ? [60, 30] : [20, 10]);
+const ruleLimits = (api) => (api >= 5 ? [100, 30] : api >= 4 ? [60, 30] : [20, 10]);
 const MAX_CONDITIONS = 20;
 const MAX_DEPTH = 3;
 /** From sextantApi 4 (#381): an older Sextant reads only older manifests, so the limits grow with the version. */
@@ -561,8 +561,8 @@ export function parseFieldPath(path) {
           const eq = chars.indexOf("=", at);
           if (eq < 0) return null;
           const field = chars.slice(at, eq).join("");
-          // Names joined by dots, optionally ending in `!` (#404).
-          if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*!?$/.test(field) || chars[eq + 1] !== '"') return null;
+          // Names joined by dots, optionally ending in `~` (compared trimmed, ADR-0169) and then `!` (#404).
+          if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*~?!?$/.test(field) || chars[eq + 1] !== '"') return null;
           const close = chars.indexOf('"', eq + 2);
           if (close < 0) return null;
           const value = chars.slice(eq + 2, close).join("");
@@ -616,8 +616,8 @@ export function parseFieldPath(path) {
     steps.push({ key: chars.slice(start, i).join("") });
     expectName = false;
   }
-  // The steps after `*` read each item (#404); two lists at most, flattened into one.
-  if (steps.filter((s) => s.pick === "all").length > 2) return null;
+  // The steps after `*` read each item (#404); lists three deep at most (`MAX_LISTS`, ADR-0169), flattened into one.
+  if (steps.filter((s) => s.pick === "all").length > 3) return null;
   return steps.length > 0 ? steps : null;
 }
 
@@ -738,6 +738,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkRulePath(numericPath(condition.path, counter.api, [...segments, "path"]), kind, [...segments, "path"], counter.metadataOnly);
     return;
   }
+  if (condition.type === "problem") {
+    // What the extension's rules say of a table's row (ADR-0169): a computed column's cases only.
+    if (!counter.case) fail([...segments, "type"], "`problem` asks what the extension's rules say of a table's row: only a computed column's cases may use it");
+    if (counter.api < PARITY_API) fail([...segments, "type"], `\`problem\` needs sextantApi ${PARITY_API} or later`);
+    return;
+  }
   if (condition.type === "judged") {
     // The extension's backend decides it (ADR-0168): `check_judged`.
     if (counter.single) fail([...segments, "type"], "`judged` is decided by the extension's backend: only problem rules may use it");
@@ -810,6 +816,33 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (inside === "not") fail([...segments, "type"], "`missing` cannot be inside `not`: a list not read would make it unknown");
     // A list of references, an item's namespace (#404).
     const listed = condition.path.includes("*");
+    // More kinds, the namespaces of the item and of its holder (ADR-0169).
+    for (const key of ["alsoKinds", "namespaceWhen", "enclosingNamespacePath", "enclosingNamespaceWhen"]) {
+      if (condition[key] !== undefined && counter.api < PARITY_API) fail([...segments, key], `needs sextantApi ${PARITY_API} or later`);
+    }
+    if (condition.namespaceWhen !== undefined && (!listed || condition.namespacePath === undefined)) {
+      fail([...segments, "namespaceWhen"], "goes with a `path` that reads a list (`[*]`) and a `namespacePath`");
+    }
+    if (condition.enclosingNamespaceWhen !== undefined && condition.enclosingNamespacePath === undefined) {
+      fail([...segments, "enclosingNamespaceWhen"], "goes with `enclosingNamespacePath`");
+    }
+    if (condition.enclosingNamespacePath !== undefined) {
+      const steps = parseFieldPath(condition.path.trim());
+      const held = steps !== null && steps.length >= 2 && steps[steps.length - 1].pick === "all" && steps[steps.length - 2].key !== undefined;
+      if (!held) fail([...segments, "enclosingNamespacePath"], "goes with a `path` whose last step lists a field's items (`.middlewares[*]`)");
+      checkRulePath(condition.enclosingNamespacePath, kind, [...segments, "enclosingNamespacePath"], counter.metadataOnly);
+    }
+    for (const key of ["namespaceWhen", "enclosingNamespaceWhen"]) {
+      if (condition[key] === undefined) continue;
+      checkObjectCondition(condition[key], [kind], [...segments, key], counter.api);
+      if (usesTime(condition[key])) fail([...segments, key], "reads no time (`olderThan`)");
+    }
+    const also = condition.alsoKinds ?? [];
+    if (condition.alsoKinds !== undefined && (also.length === 0 || also.length > 3)) fail([...segments, "alsoKinds"], "has 1 to 3 kinds");
+    also.forEach((other, i) => {
+      if (sameKind(other, condition.kind) || also.slice(0, i).some((k) => sameKind(k, other))) fail([...segments, "alsoKinds", i], "names a kind `missing` already looks up");
+      if (other.group === "" && other.kind.toLowerCase() === "secret") fail([...segments, "alsoKinds", i], "Secrets are never listed for rules");
+    });
     if ((condition.namePath !== undefined || condition.namespacePath !== undefined || condition.itemWhen !== undefined) && counter.api < SOURCES_API) {
       fail([...segments, "type"], `\`missing\` of a list or another namespace needs sextantApi ${SOURCES_API} or later`);
     }
@@ -826,11 +859,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
       fail([...segments, "kind"], "Secrets are never listed for rules");
     }
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
-    if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
-      counter.kinds.push(condition.kind);
+    [condition.kind, ...also].forEach((target, i) => {
+      if (counter.kinds.some((k) => sameKind(k, target))) return;
+      counter.kinds.push(target);
       const maxKinds = ruleLimits(counter.api)[1];
-      if (counter.kinds.length > maxKinds) fail([...segments, "kind"], `the rules judge at most ${maxKinds} kinds`);
-    }
+      if (counter.kinds.length > maxKinds) fail(i === 0 ? [...segments, "kind"] : [...segments, "alsoKinds", i - 1], `the rules judge at most ${maxKinds} kinds`);
+    });
     return;
   }
   checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
@@ -947,7 +981,8 @@ const plainPath = (path) => parseFieldPath(path)?.every((step) => "key" in step 
 const looksAcross = (condition) => lookedUpKinds(condition).length > 0 || judgedIn(condition).length > 0;
 
 function lookedUpKinds(condition) {
-  if (["missing", "related", "relatedBy", "selectsNone"].includes(condition.type)) return [condition.kind];
+  if (condition.type === "missing") return [condition.kind, ...(condition.alsoKinds ?? [])];
+  if (["related", "relatedBy", "selectsNone"].includes(condition.type)) return [condition.kind];
   if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(lookedUpKinds);
   if (condition.type === "not") return lookedUpKinds(condition.of);
   return [];
@@ -1242,7 +1277,7 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
       for (const one of multiplied) checkRulePath(one.trim(), kind, segments, metadataOnly);
     }
     const added = tried.length > 1 || multiplied.length > 1 ? [] : addedPaths(field);
-    if (added.length > 1 && !["sum", "count"].includes(filters[0]?.trim() ?? "")) fail(segments, "adds paths with `+` only before `|sum` or `|count`");
+    if (added.length > 1 && !["sum", "count", "positions"].includes(filters[0]?.trim() ?? "")) fail(segments, "adds paths with `+` only before `|sum`, `|count` or `|positions`");
     if (added.length > MAX_ADDED_PATHS) fail(segments, `adds at most ${MAX_ADDED_PATHS} paths`);
     for (const [index, filter] of filters.map((f) => f.trim()).entries()) {
       // `|share` (`check_filters`): an item's share of the list, first in a list column's item text only.
@@ -1262,7 +1297,13 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
       }
       if (!clipOk && !afterOk && !PLACEHOLDER_FILTERS.includes(filter)) fail(segments, `has a filter \`${filter}\`: one of ${PLACEHOLDER_FILTERS.join(", ")}, clip:<1 to 1000>, after:<marker>, fqdn:<namespace path>`);
     }
-    for (const one of added) checkRulePath(one.trim(), kind, segments, metadataOnly);
+    for (const one of added) {
+      checkRulePath(one.trim(), kind, segments, metadataOnly);
+      // `|positions` (ADR-0169): places in one list, the one its last step matches in.
+      if (filters[0]?.trim() === "positions" && !listsMatches(one)) {
+        fail(segments, 'has `|positions` after a path whose last step, and no other, lists the matches (`.spec.routes[match~="",*]`)');
+      }
+    }
   }
 }
 
@@ -1303,7 +1344,44 @@ export function splitOutsideQuotes(field, sep) {
 }
 
 /** `PLACEHOLDER_FILTERS` (#404). */
-const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts"];
+const PLACEHOLDER_FILTERS = ["lower", "firstLine", "lastSegment", "list", "join", "count", "sum", "keys", "unique", "countAll", "selector", "product", "cpu", "bytes", "daysLeft", "ruleHosts", "positions"];
+
+/** `lists_matches`: a path whose last step, and no other, lists the matches (`|positions`, ADR-0169). */
+function listsMatches(text) {
+  const trimmed = text.trim();
+  const steps = parseFieldPath(trimmed.startsWith("$") ? trimmed.slice(1) : trimmed);
+  return steps !== null && steps.filter((s) => s.pick === "all").length === 1 && steps[steps.length - 1].pick === "all";
+}
+
+/**
+ * `check_parity_syntax` (ADR-0169): below sextantApi 5, no path or placeholder of `contributes` uses lists three deep,
+ * a match field compared trimmed or `|positions`; strings visited in key order, as Rust does.
+ */
+function checkParitySyntax(manifest) {
+  if (!(manifest.sextantApi < PARITY_API) || !isObject(manifest.contributes)) return;
+  const newIn = (text) => {
+    // A compared path may end in a filter (`|count`).
+    const trimmed = splitOutsideQuotes(text, "|")[0].trim();
+    const steps = parseFieldPath(trimmed.startsWith("$") ? trimmed.slice(1) : trimmed);
+    if (!steps) return undefined;
+    if (steps.filter((s) => s.pick === "all").length > 2) return "a path with lists three deep (`[*]`)";
+    if (steps.some((s) => s.match?.some(([f]) => (f.endsWith("!") ? f.slice(0, -1) : f).endsWith("~")))) return 'a match field compared trimmed (`[field~="…"]`)';
+    return undefined;
+  };
+  const visit = (value, here) => {
+    if (typeof value === "string") {
+      let found = newIn(value);
+      for (const inner of placeholders(value) ?? []) {
+        const [field, ...filters] = inner.split("|");
+        if (filters.some((f) => f.trim() === "positions")) found ??= "`|positions`";
+        for (const one of splitOutsideQuotes(field, "??").flatMap((p) => splitOutsideQuotes(p, "+")).flatMap((p) => splitOutsideQuotes(p, " * "))) found ??= newIn(one);
+      }
+      if (found !== undefined) fail(here, `${found} needs sextantApi ${PARITY_API} or later`);
+    } else if (Array.isArray(value)) value.forEach((item, i) => visit(item, [...here, i]));
+    else if (isObject(value)) for (const key of sortedKeys(value)) visit(value[key], [...here, key]);
+  };
+  visit(manifest.contributes, ["contributes"]);
+}
 
 // --- Commands (`check_commands` in crates/sextant-core/src/extensions/commands.rs) ------------------------------
 
@@ -1937,6 +2015,18 @@ function checkObjectCondition(condition, kinds, segments, api) {
   for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true });
 }
 
+/** `check_case_condition`: a computed column's case, which may ask what the extension's rules say (`problem`, ADR-0169). */
+function checkCaseCondition(condition, kinds, segments, api) {
+  for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true, case: true });
+}
+
+/** `asks_problems` (ADR-0169). */
+function asksProblems(condition) {
+  if (condition.type === "problem") return true;
+  if (condition.type === "all" || condition.type === "any") return condition.of.some(asksProblems);
+  return condition.type === "not" && asksProblems(condition.of);
+}
+
 /** `check_details_sections` (#408). */
 function checkDetailsSections(manifest) {
   const list = ["contributes", "detailsSections"];
@@ -2201,7 +2291,10 @@ function checkColumns(manifest) {
       }
     }
     (column.cases ?? []).forEach((c, j) => {
-      checkObjectCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
+      checkCaseCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
+      // What the rules say of a row (ADR-0169): of a kind they judge.
+      const judged = (manifest.contributes?.problems ?? []).some((rule) => rule.kindsFrom === undefined && rule.kind !== undefined && sameKind(rule.kind, column.kind));
+      if (asksProblems(c.when) && !judged) fail([...here, "cases", j, "when"], "asks what the extension's rules say (`problem`) of a kind no rule of it judges");
       // Field values in the text, as a problem message has them (#368). An empty text leaves the cell blank (#404).
       if (c.text === "" ? manifest.sextantApi < WINDOW_API : c.text.trim() === "") fail([...here, "cases", j, "text"], c.text === "" ? `is empty only from sextantApi ${WINDOW_API}` : "must not be blank");
       checkMessage(c.text, column.kind, [...here, "cases", j, "text"], false);
@@ -2292,6 +2385,7 @@ export function validateManifest(value, schema = manifestSchema()) {
     }
     check(schema, schema, value, []);
     checkUniqueIds(value);
+    checkParitySyntax(value);
     checkProblems(value);
     checkProblemJudges(value);
     checkMetricQueries(value);

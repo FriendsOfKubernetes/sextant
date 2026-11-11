@@ -66,7 +66,8 @@ export interface SourceDef {
 /** A source's problems judged with its rows and its category's other sources (`SourceDef.judge`). */
 export interface JudgeDef {
   tap: { id: string; toRow(obj: KubeObject): unknown; max: number };
-  judge(problems: readonly Problem[], context: JudgeContext): Problem[];
+  /** `untold` gets the uids of the objects whose problems the rows cannot tell yet (ADR-0169). */
+  judge(problems: readonly Problem[], context: JudgeContext, untold?: Set<string>): Problem[];
 }
 
 /** What `JudgeDef.judge` may read, at the time it runs. */

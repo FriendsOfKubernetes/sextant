@@ -87,6 +87,11 @@ export interface SourceState {
   problems: readonly Problem[];
   /** Objects with problems were dropped to stay under `MAX_PROBLEM_OBJECTS`. */
   truncated: boolean;
+  /**
+   * A source judged across objects (`SourceDef.judge`): the uids of the objects whose problems its rows cannot tell
+   * yet, as of the last look (a table's `problem` case says "cannot tell", ADR-0169).
+   */
+  untold?: ReadonlySet<string>;
 }
 
 interface Entry {
@@ -209,8 +214,12 @@ function publish(entry: Entry, patch: Partial<SourceState> = {}): void {
   let problems: Problem[] = [];
   for (const list of entry.byUid.values()) problems.push(...list);
   const judge = entry.state.def.judge;
-  if (judge) problems = judge.judge(problems, judgeContext(entry, judge.tap.id));
-  entry.state = { ...entry.state, ...patch, problems };
+  let untold: Set<string> | undefined;
+  if (judge) {
+    untold = new Set();
+    problems = judge.judge(problems, judgeContext(entry, judge.tap.id), untold);
+  }
+  entry.state = { ...entry.state, ...patch, problems, ...(untold ? { untold } : {}) };
   // A definition kind with more definitions than its `kindsFrom` reads: always a part.
   if (entry.state.def.moreDefinitions === true) entry.state.truncated = true;
   changed();

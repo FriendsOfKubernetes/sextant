@@ -22,6 +22,84 @@ Each addition is checked alike in Rust and the SDK (`sdk/scripts/manifest.mjs`),
 `sdk/test/fixtures/manifest-cases.json`, evaluated by the window only, and documented in the wiki page "Writing
 extensions". "Cannot tell" is never a problem (ADR-0144).
 
+Below `sextantApi` 5 every one of them is refused with "needs sextantApi 5 or later": the fields and conditions where
+they are checked, and the path and placeholder syntax by one pass over the raw `contributes` before anything else
+(`problems::check_parity_syntax` = `checkParitySyntax`, strings in key order), since paths are checked in many places
+that do not know the API. An API-4 manifest means what it meant on 0.30.0: nothing it could say changed meaning, and
+the window applies `{{missing}}`'s new reading only to a manifest that names 5 (`AcrossRules.api`).
+
+### A column case asks what the extension's rules say of the row (`problem`)
+
+`{"type": "problem", "state": "found" | "unknown" | "checking"}` (`ProblemCondition::Problem`, `ProblemState`), in a
+computed column's `cases[].when` only (`check_case_condition`; anywhere else — a rule, an action's `when`, a list
+column's item case, `problemWhen` — it is refused), on a kind one of the extension's rules judges. `found` (the
+default): a problem of the extension's categories stands for the row's object, counted or still in its grace, not
+one that only counts later or has ended. `checking`: Rust has not said where the rules run, or one of the extension's
+sources in the cluster is still listing. `unknown`: the rules cannot tell — `judgeAcross` now reports the uids whose
+lookups, referrers or newest-per rows it could not tell (`untold`, kept as `SourceState.untold` by the store's
+`publish`), or the row's kind has no source watching its namespace, or that source failed or was capped. The window
+(`src/extensions/rowProblems.ts`: `rowProblemState`, `useRowProblemState`) holds the extension's problem sources while
+such a column is shown — whatever the opt-in setting of its categories, which decides what the problems screen, the
+counter and the notifications show, not what a table of the extension's own may read — as the built-in Traefik view's
+store was held by its "References" column. Such a column does not sort and is not searched (its value lives outside the
+object, as the built-in's), and filters through an observer that holds the same sources. It reads nothing an agent
+or another extension could not: the problems are the extension's own, in its own window.
+
+### `|positions`
+
+A placeholder filter: the 1-based places of the matches of a path's last step (`[…,*]`, the only list step of the
+path) in its list, each once, ascending, in the UI language's list (`positionsOf`); paths joined with `+` give the
+union. Nothing when no path reads a list, an empty text when nothing matches. It numbers the routes Traefik skips,
+as the built-in message did ("Traefik skips its routes 1, 3: …").
+
+### Match fields compared trimmed (`[field~="…"]`)
+
+A match step's field may end in `~` (before an optional `!`): the entry's text trimmed of white space is compared
+with the value trimmed, and a field that leads nowhere, `null`, an empty list or a text on the way reads as `""` — as
+Go reads a struct's string field and Traefik trims a rule (`[match~=""]` a blank or missing rule, `[match~!=""]` one
+with text). Rust's `pair_fits` (`trimmed_fits`) and the window's `pairsFit` (`trimmedFits`) agree, and so does every
+reader of the grammar (custom columns, agents' `fields`), since a field with `~` did not parse before.
+
+### `missing` looked up in more kinds (`alsoKinds`)
+
+1 to 3 kinds after `kind`: the name is missing only when none of them that the cluster serves has it, and a kind the
+cluster does not serve has no objects (as an `optional` judge read, ADR-0168 amendment); a served kind whose list
+cannot tell makes the lookup "cannot tell". So a Traefik target is found in either of Traefik's groups, as the
+built-in view looked (`exists` in `traefik.io` where served, else `traefik.containo.us`, and a `traefik.io` object's
+target only in the old group "legacy only", open), and a target kind neither group serves is missing, as the built-in
+called it. The kinds count among the rules' kinds, are agreed to with them (`problem_kinds`), get sources, are
+narrowed together and are what an agent must be able to read (`lookupRefs`).
+
+### Lists three deep, and the namespace of the object holding a list
+
+A path may list three times (`MAX_LISTS`; four are refused): a route's services' middlewares. A `missing` over a list
+gets `namespaceWhen` (the item's `namespacePath` counts only where it holds of the item: another provider's service
+names a namespace Traefik does not use) and `enclosingNamespacePath` with `enclosingNamespaceWhen` (where the item
+names none, the namespace of the object holding the list — what the path before the list's field reads, for a path
+ending in `.<field>[*]` (`heldItems`) — where that condition holds of it). Order: the item's, else the holder's, else
+the object's own, as Traefik's `serviceRefs` resolves a load balancer's middlewares and transport. Both conditions read
+only their object, no time.
+
+### 100 rules
+
+From `sextantApi` 5 an extension has up to 100 rules (`MAX_RULES_5`, the schema's `maxItems`); the 30 kinds stay.
+Traefik's references of both groups take 72.
+
+### `{{missing}}` names a single reference too
+
+From `sextantApi` 5 a rule's `{{missing}}` names what a `missing` of one name did not find as well, with its
+namespace where it is not the object's own (a TLS option of another namespace), before the names of its lists. Below
+5 it keeps naming lists only.
+
 ## Consequences
 
 - Sextant's own extensions that use these additions need Sextant 0.30.1; on 0.30.0 they stay at their API-4 releases.
+- Traefik 1.1.0 (`sextantApi` 5) uses all of them: the References column, every reference of both groups judged where
+  Traefik looks, the skipped routes numbered. What stays different from the built-in view is in its README: one
+  problem per kind of reference and place; "References found" for a reference into another namespace, another
+  provider's object or a target only in the old group, which the built-in called "Not all checked" (the column tells
+  what the rules say, and the rules judge those found); unknown service kinds, which Traefik's CRDs refuse; `|keys`
+  for a Middleware's one key; `(containo.us)` in rule titles; and the Secrets grant, which cannot say "metadata only"
+  without a new permission action.
+- A table column of an extension can now make the window hold its problem sources while it is shown, even with an
+  opt-in category off: the sources are bounded as the category's own (ADR-0144) and released 5 s after the table.

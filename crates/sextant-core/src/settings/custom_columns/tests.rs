@@ -319,9 +319,10 @@ fn a_match_takes_the_earliest_by_a_field_or_every_match_as_the_last_step() {
         &parse_field_path(".spec.containers[<name]").unwrap()[2],
         PathStep::Match { pairs, pick: MatchPick::Earliest(f) } if pairs.is_empty() && f == "name"
     ));
-    // Two lists, flattened into one (#404); three are too many.
+    // Lists three deep, flattened into one (#404, ADR-0169); four are too many.
     assert!(parse_field_path(".a[*].b[*]").is_some());
-    assert_eq!(parse_field_path(".a[*].b[*].c[*]"), None);
+    assert!(parse_field_path(".a[*].b[*].c[*]").is_some());
+    assert_eq!(parse_field_path(".a[*].b[*].c[*].d[*]"), None);
     assert_eq!(parse_field_path(".a[b=\"1\",<]"), None);
     assert_eq!(parse_field_path(".a[<]"), None);
     assert_eq!(parse_field_path(".a[b=\"1\",*,c=\"2\"]"), None);
@@ -396,4 +397,32 @@ fn a_match_reads_nested_fields_negates_and_compares_scalars_as_text() {
     ] {
         assert_eq!(parse_field_path(bad), None, "{bad}");
     }
+}
+
+#[test]
+fn a_trimmed_pair_reads_blank_text_and_a_missing_field_as_empty() {
+    use serde_json::json;
+    let steps = parse_field_path(".spec.routes[match~=\"\",*]").unwrap();
+    assert!(compares_trimmed(&steps));
+    assert!(!compares_trimmed(
+        &parse_field_path(".a[b!=\"\",*]").unwrap()
+    ));
+    let PathStep::Match { pairs, .. } = &steps[2] else {
+        panic!("a match step")
+    };
+    let routes = json!([{ "match": "  " }, { "match": "Host(`a`)" }, {}, { "match": null }]);
+    assert_eq!(PathStep::matching(pairs, &routes).len(), 3);
+    let not_blank = parse_field_path(".spec.routes[match~!=\"\",*]").unwrap();
+    let PathStep::Match { pairs, .. } = &not_blank[2] else {
+        panic!("a match step")
+    };
+    assert_eq!(PathStep::matching(pairs, &routes).len(), 1);
+    // The wanted text is trimmed too; `~` comes before `!` only.
+    let padded = parse_field_path(".a[b~=\" x \"]").unwrap();
+    let PathStep::Match { pairs, .. } = &padded[1] else {
+        panic!("a match step")
+    };
+    assert!(PathStep::pick(pairs, &json!([{ "b": "x  " }])).is_some());
+    assert_eq!(parse_field_path(".a[b!~=\"\"]"), None);
+    assert_eq!(parse_field_path(".a[~=\"\"]"), None);
 }

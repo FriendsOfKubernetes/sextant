@@ -595,9 +595,9 @@
           }
         },
         "problems": {
-          "description": "Problem rules Sextant evaluates on its own watches (ADR-0137); needs `sextantApi` 2; at most 20 before `sextantApi` 4, 60 from it. Paths must not read a Secret's values or another kind's inline secret fields.",
+          "description": "Problem rules Sextant evaluates on its own watches (ADR-0137); needs `sextantApi` 2; at most 20 before `sextantApi` 4, 60 from it, 100 from `sextantApi` 5. Paths must not read a Secret's values or another kind's inline secret fields.",
           "type": "array",
-          "maxItems": 60,
+          "maxItems": 100,
           "items": { "$ref": "#/$defs/problemRule" }
         },
         "metricQueries": {
@@ -1315,7 +1315,11 @@
             "kind": { "$ref": "#/$defs/kind" },
             "namePath": { "description": "With a list at `path`, an item's name; any item naming no object holds (sextantApi 4).", "$ref": "#/$defs/fieldPath" },
             "namespacePath": { "description": "Where the named object is: an item's namespace with a list, else the object's field (sextantApi 4).", "$ref": "#/$defs/fieldPath" },
-            "itemWhen": { "description": "With a list, the items that count; reads only the item (sextantApi 4).", "$ref": "#/$defs/problemCondition" }
+            "itemWhen": { "description": "With a list, the items that count; reads only the item (sextantApi 4).", "$ref": "#/$defs/problemCondition" },
+            "alsoKinds": { "description": "More kinds the name is looked up in: missing only when none that the cluster serves has it; a kind not served has no objects (sextantApi 5).", "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/kind" } },
+            "namespaceWhen": { "description": "With a list, `namespacePath` counts only for the items this holds of; reads only the item (sextantApi 5).", "$ref": "#/$defs/problemCondition" },
+            "enclosingNamespacePath": { "description": "With a list, the namespace of the object holding it, when the item names none (sextantApi 5).", "$ref": "#/$defs/fieldPath" },
+            "enclosingNamespaceWhen": { "description": "`enclosingNamespacePath` counts only where this holds of the holding object (sextantApi 5).", "$ref": "#/$defs/problemCondition" }
           }
         },
         {
@@ -1417,6 +1421,16 @@
             "judge": { "$ref": "#/$defs/contributionId" },
             "fact": { "$ref": "#/$defs/contributionId" },
             "each": { "description": "One problem for each time the answer gives the fact for the object, each with its own texts; only as the rule's whole `when` (not inside `all`).", "type": "boolean" }
+          }
+        },
+        {
+          "description": "What the extension's own rules say of the row's object: `found` (the default) a problem stands, `unknown` they cannot tell, `checking` their lists are being read. A computed column's cases only (sextantApi 5).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type"],
+          "properties": {
+            "type": { "const": "problem" },
+            "state": { "type": "string", "enum": ["found", "unknown", "checking"] }
           }
         },
         {

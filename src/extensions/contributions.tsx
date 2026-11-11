@@ -184,10 +184,11 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   // A rule's `judged` condition (ADR-0168) names one of the extension's problem judges, which its backend answers.
   const judges = contributes.problemJudges ?? [];
   const narrow = contributes.narrowLookups ?? [];
-  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow));
+  const api = info.manifest!.sextantApi;
+  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow, api));
   for (const own of contributes.problemCategories ?? []) {
     const rules = contributes.problems.filter((rule) => rule.category === own.id);
-    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges, narrow));
+    if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges, narrow, api));
   }
   const allCategories = [
     ...(mainRules.length > 0 ? [categoryOfExtension(extensionId)] : []),
@@ -327,7 +328,7 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   for (const column of contributes.columns) {
     // Computed from field paths (ADR-0153), or the JSONPath of CRD printer columns.
     if (column.paths !== undefined || column.jsonPath === undefined) {
-      removers.push(extendColumns(column.kind, [computedColumn(contributionKey(extensionId, column.id), column, ownColumn)]));
+      removers.push(extendColumns(column.kind, [computedColumn(contributionKey(extensionId, column.id), column, ownColumn, extensionId)]));
       continue;
     }
     const jsonPath = column.jsonPath;

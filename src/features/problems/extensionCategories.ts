@@ -66,6 +66,8 @@ interface Entry {
   kindsFrom?: KindsFrom;
   /** `group/kind` of the looked-up kinds listed only where the lookups name (`contributes.narrowLookups`). */
   narrowed: ReadonlySet<string>;
+  /** The extension's `sextantApi` (ADR-0169: what the window applies from 5). */
+  api: number;
 }
 
 /** `cluster|category` → the targets of its rules across objects as the latest look built them. */
@@ -90,16 +92,18 @@ function noteLookups(key: string, narrowed: ReadonlySet<string>, problems: reado
   const found = new Map<string, Set<string> | null>();
   for (const p of problems) {
     for (const lookup of p.lookups ?? []) {
-      const kind = kindKeyOf(lookup);
-      if (!narrowed.has(kind) || found.get(kind) === null) continue;
-      const namespaces = lookup.selects ? lookup.selects.namespaces : [lookup.namespace ?? p.object.namespace ?? ""];
-      if (namespaces === null) {
-        found.set(kind, null);
-        continue;
+      // A `missing` with `alsoKinds` (ADR-0169) names the same place in each of its kinds.
+      for (const kind of [lookup, ...(lookup.also ?? [])].map(kindKeyOf)) {
+        if (!narrowed.has(kind) || found.get(kind) === null) continue;
+        const namespaces = lookup.selects ? lookup.selects.namespaces : [lookup.namespace ?? p.object.namespace ?? ""];
+        if (namespaces === null) {
+          found.set(kind, null);
+          continue;
+        }
+        const set = found.get(kind) ?? new Set<string>();
+        for (const ns of namespaces) if (ns !== "") set.add(ns);
+        found.set(kind, set);
       }
-      const set = found.get(kind) ?? new Set<string>();
-      for (const ns of namespaces) if (ns !== "") set.add(ns);
-      found.set(kind, set);
     }
   }
   const text = (m: Map<string, Set<string> | null> | undefined) =>
@@ -176,6 +180,7 @@ export function registerExtensionProblems(
   own?: { id: string; optIn: boolean },
   manifestJudges: readonly ProblemJudgeContribution[] = [],
   narrowLookups: readonly { group: string; kind: string }[] = [],
+  api = 4,
 ): () => void {
   const category = categoryOfExtension(extensionId, own?.id);
   // Rules of kinds from definitions are one detector, applied to the sources of the kinds Rust says are defined.
@@ -224,6 +229,7 @@ export function registerExtensionProblems(
     judgedPaths,
     ...(kindsFrom ? { kindsFrom } : {}),
     narrowed: new Set(narrowLookups.map(kindKeyOf)),
+    api,
   };
   entries.set(category, entry);
   forgetScopes(extensionId);
@@ -512,6 +518,9 @@ export function extensionSourcesFor(
         return { read, target, notServed };
       }),
     }));
+    // A kind the cluster serves (ADR-0169: one it does not has no objects for a `missing` with `alsoKinds`).
+    const servedKinds = new Set(kinds.map((k) => kindKeyOf(k.kindRef)));
+    const served = (kind: { group: string; kind: string }) => servedKinds.has(kindKeyOf(kind));
     const judges = {
       fact: (judge: string, fact: string, uid: string) => judgedFact(clusterId, entry.extensionId, judge, fact, uid),
       entries: (judge: string, fact: string, uid: string) => judgedFacts(clusterId, entry.extensionId, judge, fact, uid),
@@ -540,7 +549,7 @@ export function extensionSourcesFor(
           ),
           max: def.maxObjects ?? MAX_SOURCE_OBJECTS,
         },
-        judge: (problems, context) => {
+        judge: (problems, context, untold) => {
           // Where these problems' lookups point, for the kinds listed only there (`narrowLookups`).
           if (entry.narrowed.size > 0) noteLookups(lookupKey(clusterId, entry, def), entry.narrowed, problems);
           // The definitions' rows: what they define may have changed (`kindsFrom`).
@@ -559,7 +568,12 @@ export function extensionSourcesFor(
           }
           // The targets as the latest look built them: the store keeps a source's first definition, and a narrowed kind's
           // source may have come (or gone) since.
-          return judgeAcross(problems, context, { rules: entry.rules, targets: currentTargets.get(targetsKey) ?? targets, judges });
+          return judgeAcross(
+            problems,
+            context,
+            { rules: entry.rules, targets: currentTargets.get(targetsKey) ?? targets, judges, served, api: entry.api },
+            untold,
+          );
         },
       };
     }

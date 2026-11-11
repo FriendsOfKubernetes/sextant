@@ -212,9 +212,10 @@ describe("the earliest match and every match (#399)", () => {
     expect(formatFieldPath(parseFieldPath(".spec.listeners[*].name")!)).toBe(".spec.listeners[*].name");
     expect(parseFieldPath(".spec.c[<name]")).toEqual([{ key: "spec" }, { key: "c" }, { match: [], earliest: "name" }]);
     expect(formatFieldPath(parseFieldPath(".spec.c[<name]")!)).toBe(".spec.c[<name]");
-    // Two lists, flattened into one (#404); three are too many.
+    // Lists three deep, flattened into one (#404, ADR-0169); four are too many.
     expect(parseFieldPath(".a[*].b[*]")).not.toBeNull();
-    expect(parseFieldPath(".a[*].b[*].c[*]")).toBeNull();
+    expect(parseFieldPath(".a[*].b[*].c[*]")).not.toBeNull();
+    expect(parseFieldPath(".a[*].b[*].c[*].d[*]")).toBeNull();
     expect(parseFieldPath('.a[b="1",<]')).toBeNull();
     const nodes = {
       a: { phase: "Failed", finishedAt: "2026-11-07T10:05:00Z", n: "late" },
@@ -224,6 +225,22 @@ describe("the earliest match and every match (#399)", () => {
     };
     expect(pickStep(nodes, { match: [["phase", "Failed"]], earliest: "finishedAt" })).toEqual(nodes.b);
     expect(pickStep(nodes, { match: [["phase", "Failed"]], all: true })).toHaveLength(3);
+  });
+});
+
+describe("match fields compared trimmed (ADR-0169)", () => {
+  it("read blank text and a field that leads nowhere as empty, as Rust's `trimmed_fits`", () => {
+    const routes = [{ match: "  " }, { match: "Host(`a`)" }, {}, { match: null }, { match: ["x"] }];
+    const blank = parseFieldPath('.spec.routes[match~="",*]')!;
+    expect(blank[2]).toEqual({ match: [["match~", ""]], all: true });
+    expect(pickStep(routes, blank[2] as Extract<PathStep, { match: unknown }>)).toEqual([routes[0], routes[2], routes[3]]);
+    const set = parseFieldPath('.spec.routes[match~!="",*]')!;
+    expect(pickStep(routes, set[2] as Extract<PathStep, { match: unknown }>)).toEqual([routes[1], routes[4]]);
+    // The wanted text is trimmed too; `~` comes before `!` only.
+    const padded = parseFieldPath('.a[b~=" x "]')!;
+    expect(pickStep([{ b: "x  " }], padded[1] as Extract<PathStep, { match: unknown }>)).toEqual({ b: "x  " });
+    expect(parseFieldPath('.a[b!~=""]')).toBeNull();
+    expect(parseFieldPath('.a[~=""]')).toBeNull();
   });
 });
 

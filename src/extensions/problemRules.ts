@@ -141,6 +141,11 @@ export interface Lookup {
   anyOf?: string;
   /** `relatedBy` (#404): an object of the kind in the judged object's namespace with these texts at these paths. */
   by?: [path: string, value: string][];
+  /**
+   * `missing` with `alsoKinds` (ADR-0169): more kinds the name is looked up in; missing only when none of them the
+   * cluster serves has it, a kind it does not serve having no objects.
+   */
+  also?: { group: string; kind: string }[];
   /** `selectsNone` (#404): no object of the kind in `namespaces` (`null`: every one) has labels `selector` matches. */
   selects?: { selector: LabelSelector; namespaces: string[] | null };
   /**
@@ -228,6 +233,11 @@ const NO: Verdict = { holds: false };
 export interface RuleContext {
   /** When the object entered its label-selected source, as the store saw it (not for objects already there). */
   enteredAt?: number;
+  /**
+   * What the extension's own rules say of the object (a computed column's `problem` case, ADR-0169): a problem
+   * stands, they cannot tell, they are still reading; `undefined` when none of these.
+   */
+  problemState?: (obj: KubeObject) => "found" | "unknown" | "checking" | undefined;
 }
 
 export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: RuleContext = {}): Verdict {
@@ -325,17 +335,26 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
         const v = valueAt(holder, path);
         return typeof v === "string" && v.trim() !== "" ? v : undefined;
       };
+      // `alsoKinds` (ADR-0169): the kinds looked up after `kind`.
+      const also = condition.alsoKinds?.length ? { also: condition.alsoKinds.map(({ group, kind }) => ({ group, kind })) } : {};
+      const holdsOn = (when: ProblemCondition | undefined, item: unknown) =>
+        when === undefined || (item !== null && typeof item === "object" && evaluate(when, item as KubeObject).holds);
       if (condition.path.includes("*")) {
         // A list of references (#404): any item naming an object that is not there; nothing named, nothing missing.
-        const items = valueAt(obj, condition.path);
+        // With `enclosingNamespacePath` (ADR-0169) each item with the object holding its list.
+        const items = condition.enclosingNamespacePath === undefined ? itemsOf(valueAt(obj, condition.path)) : heldItems(obj, condition.path);
         const key = `${condition.kind.group}/${condition.kind.kind}|${condition.path}`;
         const lookups: Lookup[] = [];
-        for (const item of Array.isArray(items) ? items : []) {
-          if (condition.itemWhen && !(item !== null && typeof item === "object" && evaluate(condition.itemWhen, item as KubeObject).holds)) continue;
+        for (const { item, holder } of items) {
+          if (condition.itemWhen && !holdsOn(condition.itemWhen, item)) continue;
           const name = condition.namePath === undefined ? (typeof item === "string" && item.trim() !== "" ? item : undefined) : at(item, condition.namePath);
           if (name === undefined) continue;
-          const namespace = at(item, condition.namespacePath);
-          lookups.push({ group: condition.kind.group, kind: condition.kind.kind, name, anyOf: key, ...(namespace !== undefined ? { namespace } : {}) });
+          // The item's own namespace where `namespaceWhen` lets it count, else its holder's where `enclosingNamespaceWhen`
+          // does, else the object's own (ADR-0169).
+          const namespace =
+            (holdsOn(condition.namespaceWhen, item) ? at(item, condition.namespacePath) : undefined) ??
+            (holder !== undefined && holdsOn(condition.enclosingNamespaceWhen, holder) ? at(holder, condition.enclosingNamespacePath) : undefined);
+          lookups.push({ group: condition.kind.group, kind: condition.kind.kind, name, anyOf: key, ...(namespace !== undefined ? { namespace } : {}), ...also });
         }
         return lookups.length === 0 ? NO : { holds: true, lookups };
       }
@@ -343,8 +362,11 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const name = valueAt(obj, condition.path);
       if (typeof name !== "string" || name.trim() === "") return NO;
       const namespace = at(obj, condition.namespacePath);
-      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, ...(namespace !== undefined ? { namespace } : {}) }] };
+      return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, ...(namespace !== undefined ? { namespace } : {}), ...also }] };
     }
+    case "problem":
+      // What the extension's rules say of the row (a computed column's case, ADR-0169); nothing outside a table.
+      return { holds: ctx.problemState !== undefined && ctx.problemState(obj) === (condition.state ?? "found") };
     case "relatedBy": {
       // The judged object's texts the other object must hold; one missing, nothing related (#404).
       const by: [string, string][] = [];
@@ -445,6 +467,51 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
   }
 }
 
+/** The items of a list read by a path (none for anything else), without a holder. */
+function itemsOf(value: unknown): { item: unknown; holder?: unknown }[] {
+  return Array.isArray(value) ? value.map((item) => ({ item })) : [];
+}
+
+/**
+ * The items a path whose last step lists a field's items (`….middlewares[*]`) reads, each with the object holding that
+ * field (ADR-0169): a route service's middlewares with the service. The holders are what the path before that field
+ * reads (a list where it lists).
+ */
+export function heldItems(obj: unknown, path: string): { item: unknown; holder: unknown }[] {
+  const steps = parseFieldPath(path.trim());
+  const last = steps?.[steps.length - 1];
+  const field = steps?.[steps.length - 2];
+  if (!steps || !last || !field || !("match" in last) || !last.all || !("key" in field)) return [];
+  const before = steps.slice(0, -2);
+  const read = before.length === 0 ? obj : walk(obj, before);
+  const holders = before.some((s) => "match" in s && s.all) ? (Array.isArray(read) ? read : []) : read === undefined ? [] : [read];
+  return holders.flatMap((holder) => {
+    if (holder === null || typeof holder !== "object" || Array.isArray(holder) || !Object.prototype.hasOwnProperty.call(holder, field.key)) return [];
+    const list = pickStep((holder as Record<string, unknown>)[field.key], last);
+    return Array.isArray(list) ? list.map((item) => ({ item, holder })) : [];
+  });
+}
+
+/**
+ * The 1-based places of the matches of a path's last step (`[…,*]`) in its list (ADR-0169), in order; `undefined`
+ * when the path does not end in such a step or reads no list.
+ */
+export function positionsOf(obj: unknown, path: string, root?: unknown): number[] | undefined {
+  const trimmed = path.trim();
+  if (trimmed.startsWith("$")) return positionsOf(root ?? obj, trimmed.slice(1));
+  const steps = parseFieldPath(trimmed);
+  const last = steps?.[steps.length - 1];
+  if (!steps || !last || !("match" in last) || !last.all) return undefined;
+  const list = steps.length === 1 ? obj : walk(obj, steps.slice(0, -1));
+  if (!Array.isArray(list)) return undefined;
+  const out: number[] = [];
+  list.forEach((item, i) => {
+    const one = pickStep([item], last);
+    if (Array.isArray(one) && one.length === 1) out.push(i + 1);
+  });
+  return out;
+}
+
 /** Orders the branches of `any`: holding now with a later end first, then holding earlier. */
 function rank(v: Verdict): number {
   if (v.activeFrom === undefined) return -(v.until ?? Infinity);
@@ -540,6 +607,14 @@ export function placeholderText(obj: unknown, inner: string, root?: unknown, sib
     const numbers = splitOutsideQuotes(path, " * ").map((p) => numberOf(valueAt(obj, p.trim())));
     if (numbers.every((n) => n === undefined)) return undefined;
     return clipped(String(numbers.reduce<number>((a, n) => a * (n ?? 1), 1)), filters);
+  }
+  // `|positions` (ADR-0169): the places of every `+` path's matches, each once, in order, in the UI language's list;
+  // nothing when no path reads a list, an empty text when none matches.
+  if (filter === "positions") {
+    const read = addedPaths(path).map((p) => positionsOf(obj, p, root));
+    if (read.every((p) => p === undefined)) return undefined;
+    const places = [...new Set(read.flatMap((p) => p ?? []))].sort((a, b) => a - b);
+    return clipped(formatList(places.map(String)), filters);
   }
   // Paths added with `+` before `|sum` (#404): the numbers of every path there, nothing when none is.
   const added = filter === "sum" || filter === "count" ? addedPaths(path) : [path];

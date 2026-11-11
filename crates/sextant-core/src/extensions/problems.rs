@@ -15,7 +15,9 @@ use super::permissions::ExtensionPermissions;
 use super::schema::JsonPath;
 use crate::access::{AccessAction, KindPattern, NamespaceScope};
 use crate::resources::inline_secrets::INLINE_SECRETS;
-use crate::settings::custom_columns::{PathStep, parse_field_path};
+use crate::settings::custom_columns::{
+    MatchPick, PathStep, compares_trimmed, list_steps, parse_field_path,
+};
 
 /// The `kind` of a rule that names none (its kinds come from definitions, `kindsFrom`).
 fn no_kind() -> KindPattern {
@@ -40,11 +42,16 @@ pub const MAX_RULES_4: usize = 60;
 pub const MAX_KINDS: usize = 10;
 /// Kinds the rules of one extension judge from `sextantApi` 4 (Knative's and Crossplane's views need more).
 pub const MAX_KINDS_4: usize = 30;
+/// Rules per extension from `sextantApi` 5 (ADR-0169; the schema's `maxItems`): every reference of Traefik's kinds, in
+/// both of its groups.
+pub const MAX_RULES_5: usize = 100;
 
 /// The rules and the kinds they judge an extension of `api` may have: an older Sextant reads only older manifests, so
 /// the limits grow with the version.
 pub fn rule_limits(api: u32) -> (usize, usize) {
-    if api >= SOURCES_API {
+    if api >= PARITY_API {
+        (MAX_RULES_5, MAX_KINDS_4)
+    } else if api >= SOURCES_API {
         (MAX_RULES_4, MAX_KINDS_4)
     } else {
         (MAX_RULES, MAX_KINDS)
@@ -554,6 +561,40 @@ pub enum ProblemCondition {
         #[serde(default, rename = "itemWhen", skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
         item_when: Option<Box<ProblemCondition>>,
+        /// More kinds the name is looked up in (ADR-0169): it is missing only when none of `kind` and these that the
+        /// cluster serves has it, and a kind the cluster does not serve has no objects (a Traefik target in either of
+        /// Traefik's groups). 1 to 3; `sextantApi` 5.
+        #[serde(default, rename = "alsoKinds", skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        also_kinds: Option<Vec<KindPattern>>,
+        /// With a list, `namespacePath` counts only for the items this holds of (ADR-0169): a reference to another
+        /// provider (`name@provider`) is looked up where its object is, whatever namespace it names. Reads only the
+        /// item, no time. `sextantApi` 5.
+        #[serde(
+            default,
+            rename = "namespaceWhen",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        namespace_when: Option<Box<ProblemCondition>>,
+        /// With a list, the namespace of the object holding it (the value the path reads the list's field from) when
+        /// the item names none (ADR-0169): a load balancer's middlewares are looked up in its namespace. `sextantApi` 5.
+        #[serde(
+            default,
+            rename = "enclosingNamespacePath",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        enclosing_namespace_path: Option<String>,
+        /// `enclosingNamespacePath` counts only where this holds of the holding object (ADR-0169). Reads only that
+        /// object, no time. `sextantApi` 5.
+        #[serde(
+            default,
+            rename = "enclosingNamespaceWhen",
+            skip_serializing_if = "Option::is_none"
+        )]
+        #[ts(optional)]
+        enclosing_namespace_when: Option<Box<ProblemCondition>>,
     },
     /// The text at `path` names an object of `kind` there (as `missing` looks it up) for which `when` holds (#409): a
     /// claim that exists but is not allocated, an HPA on the same target. `sextantApi` 4; unknown (not holding) while
@@ -617,6 +658,25 @@ pub enum ProblemCondition {
         #[ts(optional)]
         each: Option<bool>,
     },
+    /// What the extension's own rules say of the row's object (ADR-0169), for a computed column's cases only: `found`
+    /// (the default) a problem of them stands (counted or in its grace), `unknown` they cannot tell (a list a rule
+    /// looks up not read in full, the object's kind not judged where it is), `checking` their lists are still being
+    /// read. `sextantApi` 5; the column's kind is one the rules judge.
+    Problem {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        state: Option<ProblemState>,
+    },
+}
+
+/// What a `problem` case asks of the extension's rules (ADR-0169).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ProblemState {
+    Found,
+    Unknown,
+    Checking,
 }
 
 /// A value a condition compares with.
@@ -687,6 +747,7 @@ pub(crate) fn check_problems(manifest: &ExtensionManifest) -> Result<(), Manifes
                 .as_ref()
                 .is_some_and(|s| s.label_selector.is_some()),
             judges: &manifest.contributes.problem_judges,
+            case: false,
         };
         check_condition(
             &rule.when,
@@ -1101,6 +1162,8 @@ struct ConditionChecks<'a, 'k> {
     narrowed: bool,
     /// The manifest's judges (`judged`, ADR-0168).
     judges: &'k [super::problem_judges::ProblemJudgeContribution],
+    /// A computed column's case (ADR-0169): `problem` may ask what the extension's rules say of the row.
+    case: bool,
 }
 
 /// A condition of an action or a column (ADR-0153, ADR-0154): the grammar of problem rules without `missing`, its
@@ -1110,6 +1173,27 @@ pub(crate) fn check_object_condition(
     kinds: &[KindPattern],
     path: &JsonPath,
     api: u32,
+) -> Result<(), ManifestError> {
+    check_single(condition, kinds, path, api, false)
+}
+
+/// A computed column's case (ADR-0153): an object condition that may also ask what the extension's rules say of the
+/// row (`problem`, ADR-0169).
+pub(crate) fn check_case_condition(
+    condition: &ProblemCondition,
+    kinds: &[KindPattern],
+    path: &JsonPath,
+    api: u32,
+) -> Result<(), ManifestError> {
+    check_single(condition, kinds, path, api, true)
+}
+
+fn check_single(
+    condition: &ProblemCondition,
+    kinds: &[KindPattern],
+    path: &JsonPath,
+    api: u32,
+    case: bool,
 ) -> Result<(), ManifestError> {
     for kind in kinds {
         let mut seen = Vec::new();
@@ -1122,10 +1206,21 @@ pub(crate) fn check_object_condition(
             single: true,
             narrowed: false,
             judges: &[],
+            case,
         };
         check_condition(condition, kind, path, 1, Inside::Top, &mut checks)?;
     }
     Ok(())
+}
+
+/// Whether a condition asks what the extension's rules say of the object (`problem`, ADR-0169).
+pub(crate) fn asks_problems(condition: &ProblemCondition) -> bool {
+    match condition {
+        ProblemCondition::Problem { .. } => true,
+        ProblemCondition::All { of } | ProblemCondition::Any { of } => of.iter().any(asks_problems),
+        ProblemCondition::Not { of } => asks_problems(of),
+        _ => false,
+    }
 }
 
 /// What a condition is inside of: `missing` is refused inside `any` and `not`, but for an `any` of lookups only.
@@ -1470,8 +1565,98 @@ fn check_condition<'k>(
             name_path,
             namespace_path,
             item_when,
+            also_kinds,
+            namespace_when,
+            enclosing_namespace_path,
+            enclosing_namespace_when,
         } => {
             let listed = field.contains('*');
+            for (key, set) in [
+                ("alsoKinds", also_kinds.is_some()),
+                ("namespaceWhen", namespace_when.is_some()),
+                ("enclosingNamespacePath", enclosing_namespace_path.is_some()),
+                ("enclosingNamespaceWhen", enclosing_namespace_when.is_some()),
+            ] {
+                if set && checks.api < PARITY_API {
+                    return Err(at(
+                        &path.key(key),
+                        format!("needs sextantApi {PARITY_API} or later"),
+                    ));
+                }
+            }
+            if namespace_when.is_some() && (!listed || namespace_path.is_none()) {
+                return Err(at(
+                    &path.key("namespaceWhen"),
+                    "goes with a `path` that reads a list (`[*]`) and a `namespacePath`",
+                ));
+            }
+            if enclosing_namespace_when.is_some() && enclosing_namespace_path.is_none() {
+                return Err(at(
+                    &path.key("enclosingNamespaceWhen"),
+                    "goes with `enclosingNamespacePath`",
+                ));
+            }
+            if let Some(enclosing) = enclosing_namespace_path {
+                let held = parse_field_path(field.trim()).is_some_and(|steps| {
+                    matches!(
+                        steps.as_slice(),
+                        [
+                            ..,
+                            PathStep::Key(_),
+                            PathStep::Match {
+                                pick: MatchPick::All,
+                                ..
+                            }
+                        ]
+                    )
+                });
+                if !held {
+                    return Err(at(
+                        &path.key("enclosingNamespacePath"),
+                        "goes with a `path` whose last step lists a field's items (`.middlewares[*]`)",
+                    ));
+                }
+                check_rule_path(
+                    enclosing,
+                    kind,
+                    &path.key("enclosingNamespacePath"),
+                    checks.metadata_only,
+                )?;
+            }
+            for (key, when) in [
+                ("namespaceWhen", namespace_when),
+                ("enclosingNamespaceWhen", enclosing_namespace_when),
+            ] {
+                if let Some(when) = when {
+                    check_object_condition(
+                        when,
+                        std::slice::from_ref(kind),
+                        &path.key(key),
+                        checks.api,
+                    )?;
+                    if uses_time(when) {
+                        return Err(at(&path.key(key), "reads no time (`olderThan`)"));
+                    }
+                }
+            }
+            let also = also_kinds.as_deref().unwrap_or_default();
+            if also_kinds.is_some() && (also.is_empty() || also.len() > 3) {
+                return Err(at(&path.key("alsoKinds"), "has 1 to 3 kinds"));
+            }
+            for (i, other) in also.iter().enumerate() {
+                if same_kind(other, target) || also[..i].iter().any(|k| same_kind(k, other)) {
+                    return Err(at(
+                        &path.key("alsoKinds").index(i),
+                        "names a kind `missing` already looks up",
+                    ));
+                }
+                if other.group.is_empty() && other.kind.eq_ignore_ascii_case("Secret") {
+                    return Err(at(
+                        &path.key("alsoKinds").index(i),
+                        "Secrets are never listed for rules",
+                    ));
+                }
+            }
             if (name_path.is_some() || namespace_path.is_some() || item_when.is_some())
                 && checks.api < SOURCES_API
             {
@@ -1542,15 +1727,37 @@ fn check_condition<'k>(
                 return Err(at(&path.key("kind"), "Secrets are never listed for rules"));
             }
             check_rule_path(field, kind, &path.key("path"), checks.metadata_only)?;
-            if !checks.kinds.iter().any(|k| same_kind(k, target)) {
-                checks.kinds.push(target);
-                let max_kinds = rule_limits(checks.api).1;
-                if checks.kinds.len() > max_kinds {
-                    return Err(at(
-                        &path.key("kind"),
-                        format!("the rules judge at most {max_kinds} kinds"),
-                    ));
+            for (i, target) in std::iter::once(target).chain(also).enumerate() {
+                if !checks.kinds.iter().any(|k| same_kind(k, target)) {
+                    checks.kinds.push(target);
+                    let max_kinds = rule_limits(checks.api).1;
+                    if checks.kinds.len() > max_kinds {
+                        let place = if i == 0 {
+                            path.key("kind")
+                        } else {
+                            path.key("alsoKinds").index(i - 1)
+                        };
+                        return Err(at(
+                            &place,
+                            format!("the rules judge at most {max_kinds} kinds"),
+                        ));
+                    }
                 }
+            }
+            Ok(())
+        }
+        ProblemCondition::Problem { .. } => {
+            if !checks.case {
+                return Err(at(
+                    &path.key("type"),
+                    "`problem` asks what the extension's rules say of a table's row: only a computed column's cases may use it",
+                ));
+            }
+            if checks.api < PARITY_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`problem` needs sextantApi {PARITY_API} or later"),
+                ));
             }
             Ok(())
         }
@@ -1716,8 +1923,16 @@ pub(crate) fn looks_across(condition: &ProblemCondition) -> bool {
 /// The kinds a condition looks up (`missing`), each once, added to `out`.
 fn looked_up<'c>(condition: &'c ProblemCondition, out: &mut Vec<&'c KindPattern>) {
     match condition {
-        ProblemCondition::Missing { kind, .. }
-        | ProblemCondition::Related { kind, .. }
+        ProblemCondition::Missing {
+            kind, also_kinds, ..
+        } => {
+            for kind in std::iter::once(kind).chain(also_kinds.iter().flatten()) {
+                if !out.iter().any(|k| same_kind(k, kind)) {
+                    out.push(kind);
+                }
+            }
+        }
+        ProblemCondition::Related { kind, .. }
         | ProblemCondition::RelatedBy { kind, .. }
         | ProblemCondition::SelectsNone { kind, .. } => {
             if !out.iter().any(|k| same_kind(k, kind)) {
@@ -1951,10 +2166,10 @@ fn check_placeholders(
             continue;
         }
         let added = added_paths(field);
-        if added.len() > 1 && !matches!(filters.first(), Some(&"sum" | &"count")) {
+        if added.len() > 1 && !matches!(filters.first(), Some(&"sum" | &"count" | &"positions")) {
             return Err(at(
                 path,
-                "adds paths with `+` only before `|sum` or `|count`",
+                "adds paths with `+` only before `|sum`, `|count` or `|positions`",
             ));
         }
         if added.len() > MAX_ADDED_PATHS {
@@ -1963,9 +2178,93 @@ fn check_placeholders(
         check_filters(&filters, kind, path, metadata_only, item)?;
         for added in added {
             check_placeholder_path(added, kind, path, metadata_only, item)?;
+            // `|positions` (ADR-0169): places in one list, the one its last step matches in.
+            if filters.first() == Some(&"positions") && !lists_matches(added) {
+                return Err(at(
+                    path,
+                    "has `|positions` after a path whose last step, and no other, lists the matches (`.spec.routes[match~=\"\",*]`)",
+                ));
+            }
         }
     }
     Ok(())
+}
+
+/// Whether a placeholder's path lists matches in its last step and in no other (`|positions`, ADR-0169).
+fn lists_matches(text: &str) -> bool {
+    let text = text.trim();
+    parse_field_path(text.strip_prefix('$').unwrap_or(text)).is_some_and(|steps| {
+        list_steps(&steps) == 1
+            && matches!(
+                steps.last(),
+                Some(PathStep::Match {
+                    pick: MatchPick::All,
+                    ..
+                })
+            )
+    })
+}
+
+/// Below `sextantApi` 5, no path or placeholder of `contributes` (the raw manifest, before defaults) uses what came
+/// with it (ADR-0169): lists three deep, a match field compared trimmed (`[field~="…"]`), `|positions`. An older
+/// Sextant refuses them, so a manifest that names an older API must not use them (#420). Strings are visited in key
+/// order, as the SDK's `checkParitySyntax`.
+pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), ManifestError> {
+    if api >= PARITY_API {
+        return Ok(());
+    }
+    fn new_in(text: &str) -> Option<&'static str> {
+        // A compared path may end in a filter (`|count`).
+        let text = split_outside_quotes(text, "|")[0].trim();
+        let steps = parse_field_path(text.strip_prefix('$').unwrap_or(text))?;
+        if list_steps(&steps) > 2 {
+            Some("a path with lists three deep (`[*]`)")
+        } else if compares_trimmed(&steps) {
+            Some("a match field compared trimmed (`[field~=\"…\"]`)")
+        } else {
+            None
+        }
+    }
+    fn visit(value: &Value, here: &JsonPath) -> Result<(), ManifestError> {
+        match value {
+            Value::String(text) => {
+                let mut found = new_in(text);
+                for inner in placeholders(text).unwrap_or_default() {
+                    let mut parts = inner.split('|');
+                    let field = parts.next().unwrap_or_default();
+                    if parts.any(|f| f.trim() == "positions") {
+                        found = found.or(Some("`|positions`"));
+                    }
+                    for one in split_outside_quotes(field, "??")
+                        .into_iter()
+                        .flat_map(|p| split_outside_quotes(p, "+"))
+                        .flat_map(|p| split_outside_quotes(p, " * "))
+                    {
+                        found = found.or_else(|| new_in(one));
+                    }
+                }
+                match found {
+                    Some(what) => Err(at(
+                        here,
+                        format!("{what} needs sextantApi {PARITY_API} or later"),
+                    )),
+                    None => Ok(()),
+                }
+            }
+            Value::Array(items) => items
+                .iter()
+                .enumerate()
+                .try_for_each(|(i, item)| visit(item, &here.index(i))),
+            Value::Object(fields) => {
+                let mut keys: Vec<&String> = fields.keys().collect();
+                keys.sort();
+                keys.into_iter()
+                    .try_for_each(|key| visit(&fields[key], &here.key(key)))
+            }
+            _ => Ok(()),
+        }
+    }
+    visit(contributes, &JsonPath::default().key("contributes"))
 }
 
 /// A placeholder's filters: the listed ones, `clip:<n>`, `after:<marker>`, `fqdn:<path>`, and `share` first in a list
@@ -2161,7 +2460,7 @@ fn split_outside_quotes<'a>(field: &'a str, sep: &str) -> Vec<&'a str> {
 }
 
 /// What may follow a placeholder's path after `|` (#404); `lower` writes a text in lower case.
-pub const PLACEHOLDER_FILTERS: [&str; 16] = [
+pub const PLACEHOLDER_FILTERS: [&str; 17] = [
     "lower",
     "firstLine",
     "lastSegment",
@@ -2180,6 +2479,9 @@ pub const PLACEHOLDER_FILTERS: [&str; 16] = [
     // The exact host names of Traefik-style match rules: the quoted arguments of `Host(…)`/`HostSNI(…)`, lower case,
     // not `*`, each once, joined with ", " (as the built-in Traefik Hosts column; `hostsOf` in the window).
     "ruleHosts",
+    // The 1-based places of a `[…,*]` step's matches in its list, each once, in order, in the UI language's list
+    // (ADR-0169): the routes Traefik skips. Paths joined with `+` give every one's places. `sextantApi` 5.
+    "positions",
 ];
 
 /// The insides of the `{{…}}` of `text`, in order; `None` when a `{{` has no `}}`.
@@ -2389,6 +2691,49 @@ mod tests {
             json!({ "type": "exists", "path": ".status" })
         );
         assert_eq!(written[0]["graceMinutes"], json!(0));
+    }
+
+    #[test]
+    fn a_missing_looked_up_in_more_kinds_asks_for_each_and_api_5_takes_more_rules() {
+        let mut m = manifest(json!([]));
+        m.sextant_api = PARITY_API;
+        m.contributes.problems = serde_json::from_value(json!([{
+            "id": "mw", "title": "Middleware missing", "kind": { "group": "traefik.io", "kind": "IngressRoute" },
+            "when": { "type": "missing", "path": ".spec.routes[*].services[*].middlewares[*]",
+                      "kind": { "group": "traefik.io", "kind": "Middleware" },
+                      "alsoKinds": [{ "group": "traefik.containo.us", "kind": "Middleware" }],
+                      "namePath": ".name", "enclosingNamespacePath": ".namespace" },
+            "message": "Middleware {{missing}}"
+        }]))
+        .unwrap();
+        assert_eq!(
+            problem_kinds(&m),
+            vec![
+                kind("traefik.io", "IngressRoute"),
+                kind("traefik.io", "Middleware"),
+                kind("traefik.containo.us", "Middleware")
+            ]
+        );
+        assert_eq!(rule_limits(PARITY_API), (MAX_RULES_5, MAX_KINDS_4));
+        assert_eq!(rule_limits(SOURCES_API), (MAX_RULES_4, MAX_KINDS_4));
+        // The syntax API 5 brought, refused below it wherever it is in `contributes`.
+        let three = json!({ "columns": [{ "paths": [".a[*].b[*].c[*]"] }] });
+        assert!(check_parity_syntax(PARITY_API, &three).is_ok());
+        let refused = check_parity_syntax(SOURCES_API, &three).unwrap_err();
+        assert_eq!(refused.path, "contributes.columns[0].paths[0]");
+        assert!(refused.message.contains("needs sextantApi 5"));
+        let filter =
+            json!({ "problems": [{ "message": "{{.spec.routes[match=\"\",*]|positions}}" }] });
+        assert!(check_parity_syntax(SOURCES_API, &filter).is_err());
+        let trimmed = json!({ "problems": [{ "when": { "path": ".r[m~=\"\",*]|count" } }] });
+        assert!(check_parity_syntax(SOURCES_API, &trimmed).is_err());
+        assert!(
+            check_parity_syntax(
+                SOURCES_API,
+                &json!({ "problems": [{ "message": "{{.a[b!=\"\",*]|count}}" }] })
+            )
+            .is_ok()
+        );
     }
 
     #[test]

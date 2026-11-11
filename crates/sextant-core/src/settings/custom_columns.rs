@@ -126,6 +126,33 @@ pub enum MatchPick {
 /// Pairs one `[field="value",…]` step takes at most.
 pub const MAX_MATCH_PAIRS: usize = 12;
 
+/// `[*]`-like steps (`MatchPick::All`) one path takes at most: lists three deep (ADR-0169; two before `sextantApi` 5).
+pub const MAX_LISTS: usize = 3;
+
+/// How many steps of a path list every match (`[*]`, `[…,*]`).
+pub fn list_steps(steps: &[PathStep]) -> usize {
+    steps
+        .iter()
+        .filter(|s| {
+            matches!(
+                s,
+                PathStep::Match {
+                    pick: MatchPick::All,
+                    ..
+                }
+            )
+        })
+        .count()
+}
+
+/// Whether a path holds a match field compared trimmed (`[field~="…"]`, ADR-0169).
+pub fn compares_trimmed(steps: &[PathStep]) -> bool {
+    steps.iter().any(|s| {
+        matches!(s, PathStep::Match { pairs, .. }
+            if pairs.iter().any(|(f, _)| f.strip_suffix('!').unwrap_or(f).ends_with('~')))
+    })
+}
+
 impl PathStep {
     /// The items of a list, or the values of a map (in key order), whose fields are all `pairs`.
     pub fn matching<'a>(pairs: &[(String, String)], value: &'a Value) -> Vec<&'a Value> {
@@ -191,7 +218,9 @@ impl PathStep {
 
 /// Whether an entry has every pair (#404): a field may name a nested one (`connector.state`) and end in `!` for "not
 /// this value" (`type!="Ready"`, also when the entry lacks it); a value is compared as text, so `"true"` and `"3"`
-/// match a boolean and a number too. `[*]`'s no pairs take every entry, a scalar included.
+/// match a boolean and a number too. `[*]`'s no pairs take every entry, a scalar included. A field ending in `~`
+/// (before any `!`, `sextantApi` 5, ADR-0169) compares the text trimmed of white space, a missing or `null` field as
+/// `""`, as Go reads a struct's string: `[match~=""]` is a blank match rule, `[match~!=""]` one that is not.
 fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
     pairs.iter().all(|(field, want)| {
         let (field, negated) = match field.strip_suffix('!') {
@@ -200,6 +229,9 @@ fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
         };
         if !item.is_object() {
             return false;
+        }
+        if let Some(field) = field.strip_suffix('~') {
+            return trimmed_fits(item, field, want) != negated;
         }
         // Through a list on the way, any of its items will do (#404): `tasks.state` of a connector with a failed task.
         fn reaches(at: &Value, parts: &[&str], want: &str) -> bool {
@@ -219,9 +251,34 @@ fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
     })
 }
 
-/// A match field: names joined by single dots, optionally ending in `!` (#404).
+/// A `~` pair (ADR-0169): the text at `field` trimmed is `want` trimmed; a field that leads nowhere, or to `null`,
+/// reads as `""`; through a list on the way, any of its items will do, as other pairs.
+fn trimmed_fits(item: &Value, field: &str, want: &str) -> bool {
+    fn reaches(at: Option<&Value>, parts: &[&str], want: &str) -> bool {
+        match (at, parts.split_first()) {
+            (Some(Value::Array(items)), _) if items.is_empty() => want.is_empty(),
+            (Some(Value::Array(items)), _) => {
+                items.iter().any(|item| reaches(Some(item), parts, want))
+            }
+            (Some(at @ Value::Object(_)), Some((first, rest))) => {
+                reaches(at.get(*first), rest, want)
+            }
+            (Some(Value::Object(_)), None) => false,
+            (Some(Value::String(s)), None) => s.trim() == want,
+            (Some(Value::Bool(b)), None) => b.to_string() == want,
+            (Some(Value::Number(n)), None) => n.to_string() == want,
+            // Nothing there, or a text on the way: the field leads nowhere, an empty text.
+            (None | Some(Value::Null), _) | (Some(_), Some(_)) => want.is_empty(),
+        }
+    }
+    let parts: Vec<&str> = field.split('.').collect();
+    reaches(Some(item), &parts, want.trim())
+}
+
+/// A match field: names joined by single dots, optionally ending in `~` (trimmed, ADR-0169) and then `!` (#404).
 fn is_match_field(field: &str) -> bool {
     let names = field.strip_suffix('!').unwrap_or(field);
+    let names = names.strip_suffix('~').unwrap_or(names);
     !names.is_empty()
         && names
             .split('.')
@@ -379,8 +436,9 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
             )
         })
         .count();
-    // Two lists at most (#404): the second's items of every first's item, one flat list (delegations' namespaces).
-    (!steps.is_empty() && lists <= 2).then_some(steps)
+    // Three lists at most (#404, ADR-0169): the last's items of every earlier one's items, one flat list (a route's
+    // services' middlewares). A third needs `sextantApi` 5 in a manifest (`problems::parity_syntax`).
+    (!steps.is_empty() && lists <= MAX_LISTS).then_some(steps)
 }
 
 /// Whether a field path reads a core Secret's values (`data`, `stringData` or anything inside them).
