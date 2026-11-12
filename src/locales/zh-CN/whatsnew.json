@@ -2,6 +2,20 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Linux 上的扩展区块",
+      "text": "扩展添加到 Deployment、Pod 和 Node 详情中的区块（Vertical Pod Autoscaler、Trivy 镜像扫描、Kyverno 策略结果、服务网格等）自 0.30.0 起在 Linux 上从未显示。现在它们会再次显示。"
+    },
+    "rollouts": {
+      "title": "面向 AI 智能体的 Argo Rollouts",
+      "text": "Argo Rollouts 扩展 1.5.0 为智能体提供一个只读工具：完整诊断一个 rollout，在 canary 的流量没有到达 canary 时指出，能检查 canary 的配置有多安全，并在 Deployment 上显示哪个 Rollout 在使用它。请在“设置 → 扩展”中更新；在“设置 → AI 智能体 (MCP)”中启用后，智能体即可获得该工具。"
+    },
+    "coverage": {
+      "title": "智能体知道哪些没有检查",
+      "text": "当智能体请求问题时，Sextant 还会列出你不让智能体获取其问题的扩展，以免空的回答被当作“一切正常”。"
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "窗口隐藏时内存保持稳定",

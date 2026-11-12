@@ -2,6 +2,20 @@
   "title": "Sextant {{version}} sürümünde yenilikler",
   "version": "Sextant {{version}}",
   "close": "Anladım",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Linux'ta uzantı blokları",
+      "text": "Uzantıların Deployment, Pod ve Node ayrıntılarına eklediği bloklar (Vertical Pod Autoscaler, Trivy imaj taramaları, Kyverno ilke sonuçları, service mesh ve diğerleri) 0.30.0'dan beri Linux'ta hiç gösterilmiyordu. Yeniden gösteriliyorlar."
+    },
+    "rollouts": {
+      "title": "Yapay zekâ ajanları için Argo Rollouts",
+      "text": "Argo Rollouts uzantısı 1.5.0, ajanlara bir rollout'u bütünüyle teşhis eden salt okunur bir araç verir; bir canary'nin trafiği canary'ye ulaşmadığında bunu söyler, bir canary'nin ne kadar güvenli kurulduğunu denetleyebilir ve bir Deployment'ta onu hangi Rollout'un kullandığını gösterir. Ayarlar → Uzantılar'dan güncelleyin; ajanlar aracı, siz Ayarlar → Yapay zekâ ajanları (MCP)'den açtığınızda alır."
+    },
+    "coverage": {
+      "title": "Ajanlar neyin denetlenmediğini bilir",
+      "text": "Bir ajan sorunları istediğinde Sextant, sorunlarını ajanlardan sakladığınız uzantıları da adlandırır; böylece boş bir yanıt \"her şey yolunda\" sanılmaz."
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "Pencere gizliyken kararlı bellek",

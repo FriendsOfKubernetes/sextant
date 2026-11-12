@@ -2,6 +2,20 @@
   "title": "Sextant {{version}} の新機能",
   "version": "Sextant {{version}}",
   "close": "閉じる",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Linux での拡張機能のブロック",
+      "text": "拡張機能が Deployment、Pod、Node の詳細に追加するブロック（Vertical Pod Autoscaler、Trivy のイメージスキャン、Kyverno のポリシー結果、サービスメッシュなど）は、0.30.0 以降 Linux で一度も表示されていませんでした。再び表示されるようになりました。"
+    },
+    "rollouts": {
+      "title": "AI エージェント向けの Argo Rollouts",
+      "text": "Argo Rollouts 拡張機能 1.5.0 は、エージェントに読み取り専用のツールを 1 つ提供します。rollout 全体を診断し、canary のトラフィックが canary に届いていないときに知らせ、canary がどれだけ安全に設定されているかを確認でき、Deployment にはそれを使う Rollout を表示します。設定 → 拡張機能 で更新してください。設定 → AI エージェント (MCP) でオンにすると、エージェントがツールを使えるようになります。"
+    },
+    "coverage": {
+      "title": "エージェントは確認されなかったものを知る",
+      "text": "エージェントが問題を求めると、Sextant はエージェントに問題を渡していない拡張機能も示します。空の回答が「問題なし」と受け取られないようにするためです。"
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "ウィンドウを隠していてもメモリが安定",

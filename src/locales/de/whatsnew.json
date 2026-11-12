@@ -2,6 +2,20 @@
   "title": "Neu in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Verstanden",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Erweiterungsblöcke unter Linux",
+      "text": "Blöcke, die Erweiterungen den Details von Deployments, Pods und Nodes hinzufügen (Vertical Pod Autoscaler, Trivy-Image-Scans, Kyverno-Richtlinienergebnisse, das Service Mesh und andere), wurden seit 0.30.0 unter Linux nie angezeigt. Sie werden wieder angezeigt."
+    },
+    "rollouts": {
+      "title": "Argo Rollouts für KI-Agenten",
+      "text": "Die Erweiterung Argo Rollouts 1.5.0 gibt Agenten ein schreibgeschütztes Werkzeug, das einen Rollout als Ganzes diagnostiziert, meldet, wenn der Traffic eines Canary den Canary nicht erreicht, prüfen kann, wie sicher ein Canary eingerichtet ist, und an einem Deployment zeigt, welcher Rollout es verwendet. Aktualisieren Sie sie unter Einstellungen → Erweiterungen; Agenten erhalten das Werkzeug, sobald Sie es unter Einstellungen → KI-Agenten (MCP) einschalten."
+    },
+    "coverage": {
+      "title": "Agenten wissen, was nicht geprüft wurde",
+      "text": "Wenn ein Agent nach Problemen fragt, nennt Sextant auch die Erweiterungen, deren Probleme Sie Agenten vorenthalten, damit eine leere Antwort nicht als „alles in Ordnung“ gilt."
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "Stabiler Speicher bei verborgenem Fenster",

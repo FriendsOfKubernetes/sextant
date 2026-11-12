@@ -2,6 +2,20 @@
   "title": "Co nowego w Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Rozumiem",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Bloki rozszerzeń w Linuksie",
+      "text": "Bloki, które rozszerzenia dodają do szczegółów Deploymentów, Podów i Node'ów (Vertical Pod Autoscaler, skany obrazów Trivy, wyniki polityk Kyverno, service mesh i inne), od 0.30.0 nigdy nie były pokazywane w Linuksie. Znów są widoczne."
+    },
+    "rollouts": {
+      "title": "Argo Rollouts dla agentów AI",
+      "text": "Rozszerzenie Argo Rollouts 1.5.0 daje agentom jedno narzędzie tylko do odczytu, które diagnozuje cały rollout, mówi, gdy ruch canary nie dociera do canary, może sprawdzić, jak bezpiecznie skonfigurowano canary, i pokazuje na Deploymencie, który Rollout go używa. Zaktualizuj je w Ustawieniach → Rozszerzenia; agenci dostaną narzędzie, gdy włączysz je w Ustawieniach → Agenci AI (MCP)."
+    },
+    "coverage": {
+      "title": "Agenci wiedzą, czego nie sprawdzono",
+      "text": "Gdy agent pyta o problemy, Sextant wymienia też rozszerzenia, których problemy ukrywasz przed agentami, żeby pusta odpowiedź nie była brana za „wszystko w porządku”."
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "Stabilna pamięć przy ukrytym oknie",

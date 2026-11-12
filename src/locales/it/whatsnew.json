@@ -2,6 +2,20 @@
   "title": "Novità di Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Ho capito",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Blocchi delle estensioni su Linux",
+      "text": "I blocchi che le estensioni aggiungono ai dettagli di Deployment, Pod e Node (Vertical Pod Autoscaler, scansioni delle immagini di Trivy, risultati delle policy di Kyverno, il service mesh e altri) non venivano mai mostrati su Linux dalla 0.30.0. Ora sono di nuovo visibili."
+    },
+    "rollouts": {
+      "title": "Argo Rollouts per gli agenti IA",
+      "text": "L'estensione Argo Rollouts 1.5.0 dà agli agenti uno strumento di sola lettura che diagnostica un rollout per intero, segnala quando il traffico di un canary non raggiunge il canary, può verificare quanto è configurato in sicurezza un canary e mostra su un Deployment quale Rollout lo usa. Aggiornala in Impostazioni → Estensioni; gli agenti ricevono lo strumento appena lo attivi in Impostazioni → Agenti IA (MCP)."
+    },
+    "coverage": {
+      "title": "Gli agenti sanno cosa non è stato controllato",
+      "text": "Quando un agente chiede i problemi, Sextant nomina anche le estensioni i cui problemi nascondi agli agenti, così una risposta vuota non viene presa per «tutto a posto»."
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "Memoria stabile con la finestra nascosta",

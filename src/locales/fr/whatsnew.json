@@ -2,6 +2,20 @@
   "title": "Nouveautés de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Compris",
+  "v0_30_2": {
+    "hiddenSections": {
+      "title": "Blocs d'extensions sous Linux",
+      "text": "Les blocs que les extensions ajoutent aux détails des Deployments, Pods et Nodes (Vertical Pod Autoscaler, analyses d'images Trivy, résultats de politiques Kyverno, le service mesh et d'autres) n'étaient jamais affichés sous Linux depuis 0.30.0. Ils sont de nouveau affichés."
+    },
+    "rollouts": {
+      "title": "Argo Rollouts pour les agents IA",
+      "text": "L'extension Argo Rollouts 1.5.0 donne aux agents un outil en lecture seule qui diagnostique un rollout en entier, signale quand le trafic d'un canary n'atteint pas le canary, peut vérifier à quel point un canary est configuré prudemment, et indique sur un Deployment quel Rollout l'utilise. Mettez-la à jour dans Paramètres → Extensions ; les agents reçoivent l'outil dès que vous l'activez dans Paramètres → Agents IA (MCP)."
+    },
+    "coverage": {
+      "title": "Les agents savent ce qui n'a pas été vérifié",
+      "text": "Quand un agent demande les problèmes, Sextant nomme aussi les extensions dont vous cachez les problèmes aux agents, pour qu'une réponse vide ne soit pas prise pour « tout va bien »."
+    }
+  },
   "v0_30_1": {
     "memory": {
       "title": "Une mémoire stable quand la fenêtre est masquée",
