@@ -55,6 +55,8 @@ pub struct AppState {
     pub kubeconfig_folders: crate::kubeconfig_folders::FolderWatch,
     /// Every stream's delivery to the window, bounded by the window's acknowledgements (`streams_ack`, ADR-0170).
     pub flows: Arc<crate::streams::Flows>,
+    /// The counters line written to Sextant's log every 10 minutes (ADR-0170); stopped by [`AppState::close_all`].
+    pub counters: crate::streams::counters::CountersTask,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -103,6 +105,7 @@ impl AppState {
             vcluster: crate::commands::vcluster::VclusterLinks::default(),
             kubeconfig_folders: crate::kubeconfig_folders::FolderWatch::default(),
             flows: Arc::default(),
+            counters: crate::streams::counters::CountersTask::default(),
             streams_generation: AtomicU64::new(0),
         }
     }
@@ -125,6 +128,7 @@ impl AppState {
     /// temporary kubeconfig before this returns; node shells and debug copies start deleting their pods, and this waits
     /// up to [`NODE_SHELL_DELETE_WAIT`] for those deletions, so the process does not end before them.
     pub fn close_all(&self) {
+        self.counters.stop();
         self.mcp.stop();
         self.ext_api.close();
         self.reset_streams();

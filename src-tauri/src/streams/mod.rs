@@ -29,6 +29,7 @@ use tauri::Runtime;
 use tauri::ipc::{Channel, CommandArg, CommandItem, InvokeError, InvokeResponseBody, IpcResponse};
 use tokio::sync::Notify;
 
+pub mod counters;
 #[cfg(test)]
 mod tests;
 

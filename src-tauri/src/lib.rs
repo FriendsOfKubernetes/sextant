@@ -479,6 +479,8 @@ pub fn run() {
                 extensions::ExtensionHost::new(&data_dir, std::sync::Arc::clone(&state.settings));
             app.manage(state);
             app.manage(extensions);
+            // Counts in the log every 10 minutes, the first a minute from now (ADR-0170).
+            app.state::<AppState>().counters.start(app.handle());
             app.manage(commands::timeline::TimelineDir(data_dir.join("timeline")));
             spawn_event_forwarders(app.handle());
             kubeconfig_folders::spawn_poller(app.handle());

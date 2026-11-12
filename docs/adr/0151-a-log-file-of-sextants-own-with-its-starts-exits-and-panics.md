@@ -52,3 +52,7 @@ The user chose (2026-11-06) to add a log in 0.29.2 (#343).
   nothing more. Its run is still told apart by the missing "Sextant exited". Windows' own record of such a crash
   (Reliability Monitor, the Application event log) stays the place to look for its cause.
 - Nothing is sent anywhere. The log stays on the machine until the user shares it.
+
+## Amendment (0.30.1, #342): a counters line every 10 minutes
+
+The log also gets one line of counts every 10 minutes (the first a minute after the start): the process's memory (Windows working set and private bytes, Linux `VmRSS`/`VmData`), the open streams by kind and those waiting for the window, the messages and bytes sent to the window and acknowledged, the Kubernetes API requests, the connected clusters and whether the window is shown. Counts only, never a name or content. See ADR-0170.

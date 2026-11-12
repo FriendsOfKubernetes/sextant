@@ -1,4 +1,4 @@
-# ADR-0170: Stream delivery bounded by the window's acknowledgements
+# ADR-0170: Stream delivery bounded by the window's acknowledgements, and a counters line in the log
 
 ## Status
 
@@ -24,7 +24,7 @@ did not grow as well is not known (how WebView2 suspends a minimized window's pa
 hand); the mechanism is a suspect, not a finding.
 
 The cause is not confirmed: nobody could watch the queue on the reporter's machine. So 0.30.1 ships a defence that
-bounds what can pile up whatever the cause.
+bounds what can pile up whatever the cause, and counts in the log that tell next time where the memory went.
 
 ## Decision 1: every stream waits for the window's acknowledgements
 
@@ -74,11 +74,37 @@ bounds what can pile up whatever the cause.
   `StreamChannel<T>` (a raw `Channel` with the payload's type), so each message is serialized once, as Tauri would,
   and its size is known.
 
+## Decision 2: a counters line in Sextant's log
+
+- Every `EVERY` = 10 minutes, the first `FIRST` = 1 minute after the start, one `applog!` line
+  (`src-tauri/src/streams/counters.rs`, started in `setup`, its task in `AppState.counters`, stopped first by
+  `close_all`):
+
+  ```
+  counters (10 min): memory workingSet=312.4MiB private=280.1MiB; streams open=12 (watch=9 logs=1 terminal=1 extensionWatch=1) waiting=0; to the window messages=1204 bytes=18.4MiB acknowledged=1198; API requests=512; clusters connected=1; window=minimized
+  ```
+
+- The process's memory (`sextant_core::process_memory`): Windows `GetProcessMemoryInfo` — the working set and the
+  private bytes (commit), through the `windows-sys` the core already has (feature `Win32_System_ProcessStatus`); Linux
+  `VmRSS` and `VmData` of `/proc/self/status`; macOS nothing (`memory unknown`), as there is no cheap reading without
+  a new dependency.
+- The open streams by kind and how many wait for the window; the messages and bytes sent to the window and the
+  messages it acknowledged since the last line (from the flows' totals).
+- The Kubernetes API requests since the last line: counted in `RetryPolicy::clone_request` of the one client stack
+  (`sextant_core::cluster::api_requests`), which runs once before every attempt, each repeat counted again. Clients
+  built elsewhere (none for normal reads) are not counted.
+- Exec auth plugin runs are **not** counted: kube-rs runs them inside its auth layer and offers no hook, and wrapping
+  the plugin would change how it runs (ADR-0136).
+- The connected clusters, and whether the main window is visible, minimized, hidden (tray) or gone.
+- Counts only: never a name, a namespace, a URL, a cluster's content or a credential (ADR-0151).
+
 ## Consequences
 
 - If Tauri's queue was the cause, Sextant now holds at most 32 payloads per stream for a window that does not read
   and catches up when it reads again: a watch resumes (or relists), logs continue from where they stopped, a terminal
   continues, a transfer shows its newest progress, an extension frame gets a fresh snapshot.
+- If it was not, the counters line of the next report says whether memory grew with bytes sent to the window, with
+  API requests (an exec plugin's token refresh would show as requests, not runs), or with nothing Sextant counts.
 - A page that receives payloads but never acknowledges them (a bug in `openStream`, a failing `streams_ack`) would
   stall every stream after 32 payloads; the module tests and `src/api/stream.test.ts` check both sides.
 - Module tests that drive a stream past 32 payloads acknowledge them (`state.flows.ack`, the terminal tests'

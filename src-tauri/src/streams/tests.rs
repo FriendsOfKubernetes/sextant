@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use serde_json::{Value, json};
 
+use super::counters::{Sample, WindowShown, line};
 use super::*;
 use crate::events::test_channel;
 
@@ -248,6 +249,47 @@ async fn a_stopped_progress_stream_sends_nothing_that_waited() {
     // Its end is still said (a stopped transfer says so).
     out.send(json!({ "type": "error" }));
     assert_eq!(received(&rx), [json!({ "type": "error" })]);
+}
+
+#[test]
+fn the_counters_line_has_counts_only() {
+    let mut before = Sample::default();
+    before.flows.messages = 100;
+    before.flows.bytes = 1024 * 1024;
+    before.flows.acknowledged = 90;
+    before.api_requests = 40;
+    let now = Sample {
+        memory: vec![
+            ("workingSet", 300 * 1024 * 1024),
+            ("private", 512 * 1024 * 1024),
+        ],
+        flows: FlowCounts {
+            open: [(StreamKind::Watch, 9), (StreamKind::Terminal, 1)].into(),
+            waiting: 2,
+            messages: 1300,
+            bytes: 11 * 1024 * 1024 + 512 * 1024,
+            acknowledged: 1250,
+        },
+        api_requests: 552,
+        clusters_connected: 1,
+        window: Some(WindowShown::Minimized),
+    };
+    assert_eq!(
+        line(&now, &before, Duration::from_secs(600)),
+        "counters (10 min): memory workingSet=300.0MiB private=512.0MiB; streams open=10 (watch=9 terminal=1) \
+         waiting=2; to the window messages=1200 bytes=10.5MiB acknowledged=1160; API requests=512; clusters \
+         connected=1; window=minimized"
+    );
+    let empty = line(
+        &Sample::default(),
+        &Sample::default(),
+        Duration::from_secs(61),
+    );
+    assert_eq!(
+        empty,
+        "counters (2 min): memory unknown; streams open=0 waiting=0; to the window messages=0 bytes=0.0MiB \
+         acknowledged=0; API requests=0; clusters connected=0; window=none"
+    );
 }
 
 #[test]

@@ -29,6 +29,15 @@ pub(crate) const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 /// How long the whole connection check (exec plugin + first request) may take.
 const CHECK_TIMEOUT: Duration = Duration::from_secs(20);
 
+/// Requests sent by the clients of connected clusters since the start, every repeat of [`RetryPolicy`] counted again
+/// (Sextant's counters line in its log, #342, ADR-0170). Only a count: nothing of a request is kept.
+static API_REQUESTS: AtomicU64 = AtomicU64::new(0);
+
+/// See [`API_REQUESTS`].
+pub fn api_requests() -> u64 {
+    API_REQUESTS.load(Ordering::Relaxed)
+}
+
 /// When the connection's client repeats a request the server asked to repeat (429 Too Many Requests, 503 Service
 /// Unavailable, 504 Gateway Timeout): at most [`RetryPolicy::MAX_RETRIES`] times, pausing 0.5 s, 1 s, 2 s, and never
 /// more than [`RetryPolicy::MAX_WAIT`] in total. A `Retry-After` (in seconds) longer than the pause is waited for, if
@@ -233,6 +242,14 @@ impl ClusterManager {
             entry.state = ConnectionState::Disconnected;
         });
         self.broadcast(id, ConnectionState::Disconnected);
+    }
+
+    /// How many clusters are connected now.
+    pub fn connected_count(&self) -> usize {
+        self.lock()
+            .values()
+            .filter(|e| e.state == ConnectionState::Connected)
+            .count()
     }
 
     pub fn state(&self, id: &ClusterId) -> ConnectionState {
@@ -532,11 +549,13 @@ impl
         self.next_delay(status, retry_after).map(tokio::time::sleep)
     }
 
-    /// Requests whose body cannot be cloned (a stream) are sent once.
+    /// Requests whose body cannot be cloned (a stream) are sent once. Called once before every attempt (the first
+    /// and each repeat), so it counts the requests ([`api_requests`]).
     fn clone_request(
         &mut self,
         request: &http::Request<kube::client::Body>,
     ) -> Option<http::Request<kube::client::Body>> {
+        API_REQUESTS.fetch_add(1, Ordering::Relaxed);
         let body = request.body().try_clone()?;
         let mut clone = http::Request::builder()
             .method(request.method().clone())

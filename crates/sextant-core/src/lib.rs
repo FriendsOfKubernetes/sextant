@@ -34,6 +34,7 @@ pub mod node_shell;
 pub mod openapi;
 pub mod pod_names;
 pub mod portforward;
+pub mod process_memory;
 pub mod rbac;
 pub mod reflector;
 pub mod resources;
