@@ -78,8 +78,9 @@
     "cancel": "İptal",
     "delete_button": "Sil",
     "folderWorkspaces": "Kubeconfig klasörlerinin çalışma alanları",
-    "folderWorkspacesHint": "Her alt klasör için bir tane, dosyalarının kümeleriyle. Klasörü izlerler ve burada düzenlenemezler.",
-    "fromFolder": "{{path}} konumundan"
+    "folderWorkspacesHint": "Doğrudan klasördeki dosyalar için klasörün adını taşıyan bir tane ve her alt klasör için bir tane, dosyalarının kümeleriyle. Klasörü izlerler; düzenlemek için birini kendi çalışma alanınız olarak kopyalayın.",
+    "fromFolder": "{{path}} konumundan",
+    "copyFolderWorkspace": "{{name}} öğesini kendi çalışma alanınız olarak kopyala"
   },
   "transfer": {
     "exportTitle": "Dışa aktar",

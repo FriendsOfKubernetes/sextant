@@ -78,8 +78,9 @@
     "cancel": "Cancelar",
     "delete_button": "Excluir",
     "folderWorkspaces": "Espaços de trabalho de pastas de kubeconfig",
-    "folderWorkspacesHint": "Um por subpasta, com os clusters dos arquivos dela. Acompanham a pasta e não podem ser editados aqui.",
-    "fromFolder": "de {{path}}"
+    "folderWorkspacesHint": "Um para os arquivos diretamente na pasta, com o nome dela, e um por subpasta, com os clusters dos seus arquivos. Acompanham a pasta; copie um como espaço de trabalho seu para editá-lo.",
+    "fromFolder": "de {{path}}",
+    "copyFolderWorkspace": "Copiar {{name}} como espaço de trabalho seu"
   },
   "transfer": {
     "exportTitle": "Exportar",

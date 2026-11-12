@@ -78,8 +78,9 @@
     "cancel": "取消",
     "delete_button": "刪除",
     "folderWorkspaces": "kubeconfig 資料夾的工作區",
-    "folderWorkspacesHint": "每個子資料夾一個，包含其檔案中的叢集。它們跟隨資料夾，無法在此編輯。",
-    "fromFolder": "來自 {{path}}"
+    "folderWorkspacesHint": "資料夾中直接存放的檔案一個，以資料夾命名；每個子資料夾一個，包含其檔案中的叢集。它們跟隨資料夾；要編輯，請複製為你自己的工作區。",
+    "fromFolder": "來自 {{path}}",
+    "copyFolderWorkspace": "將 {{name}} 複製為你自己的工作區"
   },
   "transfer": {
     "exportTitle": "匯出",

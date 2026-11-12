@@ -68,7 +68,7 @@
     "folderFiles_few": "{{count}} файла kubeconfig",
     "folderFiles_many": "{{count}} файлов kubeconfig",
     "folderFiles_other": "{{count}} файла kubeconfig",
-    "folderWorkspaces": "Показывать её подпапки как рабочие пространства"
+    "folderWorkspaces": "Показывать её и её подпапки как рабочие пространства"
   },
   "welcome": {
     "loading": "Чтение kubeconfig…",

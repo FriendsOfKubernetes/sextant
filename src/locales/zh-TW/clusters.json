@@ -65,7 +65,7 @@
     "confirmCloud": "其中的叢集會從清單中消失，Sextant 為這些雲端叢集產生的 kubeconfig 也會被刪除。您的雲端 CLI 與 ~/.kube/config 不受影響。",
     "confirmFolder": "其叢集將從清單中消失。資料夾及其檔案仍留在磁碟上。",
     "folderFiles_other": "{{count}} 個 kubeconfig 檔案",
-    "folderWorkspaces": "將其子資料夾顯示為工作區"
+    "folderWorkspaces": "將資料夾及其子資料夾顯示為工作區"
   },
   "welcome": {
     "loading": "正在讀取 kubeconfig…",

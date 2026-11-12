@@ -78,8 +78,9 @@
     "cancel": "Cancel",
     "delete_button": "Delete",
     "folderWorkspaces": "Workspaces of kubeconfig folders",
-    "folderWorkspacesHint": "One for each subfolder, with the clusters of its files. They follow the folder and cannot be edited here.",
-    "fromFolder": "from {{path}}"
+    "folderWorkspacesHint": "One for the files directly in each folder, named after it, and one for each subfolder, with the clusters of their files. They follow the folder; copy one to edit it as a workspace of your own.",
+    "fromFolder": "from {{path}}",
+    "copyFolderWorkspace": "Copy {{name}} as a workspace of your own"
   },
   "transfer": {
     "exportTitle": "Export",

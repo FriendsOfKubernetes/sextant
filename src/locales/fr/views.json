@@ -78,8 +78,9 @@
     "cancel": "Annuler",
     "delete_button": "Supprimer",
     "folderWorkspaces": "Espaces de travail des dossiers kubeconfig",
-    "folderWorkspacesHint": "Un par sous-dossier, avec les clusters de ses fichiers. Ils suivent le dossier et ne se modifient pas ici.",
-    "fromFolder": "de {{path}}"
+    "folderWorkspacesHint": "Un pour les fichiers placés directement dans le dossier, nommé comme lui, et un par sous-dossier, avec les clusters de leurs fichiers. Ils suivent le dossier ; copiez-en un comme espace de travail à vous pour le modifier.",
+    "fromFolder": "de {{path}}",
+    "copyFolderWorkspace": "Copier {{name}} comme espace de travail à vous"
   },
   "transfer": {
     "exportTitle": "Export",

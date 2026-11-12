@@ -294,6 +294,13 @@ function WorkspacesTab({ settings, clusters }: { settings: AppSettings; clusters
                   >
                     {current?.id === w.id ? t("views:manager.inUse") : t("views:manager.use")}
                   </Button>
+                  <Button
+                    iconOnly
+                    icon="copy"
+                    size="compact"
+                    label={t("views:manager.copyFolderWorkspace", { name: w.name })}
+                    onClick={() => setEditing({ id: newId("w"), name: w.name, clusters: [...w.clusters] })}
+                  />
                 </span>
               </li>
             ))}

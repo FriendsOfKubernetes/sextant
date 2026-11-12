@@ -68,7 +68,7 @@
     "folderFiles_few": "{{count}} pliki kubeconfig",
     "folderFiles_many": "{{count}} plików kubeconfig",
     "folderFiles_other": "{{count}} pliku kubeconfig",
-    "folderWorkspaces": "Pokazuj jego podfoldery jako obszary robocze"
+    "folderWorkspaces": "Pokazuj folder i jego podfoldery jako obszary robocze"
   },
   "welcome": {
     "loading": "Odczytywanie kubeconfig…",

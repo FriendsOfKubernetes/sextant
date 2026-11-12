@@ -66,7 +66,7 @@
     "confirmFolder": "Seine Cluster verschwinden aus der Liste. Der Ordner und seine Dateien bleiben auf der Festplatte.",
     "folderFiles_one": "{{count}} Kubeconfig-Datei",
     "folderFiles_other": "{{count}} Kubeconfig-Dateien",
-    "folderWorkspaces": "Unterordner als Arbeitsbereiche anzeigen"
+    "folderWorkspaces": "Ordner und Unterordner als Arbeitsbereiche anzeigen"
   },
   "welcome": {
     "loading": "kubeconfig wird gelesen…",

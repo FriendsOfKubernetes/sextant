@@ -78,8 +78,9 @@
     "cancel": "Abbrechen",
     "delete_button": "Löschen",
     "folderWorkspaces": "Arbeitsbereiche aus Kubeconfig-Ordnern",
-    "folderWorkspacesHint": "Einer je Unterordner, mit den Clustern seiner Dateien. Sie folgen dem Ordner und lassen sich hier nicht bearbeiten.",
-    "fromFolder": "aus {{path}}"
+    "folderWorkspacesHint": "Einer für die Dateien direkt im Ordner, nach ihm benannt, und einer je Unterordner, mit den Clustern ihrer Dateien. Sie folgen dem Ordner; kopieren Sie einen als eigenen Arbeitsbereich, um ihn zu bearbeiten.",
+    "fromFolder": "aus {{path}}",
+    "copyFolderWorkspace": "{{name}} als eigenen Arbeitsbereich kopieren"
   },
   "transfer": {
     "exportTitle": "Export",

@@ -78,8 +78,9 @@
     "cancel": "Cancelar",
     "delete_button": "Eliminar",
     "folderWorkspaces": "Espacios de trabajo de carpetas de kubeconfig",
-    "folderWorkspacesHint": "Uno por subcarpeta, con los clústeres de sus archivos. Siguen a la carpeta y no se pueden editar aquí.",
-    "fromFolder": "de {{path}}"
+    "folderWorkspacesHint": "Uno para los archivos que están directamente en la carpeta, con su nombre, y uno por subcarpeta, con los clústeres de sus archivos. Siguen a la carpeta; copia uno como espacio de trabajo propio para editarlo.",
+    "fromFolder": "de {{path}}",
+    "copyFolderWorkspace": "Copiar {{name}} como espacio de trabajo propio"
   },
   "transfer": {
     "exportTitle": "Exportar",

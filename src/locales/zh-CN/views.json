@@ -78,8 +78,9 @@
     "cancel": "取消",
     "delete_button": "删除",
     "folderWorkspaces": "kubeconfig 文件夹的工作区",
-    "folderWorkspacesHint": "每个子文件夹一个，包含其文件中的集群。它们跟随文件夹，无法在此编辑。",
-    "fromFolder": "来自 {{path}}"
+    "folderWorkspacesHint": "文件夹中直接存放的文件一个，以文件夹命名；每个子文件夹一个，包含其文件中的集群。它们跟随文件夹；要编辑，请复制为你自己的工作区。",
+    "fromFolder": "来自 {{path}}",
+    "copyFolderWorkspace": "将 {{name}} 复制为你自己的工作区"
   },
   "transfer": {
     "exportTitle": "导出",

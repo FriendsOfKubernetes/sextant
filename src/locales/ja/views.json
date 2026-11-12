@@ -78,8 +78,9 @@
     "cancel": "キャンセル",
     "delete_button": "削除",
     "folderWorkspaces": "kubeconfig フォルダーのワークスペース",
-    "folderWorkspacesHint": "サブフォルダーごとに 1 つ、そのファイルのクラスターを含みます。フォルダーに従い、ここでは編集できません。",
-    "fromFolder": "{{path}} から"
+    "folderWorkspacesHint": "フォルダー直下のファイルにはフォルダー名のワークスペースが 1 つ、サブフォルダーごとにも 1 つずつ作られ、そのファイルのクラスターを含みます。フォルダーに従います。編集するには自分のワークスペースとしてコピーしてください。",
+    "fromFolder": "{{path}} から",
+    "copyFolderWorkspace": "{{name}} を自分のワークスペースとしてコピー"
   },
   "transfer": {
     "exportTitle": "エクスポート",

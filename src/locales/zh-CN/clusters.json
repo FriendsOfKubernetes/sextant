@@ -65,7 +65,7 @@
     "confirmCloud": "其中的集群将从列表中消失，Sextant 为这些云集群生成的 kubeconfig 也将被删除。你的云 CLI 和 ~/.kube/config 不受影响。",
     "confirmFolder": "其集群将从列表中消失。文件夹及其文件保留在磁盘上。",
     "folderFiles_other": "{{count}} 个 kubeconfig 文件",
-    "folderWorkspaces": "将其子文件夹显示为工作区"
+    "folderWorkspaces": "将文件夹及其子文件夹显示为工作区"
   },
   "welcome": {
     "loading": "正在读取 kubeconfig…",

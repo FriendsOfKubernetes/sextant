@@ -67,7 +67,7 @@
     "folderFiles_one": "{{count}} archivo kubeconfig",
     "folderFiles_many": "{{count}} de archivos kubeconfig",
     "folderFiles_other": "{{count}} archivos kubeconfig",
-    "folderWorkspaces": "Mostrar sus subcarpetas como espacios de trabajo"
+    "folderWorkspaces": "Mostrar la carpeta y sus subcarpetas como espacios de trabajo"
   },
   "welcome": {
     "loading": "Leyendo kubeconfig…",

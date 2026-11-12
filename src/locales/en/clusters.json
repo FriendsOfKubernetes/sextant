@@ -66,7 +66,7 @@
     "confirmFolder": "Its clusters disappear from the list. The folder and its files stay on disk.",
     "folderFiles_one": "{{count}} kubeconfig file",
     "folderFiles_other": "{{count}} kubeconfig files",
-    "folderWorkspaces": "Show its subfolders as workspaces"
+    "folderWorkspaces": "Show it and its subfolders as workspaces"
   },
   "welcome": {
     "loading": "Reading kubeconfig…",

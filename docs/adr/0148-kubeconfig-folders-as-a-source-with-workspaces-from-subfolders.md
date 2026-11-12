@@ -61,3 +61,15 @@ noticed a kubeconfig file changing while it ran.
 - Sextant now notices a kubeconfig change on its own, for folders only. Files added one by one are still read again
   on "Refresh".
 - Each look reads at most 500 small files' metadata every 3 s, and the files themselves only when that changed.
+
+## Amendment: a folder's own files, and editing a copy (#328)
+
+The idea's author adds several folders one by one, with no subfolders, as they did in Lens. Such folders made no
+workspace, since only subfolders did. A folder's own files (those not in a subfolder) now make a workspace too,
+named after the folder (the last part of its path), listed before its subfolders' and only when there are such files.
+Its id hashes `/`, which no subfolder name is.
+
+They also wanted to edit such a workspace. Folder workspaces stay computed and never stored: the folder decides
+what they hold. The manager copies one into a workspace of the user's own, opening the editor on its name and
+clusters. The copy is an ordinary workspace: stored, exported, and edited freely. The folder's workspace stays beside
+it, and the folder's switch "Show it and its subfolders as workspaces" turns the folder's ones off.

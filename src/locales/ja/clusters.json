@@ -65,7 +65,7 @@
     "confirmCloud": "このソースのクラスターは一覧から消え、これらのクラウドクラスター用に Sextant が作成した kubeconfig は削除されます。クラウド CLI と ~/.kube/config には手を加えません。",
     "confirmFolder": "そのクラスターは一覧から消えます。フォルダーとファイルはディスクに残ります。",
     "folderFiles_other": "kubeconfig ファイル {{count}} 個",
-    "folderWorkspaces": "サブフォルダーをワークスペースとして表示"
+    "folderWorkspaces": "フォルダーとサブフォルダーをワークスペースとして表示"
   },
   "welcome": {
     "loading": "kubeconfig を読み取り中…",

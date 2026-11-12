@@ -78,8 +78,9 @@
     "cancel": "Anuluj",
     "delete_button": "Usuń",
     "folderWorkspaces": "Obszary robocze z folderów kubeconfig",
-    "folderWorkspacesHint": "Jeden na każdy podfolder, z klastrami jego plików. Podążają za folderem i nie można ich tu edytować.",
-    "fromFolder": "z {{path}}"
+    "folderWorkspacesHint": "Jeden dla plików bezpośrednio w folderze, nazwany jak on, i jeden na każdy podfolder, z klastrami ich plików. Podążają za folderem; aby edytować, skopiuj jako własny obszar roboczy.",
+    "fromFolder": "z {{path}}",
+    "copyFolderWorkspace": "Skopiuj {{name}} jako własny obszar roboczy"
   },
   "transfer": {
     "exportTitle": "Eksport",

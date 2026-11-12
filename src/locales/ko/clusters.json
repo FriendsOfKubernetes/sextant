@@ -65,7 +65,7 @@
     "confirmCloud": "해당 클러스터가 목록에서 사라지고, 이 클라우드 클러스터에 대한 Sextant의 kubeconfig가 삭제됩니다. 클라우드 CLI와 ~/.kube/config는 변경되지 않습니다.",
     "confirmFolder": "해당 클러스터가 목록에서 사라집니다. 폴더와 파일은 디스크에 남습니다.",
     "folderFiles_other": "kubeconfig 파일 {{count}}개",
-    "folderWorkspaces": "하위 폴더를 작업 공간으로 표시"
+    "folderWorkspaces": "폴더와 하위 폴더를 작업 공간으로 표시"
   },
   "welcome": {
     "loading": "kubeconfig를 읽는 중…",

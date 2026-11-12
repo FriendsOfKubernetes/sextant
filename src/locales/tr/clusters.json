@@ -66,7 +66,7 @@
     "confirmFolder": "Kümeleri listeden kaybolur. Klasör ve dosyaları diskte kalır.",
     "folderFiles_one": "{{count}} kubeconfig dosyası",
     "folderFiles_other": "{{count}} kubeconfig dosyası",
-    "folderWorkspaces": "Alt klasörlerini çalışma alanı olarak göster"
+    "folderWorkspaces": "Klasörü ve alt klasörlerini çalışma alanı olarak göster"
   },
   "welcome": {
     "loading": "Kubeconfig okunuyor…",
