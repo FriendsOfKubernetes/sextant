@@ -11,6 +11,8 @@
 //! acknowledgements come. Its bounded output channel then fills, so the PTY is not read and the shell blocks on its
 //! writes (a container shell's websocket is not read, so the API server holds it back). Output that comes quickly is
 //! gathered into one message per [`COALESCE`]; the first chunk after a quiet spell (an echoed keystroke) goes at once.
+//! Like every stream, a session is also at most `streams::MAX_UNACKED` messages ahead of the window's `streams_ack`
+//! (ADR-0170): a page that does not run at all acknowledges neither, and the shell's output stays where it is.
 
 use sextant_core::exec::{self, ExecSession, TermEvent};
 use sextant_core::{debug, node_shell};
@@ -28,6 +30,7 @@ use tokio::time::Instant;
 use crate::events::{TermChannel, TermPayload};
 use crate::pty::{self, ShellCommand};
 use crate::state::{AppState, SessionGuard, TermSession, check_stream_id};
+use crate::streams::{Outlet, StreamChannel, StreamKind};
 
 /// Shell in a container, under `stream_id` (chosen by the frontend), its output sent through `on_event`.
 #[tauri::command]
@@ -680,24 +683,40 @@ where
     let (registered_tx, registered_rx) = oneshot::channel::<()>();
     let handle = app.clone();
     let own_id = id.to_owned();
+    let flows = app.try_state::<AppState>().map_or_else(
+        || Arc::new(crate::streams::Flows::default()),
+        |state| Arc::clone(&state.flows),
+    );
+    let own_cluster = cluster.clone();
     let task = tauri::async_runtime::spawn(async move {
         if registered_rx.await.is_err() {
             return;
         }
         let flow = FlowEntry::new(&handle, &own_id);
         let credit = &flow.credit;
+        // Bytes the window has not written (`term_ack`) and messages it has not received (`streams_ack`, ADR-0170):
+        // either keeps the shell's output where it is.
+        let outlet = Outlet::open(
+            &flows,
+            &own_id,
+            StreamKind::Terminal,
+            own_cluster,
+            StreamChannel::from(channel),
+        );
         let ExecSession {
             input,
             resize,
             mut output,
         } = session;
-        let emit = |payload: TermPayload| channel.send(payload.body()).is_ok();
-        let emit_output = |bytes: Vec<u8>| channel.send(InvokeResponseBody::Raw(bytes)).is_ok();
+        let emit = |payload: TermPayload| outlet.send(payload.body());
+        let emit_output = |bytes: Vec<u8>| outlet.send(InvokeResponseBody::Raw(bytes));
         // Output taken from the shell and not sent yet, and when output was last sent.
         let mut pending: Vec<u8> = Vec::new();
         let mut last_emit: Option<Instant> = None;
         loop {
-            let room = credit.has_room(pending.len());
+            let credit_room = credit.has_room(pending.len());
+            let message_room = outlet.flow().has_room();
+            let room = credit_room && message_room;
             let next_emit = last_emit.map_or_else(Instant::now, |t| t + COALESCE);
             tokio::select! {
                 keys = input_rx.recv() => {
@@ -709,7 +728,12 @@ where
                     let _ = resize.send(size).await;
                 }
                 // The window is behind: the shell's output stays in its channel until acknowledgements come.
-                () = credit.acked(), if !room => {}
+                () = credit.acked(), if !credit_room => {}
+                open = outlet.room(), if credit_room && !message_room => {
+                    if !open {
+                        break;
+                    }
+                }
                 () = tokio::time::sleep_until(next_emit), if !pending.is_empty() => {}
                 event_out = output.recv(), if room => {
                     let (payload, last) = match event_out {
@@ -741,6 +765,7 @@ where
                 last_emit = Some(Instant::now());
             }
         }
+        drop(outlet);
         drop(flow);
         if let Some(state) = handle.try_state::<AppState>() {
             state.sessions.remove(&own_id);
@@ -811,6 +836,35 @@ mod tests {
     /// Stops the session `id` when dropped, so a failed assertion still releases what the session holds (a producer
     /// blocked on a full output channel) instead of leaving it blocked for the rest of the run.
     struct StopOnDrop<'a>(&'a AppState, &'a str);
+
+    /// A window that receives every message of the session `id` as it comes (`streams_ack`, ADR-0170), so only the
+    /// bytes its terminal wrote (`term_ack`) hold the session back. Stops when dropped.
+    struct ReceivesMessages(
+        Arc<std::sync::atomic::AtomicBool>,
+        Option<std::thread::JoinHandle<()>>,
+    );
+
+    fn receives_messages(state: &AppState, id: &str) -> ReceivesMessages {
+        let stop = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let (flows, done) = (Arc::clone(&state.flows), Arc::clone(&stop));
+        let acks = HashMap::from([(id.to_owned(), u64::MAX)]);
+        let thread = std::thread::spawn(move || {
+            while !done.load(Ordering::SeqCst) {
+                flows.ack(&acks);
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        });
+        ReceivesMessages(stop, Some(thread))
+    }
+
+    impl Drop for ReceivesMessages {
+        fn drop(&mut self) {
+            self.0.store(true, Ordering::SeqCst);
+            if let Some(thread) = self.1.take() {
+                let _ = thread.join();
+            }
+        }
+    }
 
     impl Drop for StopOnDrop<'_> {
         fn drop(&mut self) {
@@ -1060,6 +1114,7 @@ mod tests {
         )
         .unwrap();
         let stop = StopOnDrop(&state, "t-flood");
+        let _receives = receives_messages(&state, "t-flood");
 
         // Nothing is acknowledged: the session stops at the window, and so does the producer.
         let mut total = 0;
@@ -1110,6 +1165,57 @@ mod tests {
             .unwrap();
     }
 
+    #[test]
+    fn a_session_whose_messages_are_not_received_stops_taking_output_until_they_are() {
+        within(TEST_LIMIT, unreceived_messages_hold_the_session);
+    }
+
+    fn unreceived_messages_hold_the_session() {
+        use crate::streams::MAX_UNACKED;
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let (session, shell) = fake_session();
+        let (channel, events) = test_channel();
+        forward_term(
+            app.handle(),
+            &state,
+            "t-msgs".into(),
+            None,
+            session,
+            None,
+            channel,
+        )
+        .unwrap();
+        let _stop = StopOnDrop(&state, "t-msgs");
+        // Output in small pieces with pauses longer than the gathering: one message each, far under the byte window.
+        let pieces = MAX_UNACKED as usize + 8;
+        let feeder = {
+            let output = shell.output.clone();
+            std::thread::spawn(move || {
+                for _ in 0..pieces {
+                    if output
+                        .blocking_send(TermEvent::Data(b"x".to_vec()))
+                        .is_err()
+                    {
+                        return;
+                    }
+                    std::thread::sleep(COALESCE * 2);
+                }
+            })
+        };
+        let (bytes, _) = received_bytes(&events, Duration::from_millis(500));
+        assert_eq!(
+            bytes as u64, MAX_UNACKED,
+            "the session stops at the message limit"
+        );
+        // The window received them: the rest comes.
+        let acks = HashMap::from([("t-msgs".to_owned(), u64::MAX)]);
+        state.flows.ack(&acks);
+        let (rest, _) = received_bytes(&events, Duration::from_millis(500));
+        assert_eq!(bytes + rest, pieces);
+        feeder.join().unwrap();
+    }
+
     /// A real shell running `yes`: without acknowledgements the PTY is read up to the window only, then `yes` blocks.
     #[cfg(unix)]
     #[test]
@@ -1128,6 +1234,7 @@ mod tests {
         let (channel, events) = test_channel();
         start_plain_terminal(app.handle(), &state, "yes-1".into(), &sh, 80, 24, channel).unwrap();
         let stop = StopOnDrop(&state, "yes-1");
+        let _receives = receives_messages(&state, "yes-1");
         let (input, _) = state.sessions.channels("yes-1").unwrap();
         input.blocking_send(b"yes\n".to_vec()).unwrap();
 

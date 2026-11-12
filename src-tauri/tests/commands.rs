@@ -44,6 +44,7 @@ const COMMANDS: &[(&str, Option<&str>)] = &[
     ("watch_start", Some("clusterId")),
     ("watch_stop", Some("subscriptionId")),
     ("streams_reset", None),
+    ("streams_ack", Some("acks")),
     ("resource_get", Some("clusterId")),
     ("resource_count", Some("clusterId")),
     ("resource_replace", Some("clusterId")),
@@ -742,6 +743,21 @@ fn streams_reset_is_registered_without_arguments_and_answers() {
     assert_eq!(invoke(&h, "streams_reset", json!({})).unwrap(), Value::Null);
     let state = h.window.state::<sextant_lib::AppState>();
     assert!(state.subscriptions.is_empty() && state.sessions.is_empty());
+}
+
+#[test]
+fn streams_ack_takes_counts_by_stream_id_and_skips_streams_that_ended() {
+    let h = harness();
+    assert_eq!(
+        invoke(&h, "streams_ack", json!({ "acks": { "gone": 3 } })).unwrap(),
+        Value::Null
+    );
+    assert_eq!(
+        invoke(&h, "streams_ack", json!({ "acks": {} })).unwrap(),
+        Value::Null
+    );
+    let err = invoke(&h, "streams_ack", json!({ "acks": { "s": -1 } })).unwrap_err();
+    assert!(err.as_str().is_some_and(|e| e.contains("acks")), "{err}");
 }
 
 #[test]

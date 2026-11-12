@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockBackend, type MockBackend } from "./mockBackend";
-import { newStreamId, openStream, resetStreams, resetStreamsState } from "./stream";
+import {
+  ACK_AT_ONCE,
+  ACK_INTERVAL_MS,
+  MAX_UNACKED,
+  newStreamId,
+  openStream,
+  resetStreams,
+  resetStreamsState,
+} from "./stream";
 import { currentTransport, setTransport, type StreamChannel } from "./transport";
 
 /** A promise resolved from outside. */
@@ -57,6 +65,7 @@ function fakeBackend() {
 
 let backend: MockBackend | null = null;
 afterEach(() => {
+  vi.useRealTimers();
   backend?.restore();
   backend = null;
   setTransport(null);
@@ -177,5 +186,85 @@ describe("resetStreams", () => {
     b.started.resolve();
     await flush();
     expect(b.log).toEqual(["channel", "start <id>", "listening <id>"]);
+  });
+});
+
+describe("acknowledgements (ADR-0170)", () => {
+  /** A watch on the mock backend; its payloads come from `backend.emit("watch:<id>", …)`. */
+  function openWatch() {
+    let streamId = "";
+    const onEvent = vi.fn();
+    const close = openStream<number>({
+      start: (id, channel) => {
+        streamId = id;
+        return currentTransport().invoke("watch_start", { streamId: id, onEvent: channel });
+      },
+      stop: async () => undefined,
+      onEvent,
+    });
+    return { close, onEvent, emit: (n: number) => backend!.emit(`watch:${streamId}`, n), id: () => streamId };
+  }
+
+  function started() {
+    vi.useFakeTimers();
+    backend = mockBackend({ watch_start: () => undefined });
+    return backend;
+  }
+
+  it("half the backend's limit is acknowledged at once", () => {
+    expect(ACK_AT_ONCE * 2).toBe(MAX_UNACKED);
+  });
+
+  it("tells the counts received in all, for every stream at once, at most every interval", async () => {
+    const b = started();
+    const one = openWatch();
+    const two = openWatch();
+    await vi.advanceTimersByTimeAsync(0);
+    one.emit(1);
+    one.emit(2);
+    two.emit(1);
+    expect(one.onEvent).toHaveBeenCalledTimes(2);
+    expect(b.acks).toEqual([]);
+    await vi.advanceTimersByTimeAsync(ACK_INTERVAL_MS - 1);
+    expect(b.acks).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(b.acks).toEqual([{ [one.id()]: 2, [two.id()]: 1 }]);
+    // Only streams with something new are named, with their count in all.
+    one.emit(3);
+    await vi.advanceTimersByTimeAsync(ACK_INTERVAL_MS);
+    expect(b.acks).toEqual([{ [one.id()]: 2, [two.id()]: 1 }, { [one.id()]: 3 }]);
+    // Nothing new, nothing sent.
+    await vi.advanceTimersByTimeAsync(ACK_INTERVAL_MS * 4);
+    expect(b.acks).toHaveLength(2);
+    // The calls of the other commands are unchanged.
+    expect(b.calls.map((c) => c.cmd)).toEqual(["watch_start", "watch_start"]);
+  });
+
+  it("a stream at half the limit is acknowledged at once, without waiting for the interval", async () => {
+    const b = started();
+    const one = openWatch();
+    await vi.advanceTimersByTimeAsync(0);
+    for (let n = 0; n < ACK_AT_ONCE - 1; n++) one.emit(n);
+    expect(b.acks).toEqual([]);
+    one.emit(99);
+    expect(b.acks).toEqual([{ [one.id()]: ACK_AT_ONCE }]);
+    await vi.advanceTimersByTimeAsync(ACK_INTERVAL_MS * 2);
+    expect(b.acks).toHaveLength(1);
+  });
+
+  it("a closed stream is never acknowledged again", async () => {
+    const b = started();
+    const one = openWatch();
+    const two = openWatch();
+    await vi.advanceTimersByTimeAsync(0);
+    one.emit(1);
+    two.emit(1);
+    one.close();
+    one.emit(2);
+    await vi.advanceTimersByTimeAsync(ACK_INTERVAL_MS);
+    expect(b.acks).toEqual([{ [two.id()]: 1 }]);
+    two.close();
+    await vi.advanceTimersByTimeAsync(ACK_INTERVAL_MS * 4);
+    expect(b.acks).toHaveLength(1);
   });
 });

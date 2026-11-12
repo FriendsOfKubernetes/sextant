@@ -8,6 +8,12 @@
 // and nothing is lost (interfaces.md §1). Closing at any point leaves nothing behind: a stream whose start is still in
 // flight is stopped once it answers, the channel stops delivering at once, and no callback runs after the close.
 // Streams wait for `resetStreams` (once per page load) before they start.
+//
+// The window acknowledges what it received (ADR-0170): a stream's backend may be at most `MAX_UNACKED` payloads ahead
+// of the window, so a page that does not run (a minimized or suspended web view) holds the streams back instead of
+// letting Tauri's queue of undelivered payloads grow in the backend. `openStream` counts the payloads it hands to
+// `onEvent` and tells the backend the counts (`streams_ack`), batched: at most every `ACK_INTERVAL_MS` while a stream
+// has payloads not yet acknowledged, and at once when one stream reaches half of `MAX_UNACKED`.
 import { streams } from "./commands";
 import { streamChannel, type StreamChannel } from "./transport";
 
@@ -39,6 +45,50 @@ export function newStreamId(): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+/** Payloads a stream may send ahead of the window's acknowledgements; equal to `streams::MAX_UNACKED` in Rust. */
+export const MAX_UNACKED = 32;
+/** How long acknowledgements wait to be sent together. */
+export const ACK_INTERVAL_MS = 250;
+/** A stream with this many payloads not yet acknowledged is acknowledged at once. */
+export const ACK_AT_ONCE = MAX_UNACKED / 2;
+
+// Per open stream: payloads received in all, and those not acknowledged yet.
+const received = new Map<string, number>();
+const unacked = new Map<string, number>();
+let ackTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Sends the counts of the streams with payloads not acknowledged yet (a failure is ignored: the next one says it). */
+function sendAcks(): void {
+  if (ackTimer !== null) {
+    clearTimeout(ackTimer);
+    ackTimer = null;
+  }
+  if (unacked.size === 0) return;
+  const acks: Record<string, number> = {};
+  for (const id of unacked.keys()) acks[id] = received.get(id) ?? 0;
+  unacked.clear();
+  void streams.ack(acks).catch(() => undefined);
+}
+
+/** One more payload of the open stream `id` was handed to its `onEvent`. */
+function countPayload(id: string): void {
+  received.set(id, (received.get(id) ?? 0) + 1);
+  const waiting = (unacked.get(id) ?? 0) + 1;
+  unacked.set(id, waiting);
+  if (waiting >= ACK_AT_ONCE) sendAcks();
+  else ackTimer ??= setTimeout(sendAcks, ACK_INTERVAL_MS);
+}
+
+/** The stream `id` was closed: nothing of it is acknowledged any more. */
+function forgetPayloads(id: string): void {
+  received.delete(id);
+  unacked.delete(id);
+  if (unacked.size === 0 && ackTimer !== null) {
+    clearTimeout(ackTimer);
+    ackTimer = null;
+  }
+}
+
 let streamsReady: Promise<void> = Promise.resolve();
 let resetRequested = false;
 
@@ -58,10 +108,14 @@ export function resetStreams(): Promise<void> {
   return streamsReady;
 }
 
-/** Forgets that the streams were reset (a new backend in tests). */
+/** Forgets that the streams were reset and what was acknowledged (a new backend in tests). */
 export function resetStreamsState(): void {
   resetRequested = false;
   streamsReady = Promise.resolve();
+  received.clear();
+  unacked.clear();
+  if (ackTimer !== null) clearTimeout(ackTimer);
+  ackTimer = null;
 }
 
 /** Opens the stream; the returned function closes it (idempotent). */
@@ -83,7 +137,9 @@ export function openStream<T>(spec: StreamSpec<T>): () => void {
     let own: StreamChannel<T>;
     try {
       own = streamChannel<T>((payload) => {
-        if (!closed) spec.onEvent(payload);
+        if (closed) return;
+        countPayload(id);
+        spec.onEvent(payload);
       });
     } catch (err) {
       fail(err);
@@ -96,6 +152,7 @@ export function openStream<T>(spec: StreamSpec<T>): () => void {
         // Unless a close already closed it.
         channel?.close();
         channel = null;
+        forgetPayloads(id);
         fail(err);
         return false;
       },
@@ -108,6 +165,7 @@ export function openStream<T>(spec: StreamSpec<T>): () => void {
     closed = true;
     channel?.close();
     channel = null;
+    forgetPayloads(id);
     // A start still in flight is stopped once it answers.
     void running?.then((started) => {
       if (started) stop();

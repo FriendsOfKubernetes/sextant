@@ -7,7 +7,6 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 
 use sextant_core::gitops_install::{self, GitopsTool, InstallPlan};
 use sextant_core::{ClusterId, CoreError, CoreResult};
-use tauri::ipc::Channel;
 use tauri::{AppHandle, Runtime, State};
 
 use crate::gitops_install::download::GitopsVersions;
@@ -37,6 +36,20 @@ pub async fn gitops_install_prepare(
     install::prepare(&state.gitops, &state.clusters, &cluster_id, tool, &version).await
 }
 
+/// How an install's event waits for the window: each applied (or failed) object is kept, readiness only as the newest,
+/// the outcome always. The applied objects are as many as the plan has.
+fn install_delivery(event: &InstallEvent) -> crate::streams::Delivery {
+    use crate::streams::Delivery;
+    match event {
+        InstallEvent::Applied { .. } | InstallEvent::Failed { .. } => Delivery::Each,
+        InstallEvent::Waiting { .. } => Delivery::Latest,
+        InstallEvent::Done { .. }
+        | InstallEvent::TimedOut { .. }
+        | InstallEvent::Stopped { .. }
+        | InstallEvent::Error { .. } => Delivery::Last,
+    }
+}
+
 /// Starts the prepared install of `token` (once) under `stream_id`, which the window chose; its events (`InstallEvent`)
 /// go through `on_event`, the channel the window created before the start. The install is registered before it begins;
 /// `gitops_install_stop`, disconnecting the cluster, `streams_reset` and quitting stop it.
@@ -47,7 +60,7 @@ pub async fn gitops_install_start<R: Runtime>(
     cluster_id: ClusterId,
     token: String,
     stream_id: String,
-    on_event: Channel<InstallEvent>,
+    on_event: crate::streams::StreamChannel<InstallEvent>,
 ) -> Result<(), CoreError> {
     check_stream_id(&stream_id)?;
     // Not connected: the plan stays for a retry.
@@ -65,6 +78,16 @@ pub async fn gitops_install_start<R: Runtime>(
     let flag = Arc::clone(&stop);
     let counted = Arc::clone(&applied);
     let cluster = cluster_id.clone();
+    // Never holds the install back for the window (ADR-0170): every applied object is kept for it, only the newest
+    // readiness waits, and the outcome always goes.
+    let on_event = crate::streams::Progress::open(
+        &state.flows,
+        &stream_id,
+        crate::streams::StreamKind::Install,
+        Some(cluster_id.clone()),
+        on_event,
+        install_delivery,
+    );
     let channel = on_event.clone();
     let task = tauri::async_runtime::spawn(async move {
         let Ok(plan) = plan_rx.await else {
@@ -74,7 +97,7 @@ pub async fn gitops_install_start<R: Runtime>(
             if matches!(e, InstallEvent::Applied { .. }) {
                 counted.fetch_add(1, Ordering::SeqCst);
             }
-            let _ = channel.send(e);
+            channel.send(e);
         })
         .await;
         if let Some(state) = tauri::Manager::try_state::<AppState>(&handle) {
@@ -88,7 +111,7 @@ pub async fn gitops_install_start<R: Runtime>(
             applied.load(Ordering::SeqCst),
             planned.load(Ordering::SeqCst),
         );
-        let _ = on_event.send(last);
+        on_event.send(last);
     });
     // Registered first, the plan taken after: a stream id in use does not spend the token.
     let plan = state.gitops.begin(

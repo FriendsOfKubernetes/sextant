@@ -38,9 +38,10 @@ pub const CLOSE_TAB: &str = "close-tab";
 pub const VCLUSTER_LINKS: &str = "vcluster-links";
 
 // Streams the window opens (watch, logs, terminal sessions, extension watches, GitOps installs, file transfers) are
-// not events: each `*_start` command takes a `tauri::ipc::Channel` (`onEvent`) the window created before the start,
-// and its payloads (`WatchUpdate`, `LogUpdate`, [`TermPayload`], `InstallEvent`, `TransferEvent`) go through it
-// (ADR-0078).
+// not events: each `*_start` command takes a `tauri::ipc::Channel` (`onEvent`, a `streams::StreamChannel` or a
+// [`TermChannel`]) the window created before the start, and its payloads (`WatchUpdate`, `LogUpdate`, [`TermPayload`],
+// `InstallEvent`, `TransferEvent`) go through it (ADR-0078), as far ahead of the window's acknowledgements as
+// `streams::MAX_UNACKED` allows (ADR-0170).
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -82,16 +83,14 @@ impl TermPayload {
 /// that JavaScriptCore collects late (#321).
 pub type TermChannel = tauri::ipc::Channel<tauri::ipc::InvokeResponseBody>;
 
-/// A stream channel for module tests: what the backend sends through it arrives on the receiver as JSON, raw bytes
-/// (a terminal's output) as `{"type": "data", "data": <base64>}`.
+/// A stream channel for module tests (a [`TermChannel`] or a `streams::StreamChannel`): what the backend sends through
+/// it arrives on the receiver as JSON, raw bytes (a terminal's output) as `{"type": "data", "data": <base64>}`.
 #[cfg(test)]
-pub(crate) fn test_channel<T>() -> (
-    tauri::ipc::Channel<T>,
-    std::sync::mpsc::Receiver<serde_json::Value>,
-) {
+pub(crate) fn test_channel<C: From<TermChannel>>()
+-> (C, std::sync::mpsc::Receiver<serde_json::Value>) {
     use base64::Engine as _;
     let (tx, rx) = std::sync::mpsc::channel();
-    let channel = tauri::ipc::Channel::new(move |body| {
+    let channel: TermChannel = tauri::ipc::Channel::new(move |body| {
         let value = match body {
             tauri::ipc::InvokeResponseBody::Json(json) => serde_json::from_str(&json).unwrap(),
             tauri::ipc::InvokeResponseBody::Raw(bytes) => serde_json::json!({
@@ -103,7 +102,7 @@ pub(crate) fn test_channel<T>() -> (
         let _ = tx.send(value);
         Ok(())
     });
-    (channel, rx)
+    (C::from(channel), rx)
 }
 
 #[cfg(test)]

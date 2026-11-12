@@ -16,6 +16,7 @@ pub mod mcp;
 pub mod mcp_proxy;
 pub mod pty;
 pub mod state;
+pub mod streams;
 pub mod tools;
 pub mod webkit;
 // The tray exists on the desktop only (as the window code in `window.rs`); elsewhere there is no icon.
@@ -74,6 +75,7 @@ pub fn with_commands<R: Runtime>(builder: tauri::Builder<R>) -> tauri::Builder<R
         resources::watch_start,
         resources::watch_stop,
         resources::streams_reset,
+        resources::streams_ack,
         resources::resource_get,
         resources::resource_count,
         resources::resource_replace,

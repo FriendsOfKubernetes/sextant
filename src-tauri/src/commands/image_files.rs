@@ -15,15 +15,31 @@ use sextant_core::image_fs::cache::IndexCache;
 use sextant_core::image_fs::manifest::ImagePlatform;
 use sextant_core::image_fs::{ImageDir, ImageSearch, limits};
 use sextant_core::{ClusterId, CoreError, ErrorCode};
-use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, Runtime, State};
 use tauri_plugin_dialog::DialogExt;
 
-use crate::commands::files::{Reporter, TransferEvent, start_transfer};
+use crate::commands::files::{Reporter, TransferEvent, start_transfer, transfer_progress};
 use crate::image_files::{
     DockerAccess, ImageOpenEvent, ImageReadEvent, ImageSource, OpenContext, open, read_text, save,
 };
 use crate::state::{AppState, check_stream_id};
+use crate::streams::{Delivery, Progress, StreamChannel, StreamKind};
+
+/// How an open's event waits for the window (ADR-0170): progress only as the newest, the outcome always.
+fn open_delivery(event: &ImageOpenEvent) -> Delivery {
+    match event {
+        ImageOpenEvent::Resolving | ImageOpenEvent::Layer { .. } => Delivery::Latest,
+        ImageOpenEvent::Opened { .. } | ImageOpenEvent::Error { .. } => Delivery::Last,
+    }
+}
+
+/// How a read's event waits for the window: progress only as the newest, the text or the error always.
+fn read_delivery(event: &ImageReadEvent) -> Delivery {
+    match event {
+        ImageReadEvent::Progress { .. } => Delivery::Latest,
+        ImageReadEvent::Text { .. } | ImageReadEvent::Error { .. } => Delivery::Last,
+    }
+}
 
 /// Sets the flag when the work is dropped (stopped): the blocking reader then ends at its next read.
 struct CancelOnDrop(Arc<AtomicBool>);
@@ -53,7 +69,7 @@ pub async fn image_files_open_start<R: Runtime>(
     source: ImageSource,
     platform: Option<ImagePlatform>,
     stream_id: String,
-    on_event: Channel<ImageOpenEvent>,
+    on_event: StreamChannel<ImageOpenEvent>,
 ) -> Result<(), CoreError> {
     check_stream_id(&stream_id)?;
     if state.image_files.len() >= limits::MAX_OPEN_IMAGES {
@@ -90,11 +106,19 @@ pub async fn image_files_open_start<R: Runtime>(
     };
     let handle = app.clone();
     let id = stream_id.clone();
+    let on_event = Progress::open(
+        &state.flows,
+        &stream_id,
+        StreamKind::Image,
+        Some(cluster.clone()),
+        on_event,
+        open_delivery,
+    );
     let work = async move {
         let _cancel = CancelOnDrop(cancel);
         let channel = on_event.clone();
         let emit: crate::image_files::Emit<ImageOpenEvent> = Arc::new(move |event| {
-            let _ = channel.send(event);
+            channel.send(event);
         });
         let opened = tokio::time::timeout(
             limits::OPEN_TIMEOUT,
@@ -119,7 +143,7 @@ pub async fn image_files_open_start<R: Runtime>(
                 ),
             },
         };
-        let _ = on_event.send(event);
+        on_event.send(event);
     };
     start_transfer(&app, &state, stream_id, cluster, work)
 }
@@ -132,16 +156,24 @@ pub async fn image_files_read_start<R: Runtime>(
     session_id: String,
     path: String,
     stream_id: String,
-    on_event: Channel<ImageReadEvent>,
+    on_event: StreamChannel<ImageReadEvent>,
 ) -> Result<(), CoreError> {
     let session = state.image_files.get(&session_id)?;
     let cluster = session.cluster.clone().unwrap_or_else(no_cluster);
+    let on_event = Progress::open(
+        &state.flows,
+        &stream_id,
+        StreamKind::Image,
+        Some(cluster.clone()),
+        on_event,
+        read_delivery,
+    );
     let work = async move {
         let cancel = Arc::new(AtomicBool::new(false));
         let _cancel = CancelOnDrop(Arc::clone(&cancel));
         let channel = on_event.clone();
         let emit: crate::image_files::Emit<ImageReadEvent> = Arc::new(move |event| {
-            let _ = channel.send(event);
+            channel.send(event);
         });
         let read = tokio::time::timeout(
             limits::READ_TIMEOUT,
@@ -155,7 +187,7 @@ pub async fn image_files_read_start<R: Runtime>(
                 error: CoreError::new(ErrorCode::Timeout, "reading the file took too long"),
             },
         };
-        let _ = on_event.send(event);
+        on_event.send(event);
     };
     start_transfer(&app, &state, stream_id, cluster, work)
 }
@@ -172,7 +204,7 @@ pub async fn image_files_download_start<R: Runtime>(
     path: String,
     title: String,
     stream_id: String,
-    on_event: Channel<TransferEvent>,
+    on_event: StreamChannel<TransferEvent>,
 ) -> Result<bool, CoreError> {
     check_stream_id(&stream_id)?;
     let session = state.image_files.get(&session_id)?;
@@ -193,7 +225,7 @@ pub async fn image_files_download_start<R: Runtime>(
         return Ok(false);
     };
     let cluster = session.cluster.clone().unwrap_or_else(no_cluster);
-    let mut reporter = Reporter::new(on_event);
+    let mut reporter = Reporter::new(transfer_progress(&state, &stream_id, &cluster, on_event));
     let (progress_tx, mut progress_rx) = tokio::sync::mpsc::unbounded_channel::<(u64, u64)>();
     let work = async move {
         let cancel = Arc::new(AtomicBool::new(false));

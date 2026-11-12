@@ -1077,7 +1077,7 @@ async fn stream_held_in_its_sink(
     let (entered_tx, entered_rx) = std::sync::mpsc::channel();
     let (release_tx, release_rx) = std::sync::mpsc::channel::<()>();
     let release_rx = Mutex::new(release_rx);
-    let sink: UpdateSink = Arc::new(move |_| {
+    let sink = UpdateSink::new(move |_| {
         let _ = entered_tx.send(());
         let _ = lock(&release_rx).recv();
         false
@@ -1131,7 +1131,7 @@ async fn a_watch_whose_extension_changed_before_it_was_registered_does_not_stay(
     env.install("widgets", perms(all_clusters(), &[], &["read"], false));
     let start = |granted: ExtensionPermissions, id: &str| {
         let open = async { Ok::<_, CoreError>(futures::stream::pending::<WatchUpdate>()) };
-        let sink: UpdateSink = Arc::new(|_| true);
+        let sink = UpdateSink::new(|_| true);
         env.api.start_stream(
             &env.host,
             id.to_owned(),
@@ -1415,7 +1415,7 @@ async fn a_development_folder_read_again_during_a_call_is_read_off_the_runtime()
         .await;
     assert!(listed.is_err());
     let open = async { Ok::<_, CoreError>(futures::stream::pending::<WatchUpdate>()) };
-    let sink: UpdateSink = Arc::new(|_| true);
+    let sink = UpdateSink::new(|_| true);
     env.api
         .start_stream(
             &env.host,
@@ -1841,7 +1841,7 @@ async fn every_method_against_the_test_cluster() {
 
     // resources.watch: a stream in AppState that ends when the extension is disabled.
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<WatchUpdate>();
-    let sink: UpdateSink = Arc::new(move |update| tx.send(update).is_ok());
+    let sink = UpdateSink::new(move |update| tx.send(update).is_ok());
     live.state
         .ext_api
         .call(
@@ -1878,7 +1878,10 @@ async fn every_method_against_the_test_cluster() {
             "widgets",
             "resources.watch",
             json!({ "clusterId": id, "kind": { "kind": "Secret" }, "namespaces": ["kube-system"] }),
-            Some(("ext-stream-2".into(), Arc::new(|_: WatchUpdate| true))),
+            Some((
+                "ext-stream-2".into(),
+                UpdateSink::new(|_: WatchUpdate| true),
+            )),
         )
         .await
         .unwrap_err();
@@ -1886,7 +1889,7 @@ async fn every_method_against_the_test_cluster() {
 
     // Without namespaces: only the namespaces the grant covers; with none granted for reading: denied.
     let (tx_all, mut rx_all) = tokio::sync::mpsc::unbounded_channel::<WatchUpdate>();
-    let sink: UpdateSink = Arc::new(move |update| tx_all.send(update).is_ok());
+    let sink = UpdateSink::new(move |update| tx_all.send(update).is_ok());
     live.state
         .ext_api
         .call(
@@ -1935,7 +1938,10 @@ async fn every_method_against_the_test_cluster() {
             "gadgets",
             "resources.watch",
             json!({ "clusterId": id, "kind": { "kind": "ConfigMap" } }),
-            Some(("ext-stream-4".into(), Arc::new(|_: WatchUpdate| true))),
+            Some((
+                "ext-stream-4".into(),
+                UpdateSink::new(|_: WatchUpdate| true),
+            )),
         )
         .await
         .unwrap_err();
@@ -3335,7 +3341,7 @@ async fn a_masked_frames_watch_is_never_shared_with_an_agents() {
     let env = masked_env().await;
     let watch = |stream: &'static str, agent: Option<AgentLimit>| {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<WatchUpdate>();
-        let sink: UpdateSink = Arc::new(move |update| tx.send(update).is_ok());
+        let sink = UpdateSink::new(move |update| tx.send(update).is_ok());
         let api = Arc::clone(&env.api);
         let host = &env.host;
         async move {

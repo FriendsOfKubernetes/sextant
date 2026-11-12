@@ -53,6 +53,8 @@ pub struct AppState {
     pub vcluster: crate::commands::vcluster::VclusterLinks,
     /// Moves of clusters between subfolders of a kubeconfig folder found and not yet applied (ADR-0148).
     pub kubeconfig_folders: crate::kubeconfig_folders::FolderWatch,
+    /// Every stream's delivery to the window, bounded by the window's acknowledgements (`streams_ack`, ADR-0170).
+    pub flows: Arc<crate::streams::Flows>,
     /// Grows with every [`AppState::reset_streams`]; a start that began before a reset does not register.
     streams_generation: AtomicU64,
 }
@@ -100,6 +102,7 @@ impl AppState {
             image_files: crate::image_files::ImageSessions::default(),
             vcluster: crate::commands::vcluster::VclusterLinks::default(),
             kubeconfig_folders: crate::kubeconfig_folders::FolderWatch::default(),
+            flows: Arc::default(),
             streams_generation: AtomicU64::new(0),
         }
     }
@@ -113,6 +116,8 @@ impl AppState {
         self.ext_api.streams.stop_cluster(cluster);
         self.sessions.stop_cluster(cluster);
         self.forwarder.stop_cluster(cluster);
+        // Their tasks are gone; whatever still waited on their delivery wakes and ends.
+        self.flows.close_cluster(cluster);
     }
 
     /// Stops everything (window closed, application exiting): the MCP server first (no agent starts anything new,
@@ -147,6 +152,8 @@ impl AppState {
         self.ext_api.reset();
         // Agents' diagnostic requests the old page was computing fail (ADR-0094).
         self.mcp.context().window.fail_all();
+        // Nobody acknowledges the old page's streams any more.
+        self.flows.close_all();
     }
 
     /// Taken by a `*_start` before it waits for the core; passed to [`AppState::undo_if_reset`] after registering.

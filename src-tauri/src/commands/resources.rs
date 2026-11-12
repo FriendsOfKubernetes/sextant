@@ -12,11 +12,11 @@ use sextant_core::resources::{
     self, DryRunMode, DryRunResult, ObjectCount, WatchOptions, WatchUpdate,
 };
 use sextant_core::{ClusterId, CoreError, CoreResult, KindRef, ObjectRef, WatchSpec};
-use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, Runtime, State};
 
 use crate::commands::actions::CHANGE_TIMEOUT;
 use crate::state::{AppState, Subscription, check_stream_id};
+use crate::streams::{Outlet, StreamChannel, StreamKind};
 
 /// Starts a watch under `stream_id`, which the frontend chose: updates (`WatchUpdate`) go through `on_event`, the
 /// channel the frontend created before the start, the first snapshot as soon as it is listed. A taken id is `invalid`.
@@ -30,7 +30,7 @@ pub async fn watch_start<R: Runtime>(
     cluster_id: ClusterId,
     spec: WatchSpec,
     stream_id: String,
-    on_event: Channel<WatchUpdate>,
+    on_event: StreamChannel<WatchUpdate>,
     options: Option<WatchOptions>,
 ) -> Result<(), CoreError> {
     let (mgr, cluster) = (state.clusters.clone(), cluster_id.clone());
@@ -49,7 +49,7 @@ pub async fn start_watch<R, S>(
     id: String,
     cluster: ClusterId,
     open: impl Future<Output = CoreResult<S>> + Send + 'static,
-    channel: Channel<WatchUpdate>,
+    channel: StreamChannel<WatchUpdate>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -88,6 +88,27 @@ pub async fn streams_reset(state: State<'_, AppState>) -> Result<(), CoreError> 
     Ok(())
 }
 
+/// Most streams one acknowledgement names (the window has far fewer open).
+const MAX_ACKS: usize = 4096;
+
+/// The window's acknowledgements of stream payloads (ADR-0170): stream id → payloads it received of that stream in
+/// all, since it opened it. A stream waits when it is `streams::MAX_UNACKED` payloads ahead. Ids of streams that
+/// ended are skipped. Window only — neither MCP agents nor extensions have it.
+#[tauri::command]
+pub async fn streams_ack(
+    state: State<'_, AppState>,
+    acks: std::collections::HashMap<String, u64>,
+) -> Result<(), CoreError> {
+    if acks.len() > MAX_ACKS {
+        return Err(CoreError::new(
+            sextant_core::ErrorCode::Invalid,
+            format!("at most {MAX_ACKS} streams per acknowledgement"),
+        ));
+    }
+    state.flows.ack(&acks);
+    Ok(())
+}
+
 /// Stops a subscription, also one whose start has not answered yet. Stopping one that already ended (or never
 /// existed) is not an error.
 #[tauri::command]
@@ -108,7 +129,7 @@ pub fn forward_watch<R, S>(
     id: String,
     cluster: ClusterId,
     updates: S,
-    channel: Channel<WatchUpdate>,
+    channel: StreamChannel<WatchUpdate>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -125,14 +146,16 @@ where
 }
 
 /// Registers the subscription `id` and runs it: waits for `updates` (`None`: the watch did not start), then sends
-/// each update through `channel`. Stopping the subscription at any point drops whatever it is waiting for.
+/// each update through `channel`. Stopping the subscription at any point drops whatever it is waiting for. The next
+/// update is taken from `updates` only while the window is less than `streams::MAX_UNACKED` updates behind
+/// (ADR-0170): a window that stops reading leaves the core's watch unpolled, holding nothing.
 fn spawn_watch<R, F, S>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
     cluster: ClusterId,
     updates: F,
-    channel: Channel<WatchUpdate>,
+    channel: StreamChannel<WatchUpdate>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -142,18 +165,31 @@ where
     let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
     let handle = app.clone();
     let own_id = id.clone();
+    let flows = std::sync::Arc::clone(&state.flows);
+    let own_cluster = cluster.clone();
     let task = tauri::async_runtime::spawn(async move {
         if registered_rx.await.is_err() {
             return;
         }
+        let outlet = Outlet::open(
+            &flows,
+            &own_id,
+            StreamKind::Watch,
+            Some(own_cluster),
+            channel,
+        );
         if let Some(updates) = updates.await {
             let mut updates = std::pin::pin!(updates);
-            while let Some(update) = updates.next().await {
-                if channel.send(update).is_err() {
+            while outlet.room().await {
+                let Some(update) = updates.next().await else {
+                    break;
+                };
+                if !outlet.send(update) {
                     break;
                 }
             }
         }
+        drop(outlet);
         if let Some(state) = handle.try_state::<AppState>() {
             state.subscriptions.remove(&own_id);
         }
@@ -296,6 +332,51 @@ mod tests {
         assert!(!tools.iter().any(|t| t.contains("count")), "{tools:?}");
         let methods = crate::extensions::api::METHODS;
         assert!(!methods.iter().any(|m| m.contains("count")), "{methods:?}");
+    }
+
+    #[test]
+    fn a_window_that_does_not_acknowledge_leaves_the_core_watch_unpolled() {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicU64, Ordering};
+        let (app, _dir) = app();
+        let state = app.state::<AppState>();
+        let (channel, seen) = test_channel();
+        // A core watch with ever more to say, counting what is taken from it.
+        let taken = Arc::new(AtomicU64::new(0));
+        let counted = Arc::clone(&taken);
+        let updates = futures::stream::repeat_with(move || {
+            counted.fetch_add(1, Ordering::SeqCst);
+            WatchUpdate::Reconnecting
+        });
+        forward_watch(
+            app.handle(),
+            &state,
+            "w-flow".into(),
+            ClusterId::from("c"),
+            updates,
+            channel,
+        )
+        .unwrap();
+        let limit = crate::streams::MAX_UNACKED;
+        wait_until("the first updates", || {
+            taken.load(Ordering::SeqCst) >= limit
+        });
+        std::thread::sleep(Duration::from_millis(200));
+        // Nothing more is taken while the window is behind: the core's stream holds the rest.
+        assert_eq!(taken.load(Ordering::SeqCst), limit);
+        assert_eq!(seen.try_iter().count() as u64, limit);
+        assert_eq!(state.flows.counts().waiting, 1);
+        // The window acknowledges half: as many more are taken and sent.
+        let acks = std::collections::HashMap::from([("w-flow".to_owned(), limit / 2)]);
+        state.flows.ack(&acks);
+        wait_until("more updates", || {
+            taken.load(Ordering::SeqCst) >= limit + limit / 2
+        });
+        std::thread::sleep(Duration::from_millis(200));
+        assert_eq!(taken.load(Ordering::SeqCst), limit + limit / 2);
+        // Stopping it forgets its flow.
+        state.subscriptions.stop("w-flow");
+        wait_until("the flow to be forgotten", || state.flows.is_empty());
     }
 
     #[test]
@@ -475,7 +556,7 @@ mod tests {
             app.handle(),
             &state,
             "l-1".into(),
-            ClusterId::from("b"),
+            (crate::streams::StreamKind::Logs, ClusterId::from("b")),
             logs_rx,
             test_channel().0,
         )
@@ -629,7 +710,7 @@ mod tests {
                     &handle,
                     &state,
                     "l-1".into(),
-                    cluster.clone(),
+                    (crate::streams::StreamKind::Logs, cluster.clone()),
                     async move {
                         logs_open.await;
                         Ok(logs_rx)

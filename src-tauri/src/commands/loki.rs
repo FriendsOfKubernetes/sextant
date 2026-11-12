@@ -7,7 +7,6 @@ use sextant_core::loki::{
     self, LokiLogsQuery, LokiNames, LokiNamesQuery, LokiRange, LokiSettings, LokiStatus, LokiUpdate,
 };
 use sextant_core::{ClusterId, CoreError};
-use tauri::ipc::Channel;
 use tauri::{AppHandle, Runtime, State};
 
 use crate::commands::logs::start_logs;
@@ -57,11 +56,12 @@ pub async fn loki_logs_start<R: Runtime>(
     cluster_id: ClusterId,
     query: LokiLogsQuery,
     stream_id: String,
-    on_event: Channel<LokiUpdate>,
+    on_event: crate::streams::StreamChannel<LokiUpdate>,
 ) -> Result<(), CoreError> {
     let settings = loki_settings(&state, &cluster_id);
     let open = loki::read_logs(&state.clusters, &cluster_id, &settings, query);
-    start_logs(&app, &state, stream_id, cluster_id.clone(), open, on_event).await
+    let target = (crate::streams::StreamKind::Loki, cluster_id.clone());
+    start_logs(&app, &state, stream_id, target, open, on_event).await
 }
 
 /// Stops a read. Stopping one that already ended (or never existed) is not an error.

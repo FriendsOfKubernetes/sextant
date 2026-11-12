@@ -35,8 +35,10 @@ export interface MockBackendOptions {
 }
 
 export interface MockBackend {
-  /** Every command invoked, in order. */
+  /** Every command invoked, in order — but `streams_ack`, which goes to `acks`. */
   readonly calls: MockCall[];
+  /** The `acks` argument of every `streams_ack` (stream id → payloads received in all), in order (ADR-0170). */
+  readonly acks: Record<string, number>[];
   /** Settings as stored by the default settings handlers. */
   readonly settings: AppSettings;
   /** URLs passed to `api.shell.openUrl` (the system browser), in order. */
@@ -108,7 +110,8 @@ export const UPDATER_COMMANDS = {
  * (`{ code: "other", message: "not implemented" }`); a handler that throws rejects with the thrown value.
  * `settings_get` / `settings_update` work out of the box on an in-memory copy, `extensions_list` answers `[]`, the
  * terminal tools answer nothing installed and no kubectl offer, and
- * `extension_install_cancel`, `term_ack` and `files_transfer_stop` resolve.
+ * `extension_install_cancel`, `term_ack` and `files_transfer_stop` resolve. `streams_ack` resolves too and is kept in
+ * `acks`, not in `calls`, so the acknowledgements of streams do not change what tests see of the other commands.
  *
  * Stream ids come from the frontend (`streamId` of `*_start`), and so does the channel of the stream's payloads
  * (`onEvent`): it is registered as a listener of `<prefix>:<streamId>` before the handler runs, so a handler may emit
@@ -119,6 +122,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
   const table = new Map<string, MockHandler>();
   const listeners = new Map<string, Set<(payload: unknown) => void>>();
   const calls: MockCall[] = [];
+  const acks: Record<string, number>[] = [];
   const openedUrls: string[] = [];
   // Name a `*_start` handler gave a stream → the id the frontend chose for it.
   const streamNames = new Map<string, string>();
@@ -194,6 +198,10 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
 
   const transport: Transport = {
     async invoke<T>(cmd: string, args: Record<string, unknown>): Promise<T> {
+      if (cmd === "streams_ack") {
+        acks.push({ ...(args.acks as Record<string, number>) });
+        return undefined as T;
+      }
       calls.push({ cmd, args });
       const prefix = STREAM_PREFIXES[cmd];
       const channel = args.onEvent;
@@ -255,6 +263,7 @@ export function mockBackend(handlers: Record<string, MockHandler> = {}, options:
 
   return {
     calls,
+    acks,
     openedUrls,
     get settings() {
       return settings;

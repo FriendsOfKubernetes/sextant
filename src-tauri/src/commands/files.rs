@@ -5,7 +5,8 @@
 //! through the channel it created before the start (`onEvent`, [`TransferEvent`]): progress at most every
 //! [`PROGRESS_INTERVAL`], then `done` or `error`. It is a subscription of its cluster in `AppState`, so
 //! `files_transfer_stop` (cancel), disconnecting the cluster, `streams_reset` and closing the window stop it; a stopped
-//! download leaves no partial file. Never offered to AI agents or extensions.
+//! download leaves no partial file. A window that does not acknowledge its payloads (ADR-0170) never holds a transfer
+//! back: only the newest progress waits for it, and the result always goes. Never offered to AI agents or extensions.
 
 use std::future::Future;
 use std::io::ErrorKind;
@@ -15,12 +16,12 @@ use std::time::Duration;
 use serde::Serialize;
 use sextant_core::files::{self, RemoteEntry, RemoteKind, TransferProgress};
 use sextant_core::{ClusterId, CoreError, CoreResult, ErrorCode, ObjectRef};
-use tauri::ipc::Channel;
 use tauri::{AppHandle, Manager, Runtime, State};
 use tokio::time::Instant;
 use ts_rs::TS;
 
 use crate::state::{AppState, Subscription, check_stream_id};
+use crate::streams::{Delivery, Progress, StreamChannel, StreamKind};
 
 /// Progress of a transfer goes out at most this often.
 pub const PROGRESS_INTERVAL: Duration = Duration::from_millis(100);
@@ -85,12 +86,12 @@ pub async fn files_download_start<R: Runtime>(
     kind: RemoteKind,
     destination: PathBuf,
     stream_id: String,
-    on_event: Channel<TransferEvent>,
+    on_event: StreamChannel<TransferEvent>,
 ) -> Result<(), CoreError> {
     absolute(&destination)?;
     let mgr = state.clusters.clone();
     let cluster = cluster_id.clone();
-    let mut reporter = Reporter::new(on_event);
+    let mut reporter = Reporter::new(transfer_progress(&state, &stream_id, &cluster_id, on_event));
     let work = async move {
         let result = files::download(
             &mgr,
@@ -122,12 +123,12 @@ pub async fn files_upload_start<R: Runtime>(
     source: PathBuf,
     path: String,
     stream_id: String,
-    on_event: Channel<TransferEvent>,
+    on_event: StreamChannel<TransferEvent>,
 ) -> Result<(), CoreError> {
     absolute(&source)?;
     let mgr = state.clusters.clone();
     let cluster = cluster_id.clone();
-    let mut reporter = Reporter::new(on_event);
+    let mut reporter = Reporter::new(transfer_progress(&state, &stream_id, &cluster_id, on_event));
     let work = async move {
         let result = files::upload(
             &mgr,
@@ -165,10 +166,35 @@ fn absolute(path: &Path) -> Result<(), CoreError> {
     }
 }
 
+/// How a transfer's event waits for the window (ADR-0170): progress only as the newest, the result always.
+pub fn transfer_delivery(event: &TransferEvent) -> Delivery {
+    match event {
+        TransferEvent::Progress { .. } => Delivery::Latest,
+        TransferEvent::Done { .. } | TransferEvent::Error { .. } => Delivery::Last,
+    }
+}
+
+/// The sending end of the transfer `id` of `cluster` (a cluster of its own for an image's file).
+pub fn transfer_progress(
+    state: &AppState,
+    id: &str,
+    cluster: &ClusterId,
+    channel: StreamChannel<TransferEvent>,
+) -> Progress<TransferEvent> {
+    Progress::open(
+        &state.flows,
+        id,
+        StreamKind::Transfer,
+        Some(cluster.clone()),
+        channel,
+        transfer_delivery,
+    )
+}
+
 /// Sends a transfer's events through its channel: progress at most every [`PROGRESS_INTERVAL`] (the first and the
 /// last always), then the result.
 pub struct Reporter {
-    channel: Channel<TransferEvent>,
+    channel: Progress<TransferEvent>,
     last: Option<Instant>,
     latest: Option<TransferProgress>,
     finished: bool,
@@ -179,13 +205,13 @@ impl Drop for Reporter {
     fn drop(&mut self) {
         if !self.finished {
             let error = CoreError::other("the transfer was stopped");
-            let _ = self.channel.send(TransferEvent::Error { error });
+            self.channel.send(TransferEvent::Error { error });
         }
     }
 }
 
 impl Reporter {
-    pub fn new(channel: Channel<TransferEvent>) -> Self {
+    pub fn new(channel: Progress<TransferEvent>) -> Self {
         Self {
             channel,
             last: None,
@@ -203,8 +229,7 @@ impl Reporter {
 
     fn emit_progress(&mut self) {
         if let Some(TransferProgress { transferred, total }) = self.latest.take() {
-            let _ = self
-                .channel
+            self.channel
                 .send(TransferEvent::Progress { transferred, total });
             self.last = Some(Instant::now());
         }
@@ -219,7 +244,7 @@ impl Reporter {
             }
             Err(error) => TransferEvent::Error { error },
         };
-        let _ = self.channel.send(event);
+        self.channel.send(event);
     }
 }
 
@@ -303,7 +328,7 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (channel, events) = test_channel();
-        let mut reporter = Reporter::new(channel);
+        let mut reporter = Reporter::new(transfer_progress(&state, "t-1", &"c".into(), channel));
         let work = async move {
             for transferred in [0, 10, 20] {
                 reporter.progress(TransferProgress {
@@ -345,7 +370,7 @@ mod tests {
         let (app, _dir) = app();
         let state = app.state::<AppState>();
         let (channel, events) = test_channel();
-        let reporter = Reporter::new(channel);
+        let reporter = Reporter::new(transfer_progress(&state, "t-2", &"c".into(), channel));
         let work = async move {
             let _reporter = reporter;
             std::future::pending::<()>().await;

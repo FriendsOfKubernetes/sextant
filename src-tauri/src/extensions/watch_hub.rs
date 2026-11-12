@@ -7,17 +7,23 @@
 //! A frame that joins a list already running gets the list as it stands as its first `snapshot` — then, as every
 //! frame, the updates that come — so its watch reads as one of its own: a snapshot first, deltas after. What the
 //! last update said of the stream (reconnecting, forbidden namespaces, an error) follows that snapshot.
+//!
+//! A frame whose window does not read (ADR-0170: its stream waits for acknowledgements and stops taking updates)
+//! never holds the list or the other frames back: at most [`MAX_QUEUED`] updates wait for it, then it is skipped —
+//! what waited is dropped — and once it takes updates again it gets the list as it stands, as a late frame does.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::pin::Pin;
 use std::sync::{Arc, Mutex, Weak};
-use std::task::{Context, Poll};
+use std::task::{Context, Poll, Waker};
 
 use futures::{Stream, StreamExt};
 use indexmap::IndexMap;
 use sextant_core::error::CoreResult;
 use sextant_core::resources::{WatchObject, WatchUpdate};
-use tokio::sync::mpsc;
+
+/// Updates that wait for a frame that does not take them; one more and the frame is skipped until it reads again.
+pub const MAX_QUEUED: usize = 32;
 
 /// The running lists, by cluster and spec.
 #[derive(Default)]
@@ -40,22 +46,116 @@ struct ListState {
     /// The last `Capped` of a watch with `maxObjects` (#406): told again to a frame that joins.
     capped: Option<WatchUpdate>,
     /// The frames that joined, while they listen.
-    subscribers: Vec<mpsc::UnboundedSender<WatchUpdate>>,
+    subscribers: Vec<Arc<Share>>,
     /// The core's watch ended: nobody joins this list any more.
     ended: bool,
 }
 
+impl ListState {
+    /// What a frame is told to read the list as it stands: the objects (once listed), the cap, the stream's state.
+    fn replay(&self) -> Vec<WatchUpdate> {
+        let Some(objects) = &self.objects else {
+            return self.status.iter().cloned().collect();
+        };
+        let snapshot = WatchUpdate::Snapshot {
+            items: objects.values().cloned().collect(),
+        };
+        std::iter::once(snapshot)
+            .chain(self.capped.iter().cloned())
+            .chain(self.status.iter().cloned())
+            .collect()
+    }
+}
+
+/// The updates waiting for one frame.
+#[derive(Default)]
+struct Share {
+    queue: Mutex<ShareQueue>,
+}
+
+#[derive(Default)]
+struct ShareQueue {
+    updates: VecDeque<WatchUpdate>,
+    /// More than [`MAX_QUEUED`] came while the frame did not read: they were dropped, and it reads the list anew.
+    lagging: bool,
+    /// The list ended: nothing more comes.
+    ended: bool,
+    /// The frame left.
+    left: bool,
+    waker: Option<Waker>,
+}
+
+impl Share {
+    /// Queues `update` for the frame; `false` when the frame left. Never waits.
+    fn offer(&self, update: &WatchUpdate) -> bool {
+        let waker = {
+            let mut queue = lock(&self.queue);
+            if queue.left {
+                return false;
+            }
+            if queue.lagging {
+                return true;
+            }
+            if queue.updates.len() >= MAX_QUEUED {
+                queue.updates.clear();
+                queue.lagging = true;
+            } else {
+                queue.updates.push_back(update.clone());
+            }
+            queue.waker.take()
+        };
+        if let Some(waker) = waker {
+            waker.wake();
+        }
+        true
+    }
+
+    fn end(&self) {
+        let waker = {
+            let mut queue = lock(&self.queue);
+            queue.ended = true;
+            queue.waker.take()
+        };
+        if let Some(waker) = waker {
+            waker.wake();
+        }
+    }
+}
+
 /// A frame's share of a list: its updates. Dropping it leaves the list, which closes when the last share goes.
 pub struct Subscription {
-    updates: mpsc::UnboundedReceiver<WatchUpdate>,
-    _list: Arc<SharedList>,
+    share: Arc<Share>,
+    list: Arc<SharedList>,
+}
+
+impl Drop for Subscription {
+    fn drop(&mut self) {
+        lock(&self.share.queue).left = true;
+    }
 }
 
 impl Stream for Subscription {
     type Item = WatchUpdate;
 
-    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<WatchUpdate>> {
-        self.updates.poll_recv(cx)
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<WatchUpdate>> {
+        if lock(&self.share.queue).lagging {
+            // The list's lock first, as `publish` takes them: the list as it stands now, then what comes after it.
+            let state = lock(&self.list.state);
+            let mut queue = lock(&self.share.queue);
+            if queue.lagging {
+                queue.lagging = false;
+                queue.updates = state.replay().into();
+            }
+        }
+        let mut queue = lock(&self.share.queue);
+        if let Some(update) = queue.updates.pop_front() {
+            return Poll::Ready(Some(update));
+        }
+        if queue.ended {
+            return Poll::Ready(None);
+        }
+        queue.waker = Some(cx.waker().clone());
+        Poll::Pending
     }
 }
 
@@ -166,22 +266,22 @@ impl SharedList {
         if state.ended {
             return None;
         }
-        let (tx, rx) = mpsc::unbounded_channel();
-        if let Some(objects) = &state.objects {
-            let _ = tx.send(WatchUpdate::Snapshot {
-                items: objects.values().cloned().collect(),
-            });
-            if let Some(capped) = &state.capped {
-                let _ = tx.send(capped.clone());
-            }
-            if let Some(status) = &state.status {
-                let _ = tx.send(status.clone());
-            }
-        }
-        state.subscribers.push(tx);
+        // Nothing before the first snapshot: the frame hears of the stream with the list.
+        let first = if state.objects.is_some() {
+            state.replay()
+        } else {
+            Vec::new()
+        };
+        let share = Arc::new(Share {
+            queue: Mutex::new(ShareQueue {
+                updates: first.into(),
+                ..ShareQueue::default()
+            }),
+        });
+        state.subscribers.push(Arc::clone(&share));
         Some(Subscription {
-            updates: rx,
-            _list: Arc::clone(self),
+            share,
+            list: Arc::clone(self),
         })
     }
 
@@ -213,16 +313,16 @@ impl SharedList {
             WatchUpdate::Capped { .. } => state.capped = Some(update.clone()),
             WatchUpdate::SnapshotPart { .. } | WatchUpdate::SnapshotEnd { .. } => {}
         }
-        state
-            .subscribers
-            .retain(|tx| tx.send(update.clone()).is_ok());
+        state.subscribers.retain(|share| share.offer(&update));
     }
 
     /// The core's watch ended: the shares end with it.
     fn end(&self) {
         let mut state = lock(&self.state);
         state.ended = true;
-        state.subscribers.clear();
+        for share in state.subscribers.drain(..) {
+            share.end();
+        }
     }
 }
 
@@ -232,6 +332,7 @@ mod tests {
     use sextant_core::error::{CoreError, ErrorCode};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::Duration;
+    use tokio::sync::mpsc;
 
     fn object(uid: &str, name: &str) -> WatchObject {
         WatchObject::new(&serde_json::json!({ "metadata": { "uid": uid, "name": name } })).unwrap()
@@ -438,5 +539,44 @@ mod tests {
         );
         let _second = hub.subscribe("c1|x".into(), upstream.open()).await.unwrap();
         assert_eq!(upstream.opened.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn a_frame_that_does_not_read_is_skipped_without_holding_the_others_and_then_reads_the_list_anew()
+     {
+        let hub = WatchHub::default();
+        let upstream = Upstream::new();
+        let mut reading = hub
+            .subscribe("c1|pods".into(), upstream.open())
+            .await
+            .unwrap();
+        let mut stalled = hub
+            .subscribe("c1|pods".into(), upstream.open())
+            .await
+            .unwrap();
+        upstream.send(WatchUpdate::Snapshot {
+            items: vec![object("0", "web-0")],
+        });
+        assert_eq!(names(&next(&mut reading).await), ["web-0"]);
+        // Far more updates than wait for a frame: the frame that reads gets every one of them.
+        let many = MAX_QUEUED * 3;
+        for i in 1..=many {
+            upstream.send(WatchUpdate::Delta {
+                upserted: vec![object(&i.to_string(), &format!("web-{i}"))],
+                deleted: vec![(i - 1).to_string()],
+            });
+            assert!(matches!(
+                next(&mut reading).await,
+                WatchUpdate::Delta { .. }
+            ));
+        }
+        // What waited for the other frame stayed bounded…
+        assert!(lock(&stalled.share.queue).updates.len() <= MAX_QUEUED);
+        // …and once it reads, it gets the list as it stands, then what comes after.
+        assert_eq!(names(&next(&mut stalled).await), [format!("web-{many}")]);
+        upstream.send(WatchUpdate::Reconnecting);
+        assert_eq!(next(&mut stalled).await, WatchUpdate::Reconnecting);
+        assert_eq!(next(&mut reading).await, WatchUpdate::Reconnecting);
+        assert_eq!(upstream.opened.load(Ordering::SeqCst), 1);
     }
 }

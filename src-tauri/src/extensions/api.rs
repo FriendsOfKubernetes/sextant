@@ -149,8 +149,44 @@ pub enum ApiEvent {
 /// Delivers an event to the window; `false` when there is no window to deliver it to.
 pub type ApiEmitter = Arc<dyn Fn(ApiEvent) -> bool + Send + Sync>;
 
-/// Sends one watch update to the window; `false` when nobody receives it any more.
-pub type UpdateSink = Arc<dyn Fn(WatchUpdate) -> bool + Send + Sync>;
+/// Where an extension's watch sends its updates: the window's channel of `extension_call`, whose flow bounds how far
+/// the stream may run ahead of the window (ADR-0170), or a function (tests).
+#[derive(Clone)]
+pub struct UpdateSink(Sink);
+
+#[derive(Clone)]
+enum Sink {
+    Window(Arc<crate::streams::Outlet<WatchUpdate>>),
+    Function(Arc<dyn Fn(WatchUpdate) -> bool + Send + Sync>),
+}
+
+impl UpdateSink {
+    /// Updates to `send`, which answers `false` when nobody receives them any more; never waits.
+    pub fn new(send: impl Fn(WatchUpdate) -> bool + Send + Sync + 'static) -> Self {
+        Self(Sink::Function(Arc::new(send)))
+    }
+
+    /// Updates to the window through `outlet`.
+    pub fn window(outlet: crate::streams::Outlet<WatchUpdate>) -> Self {
+        Self(Sink::Window(Arc::new(outlet)))
+    }
+
+    /// Waits until the next update may go; `false` when the stream was stopped meanwhile.
+    pub async fn room(&self) -> bool {
+        match &self.0 {
+            Sink::Window(outlet) => outlet.room().await,
+            Sink::Function(_) => true,
+        }
+    }
+
+    /// Sends one update; `false` when nobody receives it any more.
+    pub fn send(&self, update: WatchUpdate) -> bool {
+        match &self.0 {
+            Sink::Window(outlet) => outlet.send(update),
+            Sink::Function(send) => send(update),
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Streams
@@ -604,8 +640,13 @@ impl ExtensionApi {
                 Ok(updates) => {
                     let _ = started_tx.send(Ok(()));
                     let mut updates = std::pin::pin!(updates);
-                    while let Some(update) = updates.next().await {
-                        if !sink(update) {
+                    // The next update only while the window keeps up (ADR-0170); meanwhile the shared list skips
+                    // this frame and gives it the list as it stands once it reads again (`watch_hub`).
+                    while sink.room().await {
+                        let Some(update) = updates.next().await else {
+                            break;
+                        };
+                        if !sink.send(update) {
                             break;
                         }
                     }
@@ -3540,9 +3581,15 @@ pub async fn extension_call<R: Runtime>(
     on_event: Option<JavaScriptChannelId>,
 ) -> CoreResult<Value> {
     let sink = stream_id.zip(on_event).map(|(id, channel)| {
-        let channel = channel.channel_on::<R, WatchUpdate>(webview);
-        let sink: UpdateSink = Arc::new(move |update| channel.send(update).is_ok());
-        (id, sink)
+        let channel = channel.channel_on::<R, tauri::ipc::InvokeResponseBody>(webview);
+        let outlet = crate::streams::Outlet::open(
+            &state.flows,
+            &id,
+            crate::streams::StreamKind::ExtensionWatch,
+            None,
+            channel.into(),
+        );
+        (id, UpdateSink::window(outlet))
     });
     state
         .ext_api

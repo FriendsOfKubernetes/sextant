@@ -5,10 +5,11 @@ use std::future::Future;
 use futures::{Stream, StreamExt};
 use sextant_core::logs::{self, LogOptions, LogUpdate};
 use sextant_core::{ClusterId, CoreError, CoreResult, ObjectRef};
-use tauri::ipc::{Channel, IpcResponse};
+use tauri::ipc::IpcResponse;
 use tauri::{AppHandle, Manager, Runtime, State};
 
 use crate::state::{AppState, Subscription, check_stream_id};
+use crate::streams::{Outlet, StreamChannel, StreamKind};
 
 /// Opens the log stream of a container under `stream_id`, which the frontend chose, and sends its updates (`LogUpdate`)
 /// through `on_event`, the channel the frontend created before the start. A taken id is `invalid`. The stream belongs
@@ -21,21 +22,23 @@ pub async fn logs_start<R: Runtime>(
     pod: ObjectRef,
     opts: LogOptions,
     stream_id: String,
-    on_event: Channel<LogUpdate>,
+    on_event: StreamChannel<LogUpdate>,
 ) -> Result<(), CoreError> {
     let open = logs::stream_logs(&state.clusters, &cluster_id, &pod, opts);
-    start_logs(&app, &state, stream_id, cluster_id.clone(), open, on_event).await
+    let target = (StreamKind::Logs, cluster_id.clone());
+    start_logs(&app, &state, stream_id, target, open, on_event).await
 }
 
 /// `logs_start` once the pod is known: waits for `open` (the core opening the log stream), then registers and
-/// forwards it — unless `streams_reset` ran meanwhile, then the stream is dropped and the start fails.
+/// forwards it — unless `streams_reset` ran meanwhile, then the stream is dropped and the start fails. `target` is
+/// what the stream is (logs or a Loki read) and whose cluster.
 pub async fn start_logs<R, S, U>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
-    cluster: ClusterId,
+    target: (StreamKind, ClusterId),
     open: impl Future<Output = CoreResult<S>>,
-    channel: Channel<U>,
+    channel: StreamChannel<U>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
@@ -45,7 +48,7 @@ where
     check_stream_id(&id)?;
     let generation = state.streams_generation();
     let updates = open.await?;
-    forward_logs(app, state, id.clone(), cluster, updates, channel)?;
+    forward_logs(app, state, id.clone(), target, updates, channel)?;
     state.undo_if_reset(generation, || {
         state.subscriptions.stop(&id);
     })
@@ -58,35 +61,45 @@ pub async fn logs_stop(state: State<'_, AppState>, stream_id: String) -> Result<
     Ok(())
 }
 
-/// Sends every update of `updates` (log batches, or Loki pages) through `channel` as soon as it comes (the window created the channel before the
-/// start), once the stream is registered in `state.subscriptions` under `id` and `cluster`; the subscription forgets
-/// itself when the stream ends or a send fails. A taken or malformed `id` is `invalid` (nothing is sent).
+/// Sends every update of `updates` (log batches, or Loki pages) through `channel` as soon as it comes (the window
+/// created the channel before the start), once the stream is registered in `state.subscriptions` under `id` and the
+/// cluster of `target`; the subscription forgets itself when the stream ends or a send fails. A taken or malformed
+/// `id` is `invalid` (nothing is sent). The next update is taken from `updates` only while the window is less than
+/// `streams::MAX_UNACKED` updates behind (ADR-0170): the core's stream is not polled meanwhile.
 pub fn forward_logs<R, S, U>(
     app: &AppHandle<R>,
     state: &AppState,
     id: String,
-    cluster: ClusterId,
+    target: (StreamKind, ClusterId),
     updates: S,
-    channel: Channel<U>,
+    channel: StreamChannel<U>,
 ) -> Result<(), CoreError>
 where
     R: Runtime,
     S: Stream<Item = U> + Send + 'static,
     U: IpcResponse + Send + 'static,
 {
+    let (kind, cluster) = target;
     let (registered_tx, registered_rx) = tokio::sync::oneshot::channel::<()>();
     let handle = app.clone();
     let own_id = id.clone();
+    let flows = std::sync::Arc::clone(&state.flows);
+    let own_cluster = cluster.clone();
     let task = tauri::async_runtime::spawn(async move {
         if registered_rx.await.is_err() {
             return;
         }
+        let outlet = Outlet::open(&flows, &own_id, kind, Some(own_cluster), channel);
         let mut updates = std::pin::pin!(updates);
-        while let Some(update) = updates.next().await {
-            if channel.send(update).is_err() {
+        while outlet.room().await {
+            let Some(update) = updates.next().await else {
+                break;
+            };
+            if !outlet.send(update) {
                 break;
             }
         }
+        drop(outlet);
         if let Some(state) = handle.try_state::<AppState>() {
             state.subscriptions.remove(&own_id);
         }
@@ -148,7 +161,7 @@ mod tests {
             app.handle(),
             &state,
             "l-early".into(),
-            ClusterId::from("c"),
+            (crate::streams::StreamKind::Logs, ClusterId::from("c")),
             updates,
             channel,
         )
@@ -178,7 +191,7 @@ mod tests {
             app.handle(),
             &state,
             "l-1".into(),
-            ClusterId::from("c"),
+            (crate::streams::StreamKind::Logs, ClusterId::from("c")),
             rx,
             test_channel().0,
         )
@@ -188,7 +201,7 @@ mod tests {
             app.handle(),
             &state,
             "l-1".into(),
-            ClusterId::from("c"),
+            (crate::streams::StreamKind::Logs, ClusterId::from("c")),
             again,
             test_channel().0,
         )
@@ -208,7 +221,7 @@ mod tests {
             app.handle(),
             &state,
             "l-1".into(),
-            cluster.clone(),
+            (crate::streams::StreamKind::Logs, cluster.clone()),
             rx,
             test_channel().0,
         )
@@ -217,7 +230,7 @@ mod tests {
             app.handle(),
             &state,
             "l-2".into(),
-            ClusterId::from("c2"),
+            (crate::streams::StreamKind::Logs, ClusterId::from("c2")),
             other_rx,
             test_channel().0,
         )

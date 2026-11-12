@@ -197,6 +197,11 @@ export const cloud = {
 export const streams = {
   /** Stops every watch, log stream and terminal session (not connections or port forwards); on page load. */
   reset: () => call<void>("streams_reset"),
+  /**
+   * Tells the backend how many payloads of each stream the window received in all since it opened it (ADR-0170): a
+   * stream waits when it is `MAX_UNACKED` payloads ahead. Sent by `openStream` only.
+   */
+  ack: (acks: Record<string, number>) => call<void>("streams_ack", { acks }),
 };
 
 export const resources = {
