@@ -1040,14 +1040,16 @@ fn installed_with_problems(
 
 #[test]
 fn the_extensions_whose_problems_agents_do_not_get_are_named() {
-    let mut settings = sextant_core::settings::AppSettings::default();
-    settings.extensions = vec![
-        installed_with_problems("sextant.argo-rollouts", true, true),
-        installed_with_problems("sextant.flux", true, true),
-        // Turned off, or judging nothing: not named.
-        installed_with_problems("sextant.kueue", false, true),
-        installed_with_problems("sextant.velero", true, false),
-    ];
+    let mut settings = sextant_core::settings::AppSettings {
+        extensions: vec![
+            installed_with_problems("sextant.argo-rollouts", true, true),
+            installed_with_problems("sextant.flux", true, true),
+            // Turned off, or judging nothing: not named.
+            installed_with_problems("sextant.kueue", false, true),
+            installed_with_problems("sextant.velero", true, false),
+        ],
+        ..Default::default()
+    };
     settings.mcp.extension_problems = vec!["sextant.flux".into()];
     let enabled = answers::agent_categories(&settings);
     assert_eq!(
