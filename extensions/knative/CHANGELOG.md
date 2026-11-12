@@ -1,5 +1,13 @@
 # Changes of Knative
 
+## 1.1.0 — 2026-11-13
+
+Needs Sextant 0.30 (`sextantApi` 4).
+
+- **Filter** of a Trigger with one older filter attribute of another name and an empty value shows `name=*` again, as
+  the built-in view wrote it, through a placeholder's literal fallback (ADR-0167, #417). It showed `name=`.
+- No new permission or problem kind: updating asks for no consent again.
+
 ## 1.0.0 — 2026-11-09
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in Knative Serving and Knative Eventing

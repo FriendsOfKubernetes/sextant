@@ -718,6 +718,8 @@ describe("the columns, against the built-in ones", () => {
       withSpec({ filters: [] }),
       withSpec({}),
       withSpec({ filter: { attributes: { subject: "x" } } }),
+      // An attribute of another name with an empty value: "subject=*", as the built-in wrote it (#417).
+      withSpec({ filter: { attributes: { subject: "" } } }),
       withSpec({ filters: [{ exact: { subject: "s" } }, { prefix: { source: "/orders/" } }, { suffix: { subject: ".json" } }] }),
       withSpec({ filters: [{ exact: { type: "t" } }, {}, { cesql: "a = 'b'" }] }),
       withSpec({ filters: [{ exact: { type: "t" }, prefix: {}, all: [] }] }),

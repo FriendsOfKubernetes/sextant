@@ -2,7 +2,7 @@
  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
  "id": "sextant.knative",
  "name": "Knative",
- "version": "1.0.0",
+ "version": "1.1.0",
  "description": "Knative Serving and Eventing: Services, Configurations, Revisions, Routes and DomainMappings with their state, URL, revisions and traffic split; Brokers, Triggers, Channels, Subscriptions, Sequences, Parallels and sources with where they send events and the event path; problems of objects that are not ready. Read-only.",
  "author": "Sextant",
  "sextantApi": 4,
@@ -762,8 +762,8 @@
         {"type":"equals","path":".spec.filter.attributes|count","value":1}
        ]
       },
-      "text": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*]|join}}",
-      "tooltip": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*]|join}}"
+      "text": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*] ?? \"*\"|join}}",
+      "tooltip": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*] ?? \"*\"|join}}"
      },
      {
       "when": {

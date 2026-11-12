@@ -22,7 +22,7 @@ heading, blocks in Sextant's own memory).
 | | |
 |---|---|
 | Id | `sextant.knative` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `knative-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Knative |
@@ -194,8 +194,8 @@ None: the extension is read-only and has no action of its own.
     attribute, a CESQL expression, or an exact `source` and `type` — and "…" otherwise: several dialects in one filter,
     several attributes of one dialect, and the nested `all`, `any` and `not`, which a case cannot write out (a text
     projection of the filter tree would close it, #404). The older `spec.filter.attributes` are exact for a `type`, a
-    `source`, both, or one attribute of another name (whose empty value shows `name=` where the built-in wrote
-    `name=*`); more attributes show "…".
+    `source`, both, or one attribute of another name (an empty value shows `name=*`, as the built-in wrote it); more
+    attributes show "…".
   - Text cells and problem messages lose the credentials and query of any URI in them and are clipped (200 characters
     a cell, 1200 a message), as every extension text from the cluster is; the built-in ones showed them as written.
   - A problem whose reason Knative wrote as an empty text says "NotReady" (the built-in one said nothing); Knative
