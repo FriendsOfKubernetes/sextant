@@ -604,7 +604,11 @@ describe("contributions of an extension", () => {
       expect(screen.queryByRole("heading", { name: "Widget fields" })).toBeNull();
       expect(screen.getByRole("group", { name: "Widget fields" })).toBeInTheDocument();
       const [, late] = container.querySelectorAll(".ext-section");
-      expect((late as HTMLElement).hidden).toBe(true);
+      // Out of sight and out of reach, but laid out: never `display: none`, where WebKitGTK fails the frame's script.
+      expect(late).toHaveAttribute("data-waiting");
+      expect(late).toHaveAttribute("aria-hidden", "true");
+      expect(late).toHaveAttribute("inert");
+      expect(late).not.toHaveAttribute("hidden");
     } finally {
       unregisterExtension("demo.widgets");
     }
@@ -1269,9 +1273,10 @@ describe("contributions of an extension", () => {
         );
       });
     send("ui.setHidden", { hidden: true });
-    expect(view.container.querySelector(".ext-section")).toHaveAttribute("hidden");
+    expect(view.container.querySelector(".ext-section")).toHaveAttribute("data-waiting");
     send("ui.setHidden", { hidden: false });
-    expect(view.container.querySelector(".ext-section")).not.toHaveAttribute("hidden");
+    expect(view.container.querySelector(".ext-section")).not.toHaveAttribute("data-waiting");
+    expect(view.container.querySelector(".ext-section")).not.toHaveAttribute("inert");
   });
 
   it("add a dock button that opens a dock tab with the extension, closed when the extension goes", async () => {

@@ -507,8 +507,18 @@ function detailsComponent(
       />
     );
     if (tab) return frame;
+    // A hidden section stays laid out, out of sight and out of reach (`data-waiting`, `inert`, `aria-hidden`), never
+    // `display: none`: WebKitGTK fails the script of a frame loaded in a `display: none` iframe ("Script error."), so a
+    // `startHidden` section could never show itself (#406).
     return (
-      <div className="ext-section" hidden={hidden} role={look.heading ? undefined : "group"} aria-label={look.heading ? undefined : title}>
+      <div
+        className="ext-section"
+        data-waiting={hidden ? "" : undefined}
+        aria-hidden={hidden ? true : undefined}
+        inert={hidden}
+        role={look.heading ? undefined : "group"}
+        aria-label={look.heading ? undefined : title}
+      >
         {look.heading && <h3 className="ext-section__title">{title}</h3>}
         {frame}
       </div>

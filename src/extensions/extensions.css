@@ -46,6 +46,16 @@
   height: min(480px, calc(100vh - 160px));
 }
 
+/* A section waiting for its frame to show it (ADR-0161, #406): laid out but out of sight, so its frame still runs. */
+.ext-section[data-waiting] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .ext-section__title {
   margin: 8px 0;
   font-size: 0.8125rem;

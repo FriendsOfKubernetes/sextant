@@ -436,3 +436,12 @@ fought with.
 
 The UI kit's collapsible `block` draws Sextant's own chevrons (`chevronDown`/`chevronRight` through `ui.icon`), as the
 details blocks of the window do, and its text triangle only until they come or without a connection.
+
+## Amendment: a hidden section stays laid out (#341)
+
+A section hidden by `startHidden` or `ui.setHidden(true)` was given the `hidden` attribute, so its frame lived in a
+`display: none` iframe. WebKitGTK fails the script of a frame loaded there ("Script error."), so on Linux a
+`startHidden` section never ran far enough to show itself: the Deployment, Pod and Node sections of the VPA, Trivy,
+Kyverno, Service mesh, k3s, Kueue, DRA and Crossplane extensions, among others. It was found on a live cluster while
+testing Argo Rollouts' Deployment section. A hidden section now stays laid out, out of sight and out of reach
+(`data-waiting`: 1 px, clipped, absolutely placed; `inert`; `aria-hidden`), and its frame runs as a shown one does.
