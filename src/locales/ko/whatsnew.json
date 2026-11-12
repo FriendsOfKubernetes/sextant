@@ -2,6 +2,20 @@
   "title": "Sextant {{version}}의 새로운 기능",
   "version": "Sextant {{version}}",
   "close": "확인",
+  "v0_30_1": {
+    "memory": {
+      "title": "창을 숨겨도 안정적인 메모리",
+      "text": "Sextant는 이제 창이 읽은 것보다 많이 보내지 않습니다. 최소화되거나 숨겨진 창이 읽지 않는 동안 watch, 로그, 터미널은 데이터를 쌓지 않고 기다립니다. 로그(정보 → 로그 폴더 열기)에는 10분마다 메모리와 활동 카운터도 기록됩니다."
+    },
+    "api5": {
+      "title": "확장 API 5",
+      "text": "Sextant 자체 확장 네 개가 이제 대체한 보기와 같아졌습니다: Traefik의 References 열, 어떤 Prometheus도 선택하지 않는 모니터, Karpenter의 모든 한도, k3s의 마스킹된 노드 인수와 chart 값입니다. 설정 → 확장에서 업데이트하세요."
+    },
+    "commandValues": {
+      "title": "명령이 실행할 수 있는 것",
+      "text": "확장의 동의 창에 이제 각 명령 매개변수가 가질 수 있는 값이 표시됩니다."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "클러스터 도구의 보기는 이제 확장 프로그램입니다",

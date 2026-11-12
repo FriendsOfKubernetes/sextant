@@ -2,6 +2,20 @@
   "title": "What's new in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Got it",
+  "v0_30_1": {
+    "memory": {
+      "title": "Steadier memory while the window is hidden",
+      "text": "Sextant no longer sends the window more than it has read: while a minimized or hidden window does not read, watches, logs and terminals wait instead of piling data up. Its log (About → Open logs folder) also records memory and activity counters every 10 minutes."
+    },
+    "api5": {
+      "title": "Extension API 5",
+      "text": "Four of Sextant's own extensions now match the views they replaced: Traefik's References column, the monitors no Prometheus picks up, every Karpenter limit, and k3s's masked node arguments and chart values. Update them in Settings → Extensions."
+    },
+    "commandValues": {
+      "title": "What a command may run",
+      "text": "An extension's consent window now lists the values each of its commands' parameters may take."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Views of cluster tools are now extensions",

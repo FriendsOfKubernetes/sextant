@@ -2,6 +2,20 @@
   "title": "Co nowego w Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Rozumiem",
+  "v0_30_1": {
+    "memory": {
+      "title": "Stabilna pamięć przy ukrytym oknie",
+      "text": "Sextant nie wysyła już do okna więcej, niż ono odczytało: dopóki zminimalizowane lub ukryte okno nie czyta, watche, logi i terminale czekają, zamiast gromadzić dane. Jego dziennik (O programie → Otwórz folder dzienników) co 10 minut zapisuje też liczniki pamięci i aktywności."
+    },
+    "api5": {
+      "title": "API rozszerzeń 5",
+      "text": "Cztery własne rozszerzenia Sextanta odpowiadają teraz widokom, które zastąpiły: kolumna References w Traefik, monitory, których nie wybiera żaden Prometheus, każdy limit Karpentera oraz zamaskowane argumenty węzłów i wartości chartów w k3s. Zaktualizuj je w Ustawieniach → Rozszerzenia."
+    },
+    "commandValues": {
+      "title": "Co może uruchomić polecenie",
+      "text": "Okno zgody rozszerzenia pokazuje teraz wartości, jakie może przyjąć każdy parametr jego poleceń."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Widoki narzędzi klastra są teraz rozszerzeniami",

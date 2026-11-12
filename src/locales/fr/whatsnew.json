@@ -2,6 +2,20 @@
   "title": "Nouveautés de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Compris",
+  "v0_30_1": {
+    "memory": {
+      "title": "Une mémoire stable quand la fenêtre est masquée",
+      "text": "Sextant n'envoie plus à la fenêtre davantage que ce qu'elle a lu : tant qu'une fenêtre réduite ou masquée ne lit pas, les watches, les journaux et les terminaux attendent au lieu d'accumuler des données. Son journal (À propos → Ouvrir le dossier des journaux) consigne aussi des compteurs de mémoire et d'activité toutes les 10 minutes."
+    },
+    "api5": {
+      "title": "API des extensions 5",
+      "text": "Quatre des extensions de Sextant correspondent désormais aux vues qu'elles ont remplacées : la colonne References de Traefik, les moniteurs qu'aucun Prometheus ne sélectionne, toutes les limites de Karpenter et les arguments de nœud et valeurs de chart masqués de k3s. Mettez-les à jour dans Paramètres → Extensions."
+    },
+    "commandValues": {
+      "title": "Ce qu'une commande peut exécuter",
+      "text": "La fenêtre de consentement d'une extension indique désormais les valeurs que peut prendre chaque paramètre de ses commandes."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Les vues des outils du cluster sont désormais des extensions",

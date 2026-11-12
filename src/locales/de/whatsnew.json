@@ -2,6 +2,20 @@
   "title": "Neu in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Verstanden",
+  "v0_30_1": {
+    "memory": {
+      "title": "Stabiler Speicher bei verborgenem Fenster",
+      "text": "Sextant schickt dem Fenster nicht mehr, als es gelesen hat: Solange ein minimiertes oder verborgenes Fenster nicht liest, warten Watches, Logs und Terminals, statt Daten anzuhäufen. Das Protokoll (Über → Protokollordner öffnen) schreibt außerdem alle 10 Minuten Speicher- und Aktivitätszähler."
+    },
+    "api5": {
+      "title": "Extension-API 5",
+      "text": "Vier von Sextants eigenen Erweiterungen entsprechen jetzt den Ansichten, die sie ersetzt haben: die Spalte References von Traefik, die Monitore, die kein Prometheus aufgreift, jedes Karpenter-Limit sowie die maskierten Knotenargumente und Chart-Werte von k3s. Aktualisieren Sie sie unter Einstellungen → Erweiterungen."
+    },
+    "commandValues": {
+      "title": "Was ein Befehl ausführen darf",
+      "text": "Das Zustimmungsfenster einer Erweiterung zeigt jetzt die Werte, die jeder Parameter ihrer Befehle annehmen darf."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Ansichten von Cluster-Werkzeugen sind jetzt Erweiterungen",

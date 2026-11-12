@@ -15,6 +15,11 @@ export interface ReleaseNotes {
 /** Newest first. */
 export const NOTES: readonly ReleaseNotes[] = [
   {
+    version: "0.30.1",
+    items: ["memory", "api5", "commandValues"],
+    extensions: [],
+  },
+  {
     version: "0.30.0",
     items: ["extensionsMoved", "agentTools", "api4"],
     extensions: OFFERS.map((offer) => offer.id),

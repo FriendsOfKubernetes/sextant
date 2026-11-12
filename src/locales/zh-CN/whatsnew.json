@@ -2,6 +2,20 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_1": {
+    "memory": {
+      "title": "窗口隐藏时内存保持稳定",
+      "text": "Sextant 不再向窗口发送超过其已读取的数据：当最小化或隐藏的窗口不再读取时，watch、日志和终端会等待，而不会堆积数据。它的日志（关于 → 打开日志文件夹）还会每 10 分钟记录内存和活动计数。"
+    },
+    "api5": {
+      "title": "扩展 API 5",
+      "text": "Sextant 自己的四个扩展现在与它们取代的视图一致：Traefik 的 References 列、没有任何 Prometheus 选中的监视器、Karpenter 的每个限额，以及 k3s 中经过掩码的节点参数和 chart 值。请在 设置 → 扩展 中更新它们。"
+    },
+    "commandValues": {
+      "title": "命令可以运行什么",
+      "text": "扩展的同意窗口现在会列出其命令每个参数可取的值。"
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "集群工具的视图现在是扩展",

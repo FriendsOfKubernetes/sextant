@@ -2,6 +2,20 @@
   "title": "Novità di Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Ho capito",
+  "v0_30_1": {
+    "memory": {
+      "title": "Memoria stabile con la finestra nascosta",
+      "text": "Sextant non invia più alla finestra più di quanto abbia letto: finché una finestra ridotta a icona o nascosta non legge, watch, log e terminali attendono invece di accumulare dati. Il suo log (Informazioni → Apri la cartella dei log) registra anche contatori di memoria e attività ogni 10 minuti."
+    },
+    "api5": {
+      "title": "API delle estensioni 5",
+      "text": "Quattro delle estensioni di Sextant ora corrispondono alle viste che hanno sostituito: la colonna References di Traefik, i monitor che nessun Prometheus seleziona, ogni limite di Karpenter e gli argomenti dei nodi e i valori dei chart mascherati di k3s. Aggiornale in Impostazioni → Estensioni."
+    },
+    "commandValues": {
+      "title": "Cosa può eseguire un comando",
+      "text": "La finestra di consenso di un'estensione ora elenca i valori che ogni parametro dei suoi comandi può assumere."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Le viste degli strumenti del cluster ora sono estensioni",

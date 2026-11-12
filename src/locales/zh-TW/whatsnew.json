@@ -2,6 +2,20 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_1": {
+    "memory": {
+      "title": "視窗隱藏時記憶體保持穩定",
+      "text": "Sextant 不再向視窗傳送超過其已讀取的資料：當最小化或隱藏的視窗不再讀取時，watch、日誌和終端機會等待，而不會堆積資料。它的日誌（關於 → 開啟日誌資料夾）也會每 10 分鐘記錄記憶體和活動計數。"
+    },
+    "api5": {
+      "title": "擴充功能 API 5",
+      "text": "Sextant 自己的四個擴充功能現在與它們取代的檢視一致：Traefik 的 References 欄、沒有任何 Prometheus 選中的監視器、Karpenter 的每個限額，以及 k3s 中經過遮罩的節點參數和 chart 值。請在 設定 → 擴充功能 中更新它們。"
+    },
+    "commandValues": {
+      "title": "命令可以執行什麼",
+      "text": "擴充功能的同意視窗現在會列出其命令每個參數可接受的值。"
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "叢集工具的檢視現在是擴充功能",

@@ -2,6 +2,20 @@
   "title": "Sextant {{version}} sürümünde yenilikler",
   "version": "Sextant {{version}}",
   "close": "Anladım",
+  "v0_30_1": {
+    "memory": {
+      "title": "Pencere gizliyken kararlı bellek",
+      "text": "Sextant artık pencereye okuduğundan fazlasını göndermiyor: simge durumuna küçültülmüş ya da gizli bir pencere okumadığı sürece watch'lar, günlükler ve terminaller veri biriktirmek yerine bekliyor. Günlüğü (Hakkında → Günlük klasörünü aç) ayrıca her 10 dakikada bir bellek ve etkinlik sayaçlarını kaydediyor."
+    },
+    "api5": {
+      "title": "Uzantı API'si 5",
+      "text": "Sextant'ın kendi uzantılarından dördü artık yerini aldıkları görünümlerle aynı: Traefik'in References sütunu, hiçbir Prometheus'un seçmediği monitörler, Karpenter'ın her sınırı ve k3s'in maskelenmiş düğüm argümanları ile chart değerleri. Onları Ayarlar → Uzantılar'dan güncelleyin."
+    },
+    "commandValues": {
+      "title": "Bir komut neyi çalıştırabilir",
+      "text": "Bir uzantının onay penceresi artık komutlarının her parametresinin alabileceği değerleri listeliyor."
+    }
+  },
   "v0_30_0": {
     "extensionsMoved": {
       "title": "Küme araçlarının görünümleri artık uzantı",
