@@ -80,6 +80,8 @@ describe("the manifest's translations", () => {
         ]),
       ]),
       ...c.problems.flatMap((r) => [`problems.${r.id}.title`, `problems.${r.id}.message`]),
+      ...c.agentTools.map((t) => `agentTools.${t.id}.title`),
+      ...c.problemCategories.map((p) => `problemCategories.${p.id}.title`),
     ].sort();
     const translations = manifest.translations as Record<string, Record<string, string>>;
     expect(Object.keys(translations).sort()).toEqual(SEXTANT_LANGUAGES.filter((l) => l !== "en"));

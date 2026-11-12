@@ -18,8 +18,11 @@ export function buildOwnExtensions(): void {
   }
 }
 
-/** Every `{group, kind}` a problem rule judges or looks up (a superset of the core's `problem_kinds` is a grant too). */
-function problemKinds(problems: Json[]): Json[] {
+/**
+ * Every `{group, kind}` a problem rule judges or looks up, and every kind a problem judge reads (a superset of the core's
+ * `problem_kinds` is a grant too).
+ */
+function problemKinds(problems: Json[], judges: Json[]): Json[] {
   const out: Json[] = [];
   const add = (k: Json) => {
     if (!out.some((o) => o.group === k.group && o.kind === k.kind)) out.push({ group: k.group, kind: k.kind });
@@ -35,6 +38,7 @@ function problemKinds(problems: Json[]): Json[] {
     add(rule.kind as Json);
     scan(rule.when);
   }
+  for (const judge of judges) for (const read of (judge.reads as Json[]) ?? []) add(read.kind as Json);
   return out;
 }
 
@@ -61,7 +65,7 @@ export function installedEntry(name: (typeof OWN_EXTENSIONS)[number]): Json {
     installedAt: 0,
   };
   if (backend) entry.grantedBackend = { hosts: backend.hosts ?? [], credentials: backend.credentials ?? [] };
-  if (list("problems").length > 0) entry.grantedProblems = problemKinds(list("problems"));
+  if (list("problems").length > 0) entry.grantedProblems = problemKinds(list("problems"), list("problemJudges"));
   for (const [key, field] of [
     ["metricQueries", "grantedMetricQueries"],
     ["commands", "grantedCommands"],

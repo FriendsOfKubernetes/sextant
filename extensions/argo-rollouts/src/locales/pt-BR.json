@@ -100,5 +100,16 @@
   "whyNot.abort": "Só uma atualização em andamento pode ser interrompida.",
   "whyNot.retry": "Só um rollout interrompido pode ser tentado novamente.",
   "whyNot.pause": "O rollout já está pausado manualmente.",
-  "whyNot.resume": "O rollout não está pausado."
+  "whyNot.resume": "O rollout não está pausado.",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "Redução de escala",
+  "workload.template": "Um Argo Rollout usa o modelo de Pod deste Deployment (spec.workloadRef): os Pods rodam nos ReplicaSets do Rollout.",
+  "workload.scaledDown": "Suas 0 réplicas são esperadas: o controlador reduz o Deployment (scaleDown {{scaleDown}}).",
+  "workload.scaledByHand": "Suas 0 réplicas são esperadas: com scaleDown never, ele foi reduzido manualmente.",
+  "workload.runsBeside": "Com scaleDown never, o controlador deixa suas réplicas como estão: seus próprios Pods rodam ao lado dos do Rollout.",
+  "workload.willScaleDown": "O controlador o reduzirá quando a primeira revisão do Rollout estiver íntegra (scaleDown {{scaleDown}}).",
+  "workload.several_one": "{{count}} Rollout usa o modelo deste Deployment.",
+  "workload.several_many": "{{count}} de Rollouts usam o modelo deste Deployment.",
+  "workload.several_other": "{{count}} Rollouts usam o modelo deste Deployment.",
+  "workload.stays": "Seus próprios Pods rodam ao lado dos do Rollout: com scaleDown {{scaleDown}}, o controlador só reduz o Deployment enquanto a primeira revisão do Rollout é implantada, então eles ficam até que seja reduzido manualmente."
 }

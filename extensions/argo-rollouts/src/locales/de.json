@@ -100,5 +100,15 @@
   "whyNot.abort": "Nur ein laufendes Update kann abgebrochen werden.",
   "whyNot.retry": "Nur ein abgebrochener Rollout kann erneut versucht werden.",
   "whyNot.pause": "Der Rollout ist bereits von Hand pausiert.",
-  "whyNot.resume": "Der Rollout ist nicht pausiert."
+  "whyNot.resume": "Der Rollout ist nicht pausiert.",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "Herunterskalieren",
+  "workload.template": "Ein Argo Rollout übernimmt seine Pod-Vorlage aus diesem Deployment (spec.workloadRef): Die Pods laufen in den ReplicaSets des Rollouts.",
+  "workload.scaledDown": "Seine 0 Replikate sind erwartet: Der Controller skaliert das Deployment herunter (scaleDown {{scaleDown}}).",
+  "workload.scaledByHand": "Seine 0 Replikate sind erwartet: Bei scaleDown never wurde es von Hand herunterskaliert.",
+  "workload.runsBeside": "Bei scaleDown never lässt der Controller seine Replikate, wie sie sind: Seine eigenen Pods laufen neben denen des Rollouts.",
+  "workload.willScaleDown": "Der Controller skaliert es herunter, sobald die erste Revision des Rollouts gesund ist (scaleDown {{scaleDown}}).",
+  "workload.several_one": "{{count}} Rollout übernimmt seine Vorlage aus diesem Deployment.",
+  "workload.several_other": "{{count}} Rollouts übernehmen ihre Vorlage aus diesem Deployment.",
+  "workload.stays": "Seine eigenen Pods laufen neben denen des Rollouts: Bei scaleDown {{scaleDown}} skaliert der Controller das Deployment nur herunter, während die erste Revision des Rollouts ausgerollt wird, daher bleiben sie, bis es von Hand herunterskaliert wird."
 }

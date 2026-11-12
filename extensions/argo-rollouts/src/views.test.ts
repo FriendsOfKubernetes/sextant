@@ -357,3 +357,40 @@ describe("an action's window", () => {
     });
   });
 });
+
+describe("the Deployment section (#341)", () => {
+  const deployment = {
+    apiVersion: "apps/v1",
+    kind: "Deployment",
+    metadata: { name: "shop", namespace: "shop", uid: "d-1" },
+    spec: { replicas: 0 },
+  } as unknown as KubeObject;
+  const managing = { ...structuredClone(canary), spec: { ...structuredClone(canary.spec as object), workloadRef: { apiVersion: "apps/v1", kind: "Deployment", name: "shop", scaleDown: "onsuccess" } } } as unknown as KubeObject;
+
+  it("shows itself with the Rollout and what 0 replicas mean, and stays hidden for other Deployments", async () => {
+    await start({
+      objects: [deployment],
+      context: { view: "details", contribution: "managed-by-rollout", selection: [ref(deployment)], resourceVersion: "1" },
+      handlers: { "resources.list": () => ({ items: [structuredClone(managing)], truncated: false }) },
+    });
+    const { startWorkload } = await import("./workload");
+    stop = startWorkload(host.sextant, root);
+    await expect.poll(text).toContain("takes its pod template from this Deployment");
+    expect(text()).toContain("rollout-canary");
+    expect(text()).toContain("scaleDown onsuccess");
+    expect(host.calls.filter((c) => c.method === "ui.setHidden").map((c) => c.params)).toEqual([{ hidden: false }]);
+  });
+
+  it("stays hidden when no Rollout names the Deployment", async () => {
+    await start({
+      objects: [deployment],
+      context: { view: "details", contribution: "managed-by-rollout", selection: [ref(deployment)], resourceVersion: "1" },
+      handlers: { "resources.list": () => ({ items: [structuredClone(canary)], truncated: false }) },
+    });
+    const { startWorkload } = await import("./workload");
+    stop = startWorkload(host.sextant, root);
+    await expect.poll(() => host.calls.some((c) => c.method === "resources.list")).toBe(true);
+    expect(text()).toBe("");
+    expect(host.calls.some((c) => c.method === "ui.setHidden")).toBe(false);
+  });
+});

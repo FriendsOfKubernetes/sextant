@@ -141,6 +141,11 @@ export const stableHash = (ro: KubeObject): string | undefined => str(get(ro, "s
 export const currentHash = (ro: KubeObject): string | undefined => str(get(ro, "status", "currentPodHash"));
 /** The new template is the stable one: nothing is being rolled out. */
 export const fullyPromoted = (ro: KubeObject): boolean => Boolean(stableHash(ro)) && stableHash(ro) === currentHash(ro);
+/** The Rollout's revision (`rollout.argoproj.io/revision`, as on its ReplicaSets), when it writes one. */
+export const revisionOf = (ro: KubeObject): number | undefined => {
+  const n = Number(str(record(ro.metadata?.annotations)[REVISION_ANNOTATION]));
+  return Number.isInteger(n) && n > 0 ? n : undefined;
+};
 /** An update is under way: the new template is not the stable one yet. */
 export const updating = (ro: KubeObject): boolean => Boolean(currentHash(ro)) && currentHash(ro) !== stableHash(ro);
 

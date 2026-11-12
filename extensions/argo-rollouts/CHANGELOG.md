@@ -1,5 +1,31 @@
 # Changes of Argo Rollouts
 
+## 1.5.0 — 2026-11-12
+
+Needs Sextant 0.30 (`sextantApi` 4). For AI agents and canary analysis (#341, ADR-0171).
+
+- **A tool for AI agents**, `diagnose-rollout` (read only, through a backend of its own): one call reads a Rollout and
+  what it depends on — the Deployment of `spec.workloadRef`, its ReplicaSets and template hashes, the Istio
+  VirtualServices and DestinationRule and the canary and stable Services, its newest analysis runs and the analysis
+  templates it names, its events — and answers findings judged in context, a timeline, and what it could not read.
+  It reaches agents only once you turn it on in Settings → AI agents (MCP); each read is decided for the extension
+  and the agent both.
+- **Problems** (the main category): `paused-long` (paused for more than a day), `analysis-inconclusive` (an
+  inconclusive analysis or experiment waits for a person), `workload-missing` (the template's Deployment is not
+  there), and from the backend's judge `traffic`: a missing VirtualService, route or DestinationRule or subset, a
+  route the controller cannot choose or that lacks the canary or the stable destination, and `traffic-same-hash` —
+  canary and stable traffic going to the same pods while a canary has weight.
+- **Canary safety** (`canary-safety`, a new opt-in category, never for agents): metrics that always pass, pass on NaN
+  or without data, cannot fail or run dry, in AnalysisTemplates and ClusterAnalysisTemplates; Rollouts promoted on
+  time alone, shifting weights without a check, sending all traffic at the first step, or letting every pod be
+  unavailable. Read as the controller of Argo Rollouts v1.10.2 evaluates them.
+- **A section on Deployments**, "Argo Rollout" (`managed-by-rollout`): which Rollout takes its template from the
+  Deployment and what its replica count means then (0 replicas under `scaleDown` onsuccess or progressively are
+  expected; the controller scales the Deployment down only for the Rollout's first revision, so pods of its own under
+  a later revision stay — found on a live cluster).
+- New reads: Deployments, Services, Events, VirtualServices and DestinationRules; new problem kinds, a backend and an
+  agent tool. Updating asks for consent once.
+
 ## 1.4.0 — 2026-11-07
 
 Needs Sextant 0.30 (`sextantApi` 4), with `atLeast`, a column's `lookup` and `valueText` of ADR-0164 (#386, #387).

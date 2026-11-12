@@ -100,5 +100,17 @@
   "whyNot.abort": "Прервать можно только идущее обновление.",
   "whyNot.retry": "Повторить можно только прерванный rollout.",
   "whyNot.pause": "Rollout уже приостановлен вручную.",
-  "whyNot.resume": "Rollout не на паузе."
+  "whyNot.resume": "Rollout не на паузе.",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "Уменьшение реплик",
+  "workload.template": "Argo Rollout берёт шаблон Pod из этого Deployment (spec.workloadRef): Pod работают в ReplicaSet этого Rollout.",
+  "workload.scaledDown": "Его 0 реплик ожидаемы: контроллер уменьшает Deployment (scaleDown {{scaleDown}}).",
+  "workload.scaledByHand": "Его 0 реплик ожидаемы: при scaleDown never его уменьшили вручную.",
+  "workload.runsBeside": "При scaleDown never контроллер оставляет его реплики как есть: его собственные Pod работают рядом с Pod этого Rollout.",
+  "workload.willScaleDown": "Контроллер уменьшит его, когда первая ревизия Rollout станет исправной (scaleDown {{scaleDown}}).",
+  "workload.several_one": "{{count}} Rollout берёт шаблон из этого Deployment.",
+  "workload.several_few": "{{count}} Rollout берут шаблон из этого Deployment.",
+  "workload.several_many": "{{count}} Rollout берут шаблон из этого Deployment.",
+  "workload.several_other": "{{count}} Rollout берут шаблон из этого Deployment.",
+  "workload.stays": "Его собственные Pod работают рядом с Pod этого Rollout: при scaleDown {{scaleDown}} контроллер уменьшает Deployment только во время выката первой ревизии Rollout, поэтому они останутся, пока его не уменьшат вручную."
 }

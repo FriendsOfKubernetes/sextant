@@ -100,5 +100,15 @@
   "whyNot.abort": "Only an update that is under way can be aborted.",
   "whyNot.retry": "Only an aborted rollout can be retried.",
   "whyNot.pause": "The rollout is already paused by hand.",
-  "whyNot.resume": "The rollout is not paused."
+  "whyNot.resume": "The rollout is not paused.",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "Scale down",
+  "workload.template": "An Argo Rollout takes its pod template from this Deployment (spec.workloadRef): the pods run in the Rollout's ReplicaSets.",
+  "workload.scaledDown": "Its 0 replicas are expected: the controller scales the Deployment down (scaleDown {{scaleDown}}).",
+  "workload.scaledByHand": "Its 0 replicas are expected: with scaleDown never it was scaled down by hand.",
+  "workload.runsBeside": "With scaleDown never the controller leaves its replicas as they are: its own pods run beside the Rollout's.",
+  "workload.willScaleDown": "The controller scales it down once the Rollout's first revision is healthy (scaleDown {{scaleDown}}).",
+  "workload.several_one": "{{count}} Rollouts take their template from this Deployment.",
+  "workload.several_other": "{{count}} Rollouts take their template from this Deployment.",
+  "workload.stays": "Its own pods run beside the Rollout's: with scaleDown {{scaleDown}} the controller scales the Deployment down only while the Rollout's first revision rolls out, so they stay until it is scaled down by hand."
 }

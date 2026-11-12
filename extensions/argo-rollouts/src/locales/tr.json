@@ -100,5 +100,15 @@
   "whyNot.abort": "Yalnızca süren bir güncelleme iptal edilebilir.",
   "whyNot.retry": "Yalnızca iptal edilmiş bir rollout yeniden denenebilir.",
   "whyNot.pause": "Rollout zaten elle duraklatılmış.",
-  "whyNot.resume": "Rollout duraklatılmamış."
+  "whyNot.resume": "Rollout duraklatılmamış.",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "Ölçek küçültme",
+  "workload.template": "Bir Argo Rollout, Pod şablonunu bu Deployment'tan alıyor (spec.workloadRef): Pod'lar Rollout'un ReplicaSet'lerinde çalışıyor.",
+  "workload.scaledDown": "0 replikası beklenen bir durum: denetleyici Deployment'ın ölçeğini küçültüyor (scaleDown {{scaleDown}}).",
+  "workload.scaledByHand": "0 replikası beklenen bir durum: scaleDown never ile ölçeği elle küçültüldü.",
+  "workload.runsBeside": "scaleDown never ile denetleyici replikalarını olduğu gibi bırakır: kendi Pod'ları Rollout'unkilerin yanında çalışır.",
+  "workload.willScaleDown": "Rollout'un ilk revizyonu sağlıklı olduğunda denetleyici bunun ölçeğini küçültecek (scaleDown {{scaleDown}}).",
+  "workload.several_one": "{{count}} Rollout şablonunu bu Deployment'tan alıyor.",
+  "workload.several_other": "{{count}} Rollout şablonunu bu Deployment'tan alıyor.",
+  "workload.stays": "Kendi Pod'ları Rollout'unkilerin yanında çalışır: scaleDown {{scaleDown}} ile denetleyici Deployment'ın ölçeğini yalnızca Rollout'un ilk revizyonu dağıtılırken küçültür, bu yüzden elle küçültülene kadar kalırlar."
 }

@@ -100,5 +100,14 @@
   "whyNot.abort": "只有進行中的更新才能中止。",
   "whyNot.retry": "只有已中止的 rollout 才能重試。",
   "whyNot.pause": "rollout 已被手動暫停。",
-  "whyNot.resume": "rollout 未暫停。"
+  "whyNot.resume": "rollout 未暫停。",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "縮減規模",
+  "workload.template": "一個 Argo Rollout 從此 Deployment 取得其 Pod 範本（spec.workloadRef）：Pod 在該 Rollout 的 ReplicaSet 中執行。",
+  "workload.scaledDown": "其 0 個複本符合預期：控制器會縮減該 Deployment 的規模（scaleDown {{scaleDown}}）。",
+  "workload.scaledByHand": "其 0 個複本符合預期：在 scaleDown never 下，它是被手動縮減規模的。",
+  "workload.runsBeside": "在 scaleDown never 下，控制器會保持其複本不變：它自己的 Pod 與該 Rollout 的 Pod 並行執行。",
+  "workload.willScaleDown": "Rollout 的第一個修訂版狀態良好後，控制器會縮減其規模（scaleDown {{scaleDown}}）。",
+  "workload.several_other": "有 {{count}} 個 Rollout 從此 Deployment 取得範本。",
+  "workload.stays": "它自己的 Pod 與該 Rollout 的 Pod 並行執行：在 scaleDown {{scaleDown}} 下，控制器只在 Rollout 的第一個修訂版發布期間縮減該 Deployment，因此這些 Pod 會一直保留，直到手動縮減。"
 }

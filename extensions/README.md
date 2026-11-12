@@ -7,7 +7,7 @@ for other authors. The guide to writing one is the wiki page
 
 | Extension | Folder | Version | Needs | What it is |
 |---|---|---|---|---|
-| Argo Rollouts (`sextant.argo-rollouts`) | [`argo-rollouts/`](argo-rollouts/README.md) | 1.4.0 | Sextant 0.30 (`sextantApi` 4) | Rollouts, their analysis and experiments, with promote, abort, retry, pause and resume |
+| Argo Rollouts (`sextant.argo-rollouts`) | [`argo-rollouts/`](argo-rollouts/README.md) | 1.5.0 | Sextant 0.30 (`sextantApi` 4) | Rollouts, their analysis and experiments, with promote, abort, retry, pause and resume; canary traffic and safety checks; a diagnosis tool for AI agents |
 | Argo Workflows (`sextant.argo-workflows`) | [`argo-workflows/`](argo-workflows/README.md) | 1.1.0 | Sextant 0.30 (`sextantApi` 4) | Workflows with their step tree and pods' logs, cron workflows and templates, with Suspend, Resume, Stop and Terminate |
 | Flux (`sextant.flux`) | [`flux/`](flux/README.md) | 1.4.0 | Sextant 0.30 (`sextantApi` 4) | Flux CD's sources, Kustomizations, HelmReleases, image automation and notifications, with Reconcile, Suspend and Resume |
 | Argo CD (`sextant.argo-cd`) | [`argo-cd/`](argo-cd/README.md) | 1.4.0 | Sextant 0.30 (`sextantApi` 4) | Argo CD's Applications, ApplicationSets and AppProjects: sync, health, resources, history, actions, diff and UI |

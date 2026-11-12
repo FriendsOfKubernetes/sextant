@@ -100,5 +100,14 @@
   "whyNot.abort": "中止できるのは進行中の更新だけです。",
   "whyNot.retry": "再試行できるのは中止された Rollout だけです。",
   "whyNot.pause": "Rollout はすでに手動で一時停止しています。",
-  "whyNot.resume": "Rollout は一時停止していません。"
+  "whyNot.resume": "Rollout は一時停止していません。",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "スケールダウン",
+  "workload.template": "Argo Rollout がこの Deployment から Pod テンプレートを取得しています（spec.workloadRef）。Pod は Rollout の ReplicaSet で実行されます。",
+  "workload.scaledDown": "レプリカ数 0 は想定どおりです。コントローラーが Deployment をスケールダウンしています（scaleDown {{scaleDown}}）。",
+  "workload.scaledByHand": "レプリカ数 0 は想定どおりです。scaleDown never のため、手動でスケールダウンされました。",
+  "workload.runsBeside": "scaleDown never では、コントローラーはレプリカをそのままにします。この Deployment 自身の Pod が Rollout の Pod と並んで実行されます。",
+  "workload.willScaleDown": "Rollout の最初のリビジョンが正常になると、コントローラーがこれをスケールダウンします（scaleDown {{scaleDown}}）。",
+  "workload.several_other": "{{count}} 個の Rollout がこの Deployment からテンプレートを取得しています。",
+  "workload.stays": "この Deployment 自身の Pod が Rollout の Pod と並んで実行されています。scaleDown {{scaleDown}} では、コントローラーが Deployment をスケールダウンするのは Rollout の最初のリビジョンのロールアウト中だけなので、手動でスケールダウンするまで残ります。"
 }

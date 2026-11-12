@@ -2,12 +2,15 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-rollouts",
   "name": "Argo Rollouts",
-  "version": "1.4.0",
-  "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded and aborted rollouts and failed analyses.",
+  "version": "1.5.0",
+  "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded, aborted, long-paused and inconclusive rollouts, failed analyses and canary traffic that does not reach the canary; an opt-in check of how safe the canary is set up; the Rollout a Deployment serves; and a read-only diagnosis tool for AI agents.",
   "author": "Sextant",
   "sextantApi": 4,
   "entry": "index.html",
   "icon": "argoRollouts",
+  "backend": {
+    "module": "backend.wasm"
+  },
   "permissions": {
     "clusters": {
       "type": "all"
@@ -49,6 +52,26 @@
             {
               "group": "apps",
               "kind": "ReplicaSet"
+            },
+            {
+              "group": "apps",
+              "kind": "Deployment"
+            },
+            {
+              "group": "",
+              "kind": "Service"
+            },
+            {
+              "group": "",
+              "kind": "Event"
+            },
+            {
+              "group": "networking.istio.io",
+              "kind": "VirtualService"
+            },
+            {
+              "group": "networking.istio.io",
+              "kind": "DestinationRule"
             }
           ]
         },
@@ -189,6 +212,19 @@
         ],
         "placement": "section",
         "order": 25
+      },
+      {
+        "id": "managed-by-rollout",
+        "title": "Argo Rollout",
+        "kinds": [
+          {
+            "group": "apps",
+            "kind": "Deployment"
+          }
+        ],
+        "placement": "section",
+        "order": 30,
+        "startHidden": true
       }
     ],
     "actions": [
@@ -1095,13 +1131,705 @@
         },
         "message": "AnalysisRun {{.status.blueGreen.postPromotionAnalysisRunStatus.name}} ended {{.status.blueGreen.postPromotionAnalysisRunStatus.status}}: {{.status.blueGreen.postPromotionAnalysisRunStatus.message}}",
         "group": "rollout"
+      },
+      {
+        "id": "paused-long",
+        "title": "Paused for over a day",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "not",
+              "of": {
+                "type": "equals",
+                "path": ".status.abort",
+                "value": true
+              }
+            },
+            {
+              "type": "exists",
+              "path": ".status.pauseConditions[0]"
+            },
+            {
+              "type": "olderThan",
+              "path": ".status.pauseConditions[0].startTime",
+              "minutes": 1440
+            }
+          ]
+        },
+        "message": "Paused for more than a day ({{.status.pauseConditions[0].reason}}): it waits to be promoted, resumed or aborted.",
+        "group": "rollout"
+      },
+      {
+        "id": "analysis-inconclusive",
+        "title": "Inconclusive analysis",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "any",
+          "of": [
+            {
+              "type": "exists",
+              "path": ".status.pauseConditions[reason=\"InconclusiveAnalysisRun\"]"
+            },
+            {
+              "type": "exists",
+              "path": ".status.pauseConditions[reason=\"InconclusiveExperiment\"]"
+            }
+          ]
+        },
+        "message": "Paused because an analysis or experiment was inconclusive: it waits for a person to promote or abort.",
+        "group": "rollout"
+      },
+      {
+        "id": "workload-missing",
+        "title": "Template Deployment missing",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "all",
+          "of": [
+            {
+              "type": "equals",
+              "path": ".spec.workloadRef.kind",
+              "value": "Deployment"
+            },
+            {
+              "type": "missing",
+              "path": ".spec.workloadRef.name",
+              "kind": {
+                "group": "apps",
+                "kind": "Deployment"
+              }
+            }
+          ]
+        },
+        "graceMinutes": 2,
+        "message": "The pod template comes from Deployment {{.spec.workloadRef.name}} (spec.workloadRef), which is not there.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-virtual-service-missing",
+        "title": "VirtualService missing",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "virtual-service-missing",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "VirtualService {{fact:namespace}}/{{fact:name}} is not there: the controller cannot shift the canary's traffic.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-route-missing",
+        "title": "Route missing",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "route-missing",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "VirtualService {{fact:virtualService}} has no HTTP route named {{fact:route}}: the controller cannot set the canary's weight.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-route-not-chosen",
+        "title": "Route not chosen",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "route-not-chosen",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "VirtualService {{fact:virtualService}} has several HTTP routes and the Rollout names none of them: the controller cannot tell which one to edit.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-route-without-canary",
+        "title": "Route without the canary",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "route-without-canary",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "A route of VirtualService {{fact:virtualService}} has no destination {{fact:target}} for the canary.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-route-without-stable",
+        "title": "Route without the stable version",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "route-without-stable",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "A route of VirtualService {{fact:virtualService}} has no destination {{fact:target}} for the stable version.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-destination-rule-missing",
+        "title": "DestinationRule missing",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "destination-rule-missing",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "DestinationRule {{fact:name}} is not there: the controller cannot point the subsets at the canary and the stable pods.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-subset-missing",
+        "title": "Subset missing",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "subset-missing",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "DestinationRule {{fact:destinationRule}} has no subset {{fact:subset}}.",
+        "group": "rollout"
+      },
+      {
+        "id": "traffic-same-hash",
+        "title": "Canary not isolated",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "traffic",
+          "fact": "same-hash",
+          "each": true
+        },
+        "graceMinutes": 5,
+        "message": "Canary and stable traffic go to the same pods (template hash {{fact:hash}}) while the canary has weight {{fact:weight}}: the canary is not isolated, and its analysis measures the old version.",
+        "group": "rollout"
+      },
+      {
+        "id": "template-metric-always-passes",
+        "title": "Metric always passes",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-always-passes",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} has neither a successCondition nor a failureCondition: every measurement counts as a success.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "template-metric-nan-passes",
+        "title": "Metric passes on NaN",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-nan-passes",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} passes on NaN, as 0/0 gives when there is no traffic: it has only a failureCondition, or its successCondition accepts isNaN or isInf.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "template-metric-no-data-passes",
+        "title": "Metric passes without data",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-no-data-passes",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} passes without data: its successCondition accepts an empty result or a default value.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "template-metric-cannot-fail",
+        "title": "Metric cannot fail",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-cannot-fail",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} cannot fail: its failureLimit {{fact:failureLimit}} is never exceeded.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "template-metric-dry-run",
+        "title": "Metric runs dry",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "AnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-dry-run",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} runs dry: its failures are recorded but never fail the analysis.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "cluster-template-metric-always-passes",
+        "title": "Metric always passes (cluster template)",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterAnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-always-passes",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} has neither a successCondition nor a failureCondition: every measurement counts as a success.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "cluster-template-metric-nan-passes",
+        "title": "Metric passes on NaN (cluster template)",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterAnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-nan-passes",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} passes on NaN, as 0/0 gives when there is no traffic: it has only a failureCondition, or its successCondition accepts isNaN or isInf.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "cluster-template-metric-no-data-passes",
+        "title": "Metric passes without data (cluster template)",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterAnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-no-data-passes",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} passes without data: its successCondition accepts an empty result or a default value.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "cluster-template-metric-cannot-fail",
+        "title": "Metric cannot fail (cluster template)",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterAnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-cannot-fail",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} cannot fail: its failureLimit {{fact:failureLimit}} is never exceeded.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "cluster-template-metric-dry-run",
+        "title": "Metric runs dry (cluster template)",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "ClusterAnalysisTemplate"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "metric-dry-run",
+          "each": true
+        },
+        "message": "Metric {{fact:metric}} runs dry: its failures are recorded but never fail the analysis.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "rollout-promoted-on-time",
+        "title": "Promoted without a check",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "promoted-on-time"
+        },
+        "message": "No analysis or manual pause checks this {{fact:strategy}} rollout: a new version is promoted on time alone.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "rollout-weights-without-check",
+        "title": "Weights without a check",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "weights-without-check"
+        },
+        "message": "The canary goes from {{fact:from}}% to {{fact:to}}% with no pause or analysis between the two steps.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "rollout-first-step-full",
+        "title": "First step sends all traffic",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "first-step-full"
+        },
+        "message": "The first traffic step sends {{fact:weight}}% to the canary: there is no gradual shift.",
+        "category": "canary-safety"
+      },
+      {
+        "id": "rollout-all-pods-unavailable",
+        "title": "All pods may be unavailable",
+        "kind": {
+          "group": "argoproj.io",
+          "kind": "Rollout"
+        },
+        "when": {
+          "type": "judged",
+          "judge": "safety",
+          "fact": "all-pods-unavailable"
+        },
+        "message": "maxUnavailable {{fact:maxUnavailable}} lets every pod be unavailable during an update.",
+        "category": "canary-safety"
+      }
+    ],
+    "agentTools": [
+      {
+        "id": "diagnose-rollout",
+        "title": "Diagnose a rollout",
+        "description": "Diagnoses one Argo Rollout in a single call: its phase and step; the Deployment its template comes from (spec.workloadRef — 0 replicas of such a Deployment is normal); its ReplicaSets and pod template hashes; where canary and stable traffic really go (the Istio VirtualService routes, the DestinationRule subsets and the canary and stable Services, resolved to template hashes and available pods); its analysis runs with the failing measurements, and the weak spots of its analysis templates (passing on NaN or without data, unable to fail, run dry); and a timeline of conditions, pauses, analyses and events. Findings are judged in context: the same hash for stable and canary is a problem only while an update runs and the canary has weight. Give the Rollout's name, or a Deployment's to find the Rollout that uses it. Changes nothing; what could not be read is listed in notChecked.",
+        "readOnly": true,
+        "inputSchema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cluster",
+            "namespace"
+          ],
+          "properties": {
+            "cluster": {
+              "type": "string",
+              "description": "The cluster id from list_clusters.",
+              "minLength": 1
+            },
+            "namespace": {
+              "type": "string",
+              "description": "The namespace of the Rollout (or of the Deployment).",
+              "minLength": 1,
+              "maxLength": 63
+            },
+            "name": {
+              "type": "string",
+              "description": "The Rollout's name. Give this or deployment.",
+              "minLength": 1,
+              "maxLength": 253
+            },
+            "deployment": {
+              "type": "string",
+              "description": "A Deployment's name: the Rollout that takes its pod template from it (spec.workloadRef) is diagnosed. Give this or name.",
+              "minLength": 1,
+              "maxLength": 253
+            }
+          }
+        }
+      }
+    ],
+    "problemJudges": [
+      {
+        "id": "traffic",
+        "reads": [
+          {
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "Rollout"
+            },
+            "paths": [
+              ".spec.strategy",
+              ".status"
+            ]
+          },
+          {
+            "kind": {
+              "group": "networking.istio.io",
+              "kind": "VirtualService"
+            },
+            "paths": [
+              ".spec.http"
+            ],
+            "optional": true,
+            "partial": true
+          },
+          {
+            "kind": {
+              "group": "networking.istio.io",
+              "kind": "DestinationRule"
+            },
+            "paths": [
+              ".spec.subsets"
+            ],
+            "optional": true,
+            "partial": true
+          },
+          {
+            "kind": {
+              "group": "",
+              "kind": "Service"
+            },
+            "paths": [
+              ".spec.selector"
+            ],
+            "partial": true
+          }
+        ],
+        "facts": [
+          {
+            "id": "virtual-service-missing",
+            "values": [
+              "name",
+              "namespace"
+            ]
+          },
+          {
+            "id": "route-missing",
+            "values": [
+              "virtualService",
+              "route"
+            ]
+          },
+          {
+            "id": "route-not-chosen",
+            "values": [
+              "virtualService"
+            ]
+          },
+          {
+            "id": "route-without-canary",
+            "values": [
+              "virtualService",
+              "route",
+              "target"
+            ]
+          },
+          {
+            "id": "route-without-stable",
+            "values": [
+              "virtualService",
+              "route",
+              "target"
+            ]
+          },
+          {
+            "id": "destination-rule-missing",
+            "values": [
+              "name"
+            ]
+          },
+          {
+            "id": "subset-missing",
+            "values": [
+              "destinationRule",
+              "subset"
+            ]
+          },
+          {
+            "id": "same-hash",
+            "values": [
+              "via",
+              "hash",
+              "weight"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "safety",
+        "reads": [
+          {
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "Rollout"
+            },
+            "paths": [
+              ".spec.strategy",
+              ".spec.replicas"
+            ]
+          },
+          {
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "AnalysisTemplate"
+            },
+            "paths": [
+              ".spec.metrics",
+              ".spec.dryRun"
+            ],
+            "optional": true
+          },
+          {
+            "kind": {
+              "group": "argoproj.io",
+              "kind": "ClusterAnalysisTemplate"
+            },
+            "paths": [
+              ".spec.metrics",
+              ".spec.dryRun"
+            ],
+            "optional": true
+          }
+        ],
+        "facts": [
+          {
+            "id": "metric-always-passes",
+            "values": [
+              "metric"
+            ]
+          },
+          {
+            "id": "metric-nan-passes",
+            "values": [
+              "metric"
+            ]
+          },
+          {
+            "id": "metric-no-data-passes",
+            "values": [
+              "metric"
+            ]
+          },
+          {
+            "id": "metric-cannot-fail",
+            "values": [
+              "metric",
+              "failureLimit",
+              "count"
+            ]
+          },
+          {
+            "id": "metric-dry-run",
+            "values": [
+              "metric"
+            ]
+          },
+          {
+            "id": "promoted-on-time",
+            "values": [
+              "strategy"
+            ]
+          },
+          {
+            "id": "weights-without-check",
+            "values": [
+              "from",
+              "to"
+            ]
+          },
+          {
+            "id": "first-step-full",
+            "values": [
+              "weight"
+            ]
+          },
+          {
+            "id": "all-pods-unavailable",
+            "values": [
+              "maxUnavailable"
+            ]
+          }
+        ]
+      }
+    ],
+    "problemCategories": [
+      {
+        "id": "canary-safety",
+        "title": "Canary safety",
+        "optIn": true
       }
     ]
   },
   "translations": {
     "ru": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: rollout с шагами, весами, ReplicaSet и запусками анализа; продвижение, прерывание, повтор, пауза и возобновление ровно теми патчами, что шлёт kubectl argo rollouts, с показом перед отправкой; проблемы деградировавших и прерванных rollout и проваленных анализов.",
+      "description": "Argo Rollouts: rollout с шагами, весами, ReplicaSet и запусками анализа; продвижение, прерывание, повтор, пауза и возобновление ровно патчами kubectl argo rollouts, с показом перед отправкой; проблемы деградировавших, прерванных, долго стоящих на паузе и неопределённых rollout, проваленных анализов и трафика, не доходящего до canary; проверка безопасности настройки canary по выбору; Rollout, которому Deployment служит шаблоном; инструмент диагностики только для чтения для ИИ-агентов.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1161,11 +1889,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Диагностировать rollout",
+      "problemCategories.canary-safety.title": "Безопасность canary",
+      "problems.paused-long.title": "На паузе больше суток",
+      "problems.paused-long.message": "На паузе больше суток ({{.status.pauseConditions[0].reason}}): ждёт продвижения, возобновления или прерывания.",
+      "problems.analysis-inconclusive.title": "Неопределённый анализ",
+      "problems.analysis-inconclusive.message": "На паузе, потому что анализ или эксперимент дал неопределённый результат: ждёт, пока человек продвинет или прервёт обновление.",
+      "problems.workload-missing.title": "Нет Deployment шаблона",
+      "problems.workload-missing.message": "Шаблон Pod берётся из Deployment {{.spec.workloadRef.name}} (spec.workloadRef), которого нет.",
+      "problems.traffic-virtual-service-missing.title": "Нет VirtualService",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} не существует: контроллер не может перераспределить трафик canary.",
+      "problems.traffic-route-missing.title": "Нет маршрута",
+      "problems.traffic-route-missing.message": "В VirtualService {{fact:virtualService}} нет HTTP-маршрута с именем {{fact:route}}: контроллер не может задать вес canary.",
+      "problems.traffic-route-not-chosen.title": "Маршрут не выбран",
+      "problems.traffic-route-not-chosen.message": "В VirtualService {{fact:virtualService}} несколько HTTP-маршрутов, и Rollout не называет ни одного из них: контроллер не может понять, какой менять.",
+      "problems.traffic-route-without-canary.title": "Маршрут без canary",
+      "problems.traffic-route-without-canary.message": "В маршруте VirtualService {{fact:virtualService}} нет назначения {{fact:target}} для canary.",
+      "problems.traffic-route-without-stable.title": "Маршрут без стабильной версии",
+      "problems.traffic-route-without-stable.message": "В маршруте VirtualService {{fact:virtualService}} нет назначения {{fact:target}} для стабильной версии.",
+      "problems.traffic-destination-rule-missing.title": "Нет DestinationRule",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} не существует: контроллер не может направить subset на Pod canary и стабильные Pod.",
+      "problems.traffic-subset-missing.title": "Нет subset",
+      "problems.traffic-subset-missing.message": "В DestinationRule {{fact:destinationRule}} нет subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary не изолирован",
+      "problems.traffic-same-hash.message": "Трафик canary и стабильной версии идёт в одни и те же Pod (хеш шаблона {{fact:hash}}), хотя у canary вес {{fact:weight}}: canary не изолирован, и его анализ измеряет старую версию.",
+      "problems.template-metric-always-passes.title": "Метрика всегда проходит",
+      "problems.template-metric-always-passes.message": "У метрики {{fact:metric}} нет ни successCondition, ни failureCondition: каждое измерение считается успешным.",
+      "problems.template-metric-nan-passes.title": "Метрика проходит при NaN",
+      "problems.template-metric-nan-passes.message": "Метрика {{fact:metric}} проходит при NaN, который даёт 0/0 при отсутствии трафика: у неё есть только failureCondition, или её successCondition принимает isNaN или isInf.",
+      "problems.template-metric-no-data-passes.title": "Метрика проходит без данных",
+      "problems.template-metric-no-data-passes.message": "Метрика {{fact:metric}} проходит без данных: её successCondition принимает пустой результат или значение по умолчанию.",
+      "problems.template-metric-cannot-fail.title": "Метрика не может провалиться",
+      "problems.template-metric-cannot-fail.message": "Метрика {{fact:metric}} не может провалиться: её failureLimit {{fact:failureLimit}} никогда не превышается.",
+      "problems.template-metric-dry-run.title": "Метрика в режиме dry-run",
+      "problems.template-metric-dry-run.message": "Метрика {{fact:metric}} работает в режиме dry-run: её провалы записываются, но никогда не проваливают анализ.",
+      "problems.rollout-promoted-on-time.title": "Продвижение без проверки",
+      "problems.rollout-promoted-on-time.message": "Этот rollout {{fact:strategy}} не проверяет ни анализ, ни ручная пауза: новая версия продвигается только по времени.",
+      "problems.rollout-weights-without-check.title": "Веса без проверки",
+      "problems.rollout-weights-without-check.message": "Canary переходит с {{fact:from}}% на {{fact:to}}% без паузы или анализа между этими двумя шагами.",
+      "problems.rollout-first-step-full.title": "Первый шаг отправляет весь трафик",
+      "problems.rollout-first-step-full.message": "Первый шаг трафика отправляет на canary {{fact:weight}}%: постепенного перехода нет.",
+      "problems.rollout-all-pods-unavailable.title": "Все Pod могут быть недоступны",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} позволяет всем Pod быть недоступными во время обновления.",
+      "problems.cluster-template-metric-always-passes.title": "Метрика всегда проходит (шаблон кластера)",
+      "problems.cluster-template-metric-always-passes.message": "У метрики {{fact:metric}} нет ни successCondition, ни failureCondition: каждое измерение считается успешным.",
+      "problems.cluster-template-metric-nan-passes.title": "Метрика проходит при NaN (шаблон кластера)",
+      "problems.cluster-template-metric-nan-passes.message": "Метрика {{fact:metric}} проходит при NaN, который даёт 0/0 при отсутствии трафика: у неё есть только failureCondition, или её successCondition принимает isNaN или isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "Метрика проходит без данных (шаблон кластера)",
+      "problems.cluster-template-metric-no-data-passes.message": "Метрика {{fact:metric}} проходит без данных: её successCondition принимает пустой результат или значение по умолчанию.",
+      "problems.cluster-template-metric-cannot-fail.title": "Метрика не может провалиться (шаблон кластера)",
+      "problems.cluster-template-metric-cannot-fail.message": "Метрика {{fact:metric}} не может провалиться: её failureLimit {{fact:failureLimit}} никогда не превышается.",
+      "problems.cluster-template-metric-dry-run.title": "Метрика в режиме dry-run (шаблон кластера)",
+      "problems.cluster-template-metric-dry-run.message": "Метрика {{fact:metric}} работает в режиме dry-run: её провалы записываются, но никогда не проваливают анализ."
     },
     "uk": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: rollout із кроками, вагами, ReplicaSet і запусками аналізу; просування, переривання, повтор, пауза й відновлення саме тими патчами, що надсилає kubectl argo rollouts, із показом перед надсиланням; проблеми деградованих і перерваних rollout і провалених аналізів.",
+      "description": "Argo Rollouts: rollout із кроками, вагами, ReplicaSet і запусками аналізу; просування, переривання, повтор, пауза й відновлення саме патчами kubectl argo rollouts, із показом перед надсиланням; проблеми деградованих, перерваних, довго призупинених і невизначених rollout, провалених аналізів і трафіку, що не доходить до canary; перевірка безпеки налаштування canary за вибором; Rollout, якому Deployment слугує шаблоном; інструмент діагностики лише для читання для ШІ-агентів.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1225,11 +2006,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Діагностувати rollout",
+      "problemCategories.canary-safety.title": "Безпека canary",
+      "problems.paused-long.title": "На паузі понад добу",
+      "problems.paused-long.message": "На паузі понад добу ({{.status.pauseConditions[0].reason}}): чекає на просування, відновлення або переривання.",
+      "problems.analysis-inconclusive.title": "Невизначений аналіз",
+      "problems.analysis-inconclusive.message": "На паузі, бо аналіз або експеримент дав невизначений результат: чекає, доки людина просуне або перерве оновлення.",
+      "problems.workload-missing.title": "Немає Deployment шаблону",
+      "problems.workload-missing.message": "Шаблон Pod береться з Deployment {{.spec.workloadRef.name}} (spec.workloadRef), якого немає.",
+      "problems.traffic-virtual-service-missing.title": "Немає VirtualService",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} не існує: контролер не може перерозподілити трафік canary.",
+      "problems.traffic-route-missing.title": "Немає маршруту",
+      "problems.traffic-route-missing.message": "У VirtualService {{fact:virtualService}} немає HTTP-маршруту з назвою {{fact:route}}: контролер не може задати вагу canary.",
+      "problems.traffic-route-not-chosen.title": "Маршрут не вибрано",
+      "problems.traffic-route-not-chosen.message": "У VirtualService {{fact:virtualService}} кілька HTTP-маршрутів, і Rollout не називає жодного з них: контролер не може визначити, який змінювати.",
+      "problems.traffic-route-without-canary.title": "Маршрут без canary",
+      "problems.traffic-route-without-canary.message": "У маршруті VirtualService {{fact:virtualService}} немає призначення {{fact:target}} для canary.",
+      "problems.traffic-route-without-stable.title": "Маршрут без стабільної версії",
+      "problems.traffic-route-without-stable.message": "У маршруті VirtualService {{fact:virtualService}} немає призначення {{fact:target}} для стабільної версії.",
+      "problems.traffic-destination-rule-missing.title": "Немає DestinationRule",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} не існує: контролер не може спрямувати subset на Pod canary і стабільні Pod.",
+      "problems.traffic-subset-missing.title": "Немає subset",
+      "problems.traffic-subset-missing.message": "У DestinationRule {{fact:destinationRule}} немає subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary не ізольовано",
+      "problems.traffic-same-hash.message": "Трафік canary і стабільної версії йде до тих самих Pod (хеш шаблону {{fact:hash}}), хоча canary має вагу {{fact:weight}}: canary не ізольовано, і його аналіз вимірює стару версію.",
+      "problems.template-metric-always-passes.title": "Метрика завжди проходить",
+      "problems.template-metric-always-passes.message": "Метрика {{fact:metric}} не має ні successCondition, ні failureCondition: кожне вимірювання вважається успішним.",
+      "problems.template-metric-nan-passes.title": "Метрика проходить при NaN",
+      "problems.template-metric-nan-passes.message": "Метрика {{fact:metric}} проходить при NaN, який дає 0/0, коли трафіку немає: вона має лише failureCondition, або її successCondition приймає isNaN чи isInf.",
+      "problems.template-metric-no-data-passes.title": "Метрика проходить без даних",
+      "problems.template-metric-no-data-passes.message": "Метрика {{fact:metric}} проходить без даних: її successCondition приймає порожній результат або типове значення.",
+      "problems.template-metric-cannot-fail.title": "Метрика не може провалитися",
+      "problems.template-metric-cannot-fail.message": "Метрика {{fact:metric}} не може провалитися: її failureLimit {{fact:failureLimit}} ніколи не перевищується.",
+      "problems.template-metric-dry-run.title": "Метрика в режимі dry-run",
+      "problems.template-metric-dry-run.message": "Метрика {{fact:metric}} працює в режимі dry-run: її провали записуються, але ніколи не провалюють аналіз.",
+      "problems.rollout-promoted-on-time.title": "Просування без перевірки",
+      "problems.rollout-promoted-on-time.message": "Цей rollout {{fact:strategy}} не перевіряє ні аналіз, ні ручна пауза: нова версія просувається лише за часом.",
+      "problems.rollout-weights-without-check.title": "Ваги без перевірки",
+      "problems.rollout-weights-without-check.message": "Canary переходить з {{fact:from}}% на {{fact:to}}% без паузи чи аналізу між цими двома кроками.",
+      "problems.rollout-first-step-full.title": "Перший крок надсилає весь трафік",
+      "problems.rollout-first-step-full.message": "Перший крок трафіку надсилає на canary {{fact:weight}}%: поступового переходу немає.",
+      "problems.rollout-all-pods-unavailable.title": "Усі Pod можуть бути недоступні",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} дозволяє всім Pod бути недоступними під час оновлення.",
+      "problems.cluster-template-metric-always-passes.title": "Метрика завжди проходить (шаблон кластера)",
+      "problems.cluster-template-metric-always-passes.message": "Метрика {{fact:metric}} не має ні successCondition, ні failureCondition: кожне вимірювання вважається успішним.",
+      "problems.cluster-template-metric-nan-passes.title": "Метрика проходить при NaN (шаблон кластера)",
+      "problems.cluster-template-metric-nan-passes.message": "Метрика {{fact:metric}} проходить при NaN, який дає 0/0, коли трафіку немає: вона має лише failureCondition, або її successCondition приймає isNaN чи isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "Метрика проходить без даних (шаблон кластера)",
+      "problems.cluster-template-metric-no-data-passes.message": "Метрика {{fact:metric}} проходить без даних: її successCondition приймає порожній результат або типове значення.",
+      "problems.cluster-template-metric-cannot-fail.title": "Метрика не може провалитися (шаблон кластера)",
+      "problems.cluster-template-metric-cannot-fail.message": "Метрика {{fact:metric}} не може провалитися: її failureLimit {{fact:failureLimit}} ніколи не перевищується.",
+      "problems.cluster-template-metric-dry-run.title": "Метрика в режимі dry-run (шаблон кластера)",
+      "problems.cluster-template-metric-dry-run.message": "Метрика {{fact:metric}} працює в режимі dry-run: її провали записуються, але ніколи не провалюють аналіз."
     },
     "de": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: Rollouts mit ihren Schritten, Gewichten, ReplicaSets und Analyseläufen; Promoten, Abbrechen, erneut Versuchen, Pausieren und Fortsetzen mit genau den Patches von kubectl argo rollouts, vorher angezeigt; Probleme beeinträchtigter und abgebrochener Rollouts und fehlgeschlagener Analysen.",
+      "description": "Argo Rollouts: Rollouts mit Schritten, Gewichten, ReplicaSets und Analyseläufen; Promoten, Abbrechen, Wiederholen, Pausieren und Fortsetzen mit genau den Patches von kubectl argo rollouts, vorher angezeigt; Probleme: beeinträchtigte, abgebrochene, lange pausierte und unentschiedene Rollouts, fehlgeschlagene Analysen, Traffic, der den Canary verfehlt; optionale Prüfung der Canary-Sicherheit; der Rollout, dem ein Deployment als Vorlage dient; schreibgeschützte Diagnose für KI-Agenten.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1289,11 +2123,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Rollout diagnostizieren",
+      "problemCategories.canary-safety.title": "Canary-Sicherheit",
+      "problems.paused-long.title": "Seit über einem Tag pausiert",
+      "problems.paused-long.message": "Seit mehr als einem Tag pausiert ({{.status.pauseConditions[0].reason}}): wartet darauf, promotet, fortgesetzt oder abgebrochen zu werden.",
+      "problems.analysis-inconclusive.title": "Unentschiedene Analyse",
+      "problems.analysis-inconclusive.message": "Pausiert, weil eine Analyse oder ein Experiment kein eindeutiges Ergebnis hatte: wartet darauf, dass jemand promotet oder abbricht.",
+      "problems.workload-missing.title": "Vorlagen-Deployment fehlt",
+      "problems.workload-missing.message": "Die Pod-Vorlage kommt aus Deployment {{.spec.workloadRef.name}} (spec.workloadRef), das nicht existiert.",
+      "problems.traffic-virtual-service-missing.title": "VirtualService fehlt",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} existiert nicht: Der Controller kann den Traffic des Canary nicht verschieben.",
+      "problems.traffic-route-missing.title": "Route fehlt",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}} hat keine HTTP-Route namens {{fact:route}}: Der Controller kann das Gewicht des Canary nicht setzen.",
+      "problems.traffic-route-not-chosen.title": "Route nicht gewählt",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}} hat mehrere HTTP-Routen, und der Rollout nennt keine davon: Der Controller kann nicht erkennen, welche er bearbeiten soll.",
+      "problems.traffic-route-without-canary.title": "Route ohne Canary",
+      "problems.traffic-route-without-canary.message": "Eine Route von VirtualService {{fact:virtualService}} hat kein Ziel {{fact:target}} für den Canary.",
+      "problems.traffic-route-without-stable.title": "Route ohne stabile Version",
+      "problems.traffic-route-without-stable.message": "Eine Route von VirtualService {{fact:virtualService}} hat kein Ziel {{fact:target}} für die stabile Version.",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule fehlt",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} existiert nicht: Der Controller kann die Subsets nicht auf die Canary- und die stabilen Pods richten.",
+      "problems.traffic-subset-missing.title": "Subset fehlt",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}} hat kein Subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary nicht isoliert",
+      "problems.traffic-same-hash.message": "Canary- und stabiler Traffic gehen an dieselben Pods (Vorlagen-Hash {{fact:hash}}), während der Canary das Gewicht {{fact:weight}} hat: Der Canary ist nicht isoliert, und seine Analyse misst die alte Version.",
+      "problems.template-metric-always-passes.title": "Metrik besteht immer",
+      "problems.template-metric-always-passes.message": "Metrik {{fact:metric}} hat weder eine successCondition noch eine failureCondition: Jede Messung zählt als Erfolg.",
+      "problems.template-metric-nan-passes.title": "Metrik besteht bei NaN",
+      "problems.template-metric-nan-passes.message": "Metrik {{fact:metric}} besteht bei NaN, wie es 0/0 ohne Traffic ergibt: Sie hat nur eine failureCondition, oder ihre successCondition akzeptiert isNaN oder isInf.",
+      "problems.template-metric-no-data-passes.title": "Metrik besteht ohne Daten",
+      "problems.template-metric-no-data-passes.message": "Metrik {{fact:metric}} besteht ohne Daten: Ihre successCondition akzeptiert ein leeres Ergebnis oder einen Standardwert.",
+      "problems.template-metric-cannot-fail.title": "Metrik kann nicht fehlschlagen",
+      "problems.template-metric-cannot-fail.message": "Metrik {{fact:metric}} kann nicht fehlschlagen: Ihr failureLimit {{fact:failureLimit}} wird nie überschritten.",
+      "problems.template-metric-dry-run.title": "Metrik im Dry-Run",
+      "problems.template-metric-dry-run.message": "Metrik {{fact:metric}} läuft im Dry-Run: Ihre Fehlschläge werden erfasst, lassen die Analyse aber nie fehlschlagen.",
+      "problems.rollout-promoted-on-time.title": "Promotet ohne Prüfung",
+      "problems.rollout-promoted-on-time.message": "Keine Analyse und keine manuelle Pause prüft diesen {{fact:strategy}}-Rollout: Eine neue Version wird allein nach Zeit promotet.",
+      "problems.rollout-weights-without-check.title": "Gewichte ohne Prüfung",
+      "problems.rollout-weights-without-check.message": "Der Canary geht von {{fact:from}} % auf {{fact:to}} % ohne Pause oder Analyse zwischen den beiden Schritten.",
+      "problems.rollout-first-step-full.title": "Erster Schritt sendet allen Traffic",
+      "problems.rollout-first-step-full.message": "Der erste Traffic-Schritt sendet {{fact:weight}} % an den Canary: Es gibt keine schrittweise Verschiebung.",
+      "problems.rollout-all-pods-unavailable.title": "Alle Pods können ausfallen",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} lässt zu, dass während eines Updates jeder Pod nicht verfügbar ist.",
+      "problems.cluster-template-metric-always-passes.title": "Metrik besteht immer (Cluster-Vorlage)",
+      "problems.cluster-template-metric-always-passes.message": "Metrik {{fact:metric}} hat weder eine successCondition noch eine failureCondition: Jede Messung zählt als Erfolg.",
+      "problems.cluster-template-metric-nan-passes.title": "Metrik besteht bei NaN (Cluster-Vorlage)",
+      "problems.cluster-template-metric-nan-passes.message": "Metrik {{fact:metric}} besteht bei NaN, wie es 0/0 ohne Traffic ergibt: Sie hat nur eine failureCondition, oder ihre successCondition akzeptiert isNaN oder isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "Metrik besteht ohne Daten (Cluster-Vorlage)",
+      "problems.cluster-template-metric-no-data-passes.message": "Metrik {{fact:metric}} besteht ohne Daten: Ihre successCondition akzeptiert ein leeres Ergebnis oder einen Standardwert.",
+      "problems.cluster-template-metric-cannot-fail.title": "Metrik kann nicht fehlschlagen (Cluster-Vorlage)",
+      "problems.cluster-template-metric-cannot-fail.message": "Metrik {{fact:metric}} kann nicht fehlschlagen: Ihr failureLimit {{fact:failureLimit}} wird nie überschritten.",
+      "problems.cluster-template-metric-dry-run.title": "Metrik im Dry-Run (Cluster-Vorlage)",
+      "problems.cluster-template-metric-dry-run.message": "Metrik {{fact:metric}} läuft im Dry-Run: Ihre Fehlschläge werden erfasst, lassen die Analyse aber nie fehlschlagen."
     },
     "fr": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts : les rollouts avec leurs étapes, poids, ReplicaSets et analyses ; promouvoir, interrompre, réessayer, mettre en pause et reprendre avec exactement les patchs de kubectl argo rollouts, montrés d'abord ; problèmes des rollouts dégradés ou interrompus et des analyses échouées.",
+      "description": "Argo Rollouts : rollouts avec étapes, poids, ReplicaSets et analyses ; promouvoir, interrompre, réessayer, suspendre et reprendre avec exactement les patchs de kubectl argo rollouts, montrés d'abord ; problèmes des rollouts dégradés, interrompus, longtemps en pause ou non concluants, des analyses échouées et du trafic qui manque le canary ; vérification facultative de la sûreté du canary ; le Rollout dont un Deployment est le modèle ; diagnostic en lecture seule pour les agents IA.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1353,11 +2240,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Diagnostiquer un rollout",
+      "problemCategories.canary-safety.title": "Sûreté du canary",
+      "problems.paused-long.title": "En pause depuis plus d'un jour",
+      "problems.paused-long.message": "En pause depuis plus d'un jour ({{.status.pauseConditions[0].reason}}) : il attend d'être promu, repris ou interrompu.",
+      "problems.analysis-inconclusive.title": "Analyse non concluante",
+      "problems.analysis-inconclusive.message": "En pause car une analyse ou une expérience n'a pas été concluante : il attend qu'une personne le promeuve ou l'interrompe.",
+      "problems.workload-missing.title": "Deployment modèle absent",
+      "problems.workload-missing.message": "Le modèle de Pod vient du Deployment {{.spec.workloadRef.name}} (spec.workloadRef), qui n'existe pas.",
+      "problems.traffic-virtual-service-missing.title": "VirtualService absent",
+      "problems.traffic-virtual-service-missing.message": "Le VirtualService {{fact:namespace}}/{{fact:name}} n'existe pas : le contrôleur ne peut pas déplacer le trafic du canary.",
+      "problems.traffic-route-missing.title": "Route absente",
+      "problems.traffic-route-missing.message": "Le VirtualService {{fact:virtualService}} n'a pas de route HTTP nommée {{fact:route}} : le contrôleur ne peut pas définir le poids du canary.",
+      "problems.traffic-route-not-chosen.title": "Route non choisie",
+      "problems.traffic-route-not-chosen.message": "Le VirtualService {{fact:virtualService}} a plusieurs routes HTTP et le Rollout n'en nomme aucune : le contrôleur ne peut pas savoir laquelle modifier.",
+      "problems.traffic-route-without-canary.title": "Route sans le canary",
+      "problems.traffic-route-without-canary.message": "Une route du VirtualService {{fact:virtualService}} n'a pas de destination {{fact:target}} pour le canary.",
+      "problems.traffic-route-without-stable.title": "Route sans la version stable",
+      "problems.traffic-route-without-stable.message": "Une route du VirtualService {{fact:virtualService}} n'a pas de destination {{fact:target}} pour la version stable.",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule absente",
+      "problems.traffic-destination-rule-missing.message": "La DestinationRule {{fact:name}} n'existe pas : le contrôleur ne peut pas diriger les subsets vers les Pods canary et stables.",
+      "problems.traffic-subset-missing.title": "Subset absent",
+      "problems.traffic-subset-missing.message": "La DestinationRule {{fact:destinationRule}} n'a pas de subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary non isolé",
+      "problems.traffic-same-hash.message": "Le trafic canary et le trafic stable vont aux mêmes Pods (hash de modèle {{fact:hash}}) alors que le canary a le poids {{fact:weight}} : le canary n'est pas isolé et son analyse mesure l'ancienne version.",
+      "problems.template-metric-always-passes.title": "La métrique réussit toujours",
+      "problems.template-metric-always-passes.message": "La métrique {{fact:metric}} n'a ni successCondition ni failureCondition : chaque mesure compte comme un succès.",
+      "problems.template-metric-nan-passes.title": "La métrique réussit sur NaN",
+      "problems.template-metric-nan-passes.message": "La métrique {{fact:metric}} réussit sur NaN, que donne 0/0 en l'absence de trafic : elle n'a qu'une failureCondition, ou sa successCondition accepte isNaN ou isInf.",
+      "problems.template-metric-no-data-passes.title": "La métrique réussit sans données",
+      "problems.template-metric-no-data-passes.message": "La métrique {{fact:metric}} réussit sans données : sa successCondition accepte un résultat vide ou une valeur par défaut.",
+      "problems.template-metric-cannot-fail.title": "La métrique ne peut pas échouer",
+      "problems.template-metric-cannot-fail.message": "La métrique {{fact:metric}} ne peut pas échouer : son failureLimit {{fact:failureLimit}} n'est jamais dépassé.",
+      "problems.template-metric-dry-run.title": "Métrique en dry-run",
+      "problems.template-metric-dry-run.message": "La métrique {{fact:metric}} s'exécute en dry-run : ses échecs sont enregistrés mais ne font jamais échouer l'analyse.",
+      "problems.rollout-promoted-on-time.title": "Promu sans vérification",
+      "problems.rollout-promoted-on-time.message": "Aucune analyse ni pause manuelle ne vérifie ce rollout {{fact:strategy}} : une nouvelle version est promue au seul passage du temps.",
+      "problems.rollout-weights-without-check.title": "Poids sans vérification",
+      "problems.rollout-weights-without-check.message": "Le canary passe de {{fact:from}} % à {{fact:to}} % sans pause ni analyse entre les deux étapes.",
+      "problems.rollout-first-step-full.title": "La première étape envoie tout le trafic",
+      "problems.rollout-first-step-full.message": "La première étape de trafic envoie {{fact:weight}} % au canary : il n'y a pas de bascule progressive.",
+      "problems.rollout-all-pods-unavailable.title": "Tous les Pods peuvent être indisponibles",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} permet à tous les Pods d'être indisponibles pendant une mise à jour.",
+      "problems.cluster-template-metric-always-passes.title": "La métrique réussit toujours (modèle de cluster)",
+      "problems.cluster-template-metric-always-passes.message": "La métrique {{fact:metric}} n'a ni successCondition ni failureCondition : chaque mesure compte comme un succès.",
+      "problems.cluster-template-metric-nan-passes.title": "La métrique réussit sur NaN (modèle de cluster)",
+      "problems.cluster-template-metric-nan-passes.message": "La métrique {{fact:metric}} réussit sur NaN, que donne 0/0 en l'absence de trafic : elle n'a qu'une failureCondition, ou sa successCondition accepte isNaN ou isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "La métrique réussit sans données (modèle de cluster)",
+      "problems.cluster-template-metric-no-data-passes.message": "La métrique {{fact:metric}} réussit sans données : sa successCondition accepte un résultat vide ou une valeur par défaut.",
+      "problems.cluster-template-metric-cannot-fail.title": "La métrique ne peut pas échouer (modèle de cluster)",
+      "problems.cluster-template-metric-cannot-fail.message": "La métrique {{fact:metric}} ne peut pas échouer : son failureLimit {{fact:failureLimit}} n'est jamais dépassé.",
+      "problems.cluster-template-metric-dry-run.title": "Métrique en dry-run (modèle de cluster)",
+      "problems.cluster-template-metric-dry-run.message": "La métrique {{fact:metric}} s'exécute en dry-run : ses échecs sont enregistrés mais ne font jamais échouer l'analyse."
     },
     "es": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: rollouts con sus pasos, pesos, ReplicaSets y ejecuciones de análisis; promover, interrumpir, reintentar, pausar y reanudar con exactamente los parches de kubectl argo rollouts, mostrados antes; problemas de rollouts degradados o interrumpidos y de análisis fallidos.",
+      "description": "Argo Rollouts: rollouts con pasos, pesos, ReplicaSets y ejecuciones de análisis; promover, interrumpir, reintentar, pausar y reanudar con exactamente los parches de kubectl argo rollouts, mostrados antes; problemas de rollouts degradados, interrumpidos, en pausa larga o no concluyentes, de análisis fallidos y de tráfico que no llega al canary; comprobación opcional de la seguridad del canary; el Rollout al que un Deployment sirve de plantilla; diagnóstico de solo lectura para agentes de IA.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1417,11 +2357,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Diagnosticar un rollout",
+      "problemCategories.canary-safety.title": "Seguridad del canary",
+      "problems.paused-long.title": "En pausa más de un día",
+      "problems.paused-long.message": "En pausa desde hace más de un día ({{.status.pauseConditions[0].reason}}): espera a que se promueva, se reanude o se interrumpa.",
+      "problems.analysis-inconclusive.title": "Análisis no concluyente",
+      "problems.analysis-inconclusive.message": "En pausa porque un análisis o un experimento no fue concluyente: espera a que una persona lo promueva o lo interrumpa.",
+      "problems.workload-missing.title": "Falta el Deployment de plantilla",
+      "problems.workload-missing.message": "La plantilla de Pod viene del Deployment {{.spec.workloadRef.name}} (spec.workloadRef), que no existe.",
+      "problems.traffic-virtual-service-missing.title": "Falta el VirtualService",
+      "problems.traffic-virtual-service-missing.message": "El VirtualService {{fact:namespace}}/{{fact:name}} no existe: el controlador no puede desplazar el tráfico del canary.",
+      "problems.traffic-route-missing.title": "Falta la ruta",
+      "problems.traffic-route-missing.message": "El VirtualService {{fact:virtualService}} no tiene ninguna ruta HTTP llamada {{fact:route}}: el controlador no puede fijar el peso del canary.",
+      "problems.traffic-route-not-chosen.title": "Ruta no elegida",
+      "problems.traffic-route-not-chosen.message": "El VirtualService {{fact:virtualService}} tiene varias rutas HTTP y el Rollout no nombra ninguna: el controlador no puede saber cuál editar.",
+      "problems.traffic-route-without-canary.title": "Ruta sin el canary",
+      "problems.traffic-route-without-canary.message": "Una ruta del VirtualService {{fact:virtualService}} no tiene el destino {{fact:target}} para el canary.",
+      "problems.traffic-route-without-stable.title": "Ruta sin la versión estable",
+      "problems.traffic-route-without-stable.message": "Una ruta del VirtualService {{fact:virtualService}} no tiene el destino {{fact:target}} para la versión estable.",
+      "problems.traffic-destination-rule-missing.title": "Falta la DestinationRule",
+      "problems.traffic-destination-rule-missing.message": "La DestinationRule {{fact:name}} no existe: el controlador no puede apuntar los subsets a los Pods canary y estables.",
+      "problems.traffic-subset-missing.title": "Falta el subset",
+      "problems.traffic-subset-missing.message": "La DestinationRule {{fact:destinationRule}} no tiene el subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary no aislado",
+      "problems.traffic-same-hash.message": "El tráfico canary y el estable van a los mismos Pods (hash de plantilla {{fact:hash}}) mientras el canary tiene peso {{fact:weight}}: el canary no está aislado y su análisis mide la versión antigua.",
+      "problems.template-metric-always-passes.title": "La métrica siempre pasa",
+      "problems.template-metric-always-passes.message": "La métrica {{fact:metric}} no tiene ni successCondition ni failureCondition: cada medición cuenta como un éxito.",
+      "problems.template-metric-nan-passes.title": "La métrica pasa con NaN",
+      "problems.template-metric-nan-passes.message": "La métrica {{fact:metric}} pasa con NaN, que es lo que da 0/0 cuando no hay tráfico: solo tiene una failureCondition, o su successCondition acepta isNaN o isInf.",
+      "problems.template-metric-no-data-passes.title": "La métrica pasa sin datos",
+      "problems.template-metric-no-data-passes.message": "La métrica {{fact:metric}} pasa sin datos: su successCondition acepta un resultado vacío o un valor predeterminado.",
+      "problems.template-metric-cannot-fail.title": "La métrica no puede fallar",
+      "problems.template-metric-cannot-fail.message": "La métrica {{fact:metric}} no puede fallar: su failureLimit {{fact:failureLimit}} nunca se supera.",
+      "problems.template-metric-dry-run.title": "Métrica en dry-run",
+      "problems.template-metric-dry-run.message": "La métrica {{fact:metric}} se ejecuta en dry-run: sus fallos se registran, pero nunca hacen fallar el análisis.",
+      "problems.rollout-promoted-on-time.title": "Promovido sin comprobación",
+      "problems.rollout-promoted-on-time.message": "Ningún análisis ni pausa manual comprueba este rollout {{fact:strategy}}: una versión nueva se promueve solo por tiempo.",
+      "problems.rollout-weights-without-check.title": "Pesos sin comprobación",
+      "problems.rollout-weights-without-check.message": "El canary pasa del {{fact:from}} % al {{fact:to}} % sin pausa ni análisis entre los dos pasos.",
+      "problems.rollout-first-step-full.title": "El primer paso envía todo el tráfico",
+      "problems.rollout-first-step-full.message": "El primer paso de tráfico envía el {{fact:weight}} % al canary: no hay un cambio gradual.",
+      "problems.rollout-all-pods-unavailable.title": "Todos los Pods pueden quedar no disponibles",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} permite que todos los Pods queden no disponibles durante una actualización.",
+      "problems.cluster-template-metric-always-passes.title": "La métrica siempre pasa (plantilla de clúster)",
+      "problems.cluster-template-metric-always-passes.message": "La métrica {{fact:metric}} no tiene ni successCondition ni failureCondition: cada medición cuenta como un éxito.",
+      "problems.cluster-template-metric-nan-passes.title": "La métrica pasa con NaN (plantilla de clúster)",
+      "problems.cluster-template-metric-nan-passes.message": "La métrica {{fact:metric}} pasa con NaN, que es lo que da 0/0 cuando no hay tráfico: solo tiene una failureCondition, o su successCondition acepta isNaN o isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "La métrica pasa sin datos (plantilla de clúster)",
+      "problems.cluster-template-metric-no-data-passes.message": "La métrica {{fact:metric}} pasa sin datos: su successCondition acepta un resultado vacío o un valor predeterminado.",
+      "problems.cluster-template-metric-cannot-fail.title": "La métrica no puede fallar (plantilla de clúster)",
+      "problems.cluster-template-metric-cannot-fail.message": "La métrica {{fact:metric}} no puede fallar: su failureLimit {{fact:failureLimit}} nunca se supera.",
+      "problems.cluster-template-metric-dry-run.title": "Métrica en dry-run (plantilla de clúster)",
+      "problems.cluster-template-metric-dry-run.message": "La métrica {{fact:metric}} se ejecuta en dry-run: sus fallos se registran, pero nunca hacen fallar el análisis."
     },
     "pt-BR": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: rollouts com seus passos, pesos, ReplicaSets e execuções de análise; promover, interromper, tentar novamente, pausar e retomar com exatamente os patches do kubectl argo rollouts, mostrados antes; problemas de rollouts degradados ou interrompidos e de análises com falha.",
+      "description": "Argo Rollouts: rollouts com passos, pesos, ReplicaSets e execuções de análise; promover, interromper, repetir, pausar e retomar com exatamente os patches do kubectl argo rollouts, mostrados antes; problemas de rollouts degradados, interrompidos, pausados há muito tempo ou inconclusivos, de análises com falha e de tráfego que não chega ao canary; verificação opcional da segurança do canary; o Rollout ao qual um Deployment serve de modelo; diagnóstico somente leitura para agentes de IA.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1481,11 +2474,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Diagnosticar um rollout",
+      "problemCategories.canary-safety.title": "Segurança do canary",
+      "problems.paused-long.title": "Pausado há mais de um dia",
+      "problems.paused-long.message": "Pausado há mais de um dia ({{.status.pauseConditions[0].reason}}): aguarda ser promovido, retomado ou interrompido.",
+      "problems.analysis-inconclusive.title": "Análise inconclusiva",
+      "problems.analysis-inconclusive.message": "Pausado porque uma análise ou um experimento foi inconclusivo: aguarda que uma pessoa o promova ou interrompa.",
+      "problems.workload-missing.title": "Deployment de modelo ausente",
+      "problems.workload-missing.message": "O modelo de Pod vem do Deployment {{.spec.workloadRef.name}} (spec.workloadRef), que não existe.",
+      "problems.traffic-virtual-service-missing.title": "VirtualService ausente",
+      "problems.traffic-virtual-service-missing.message": "O VirtualService {{fact:namespace}}/{{fact:name}} não existe: o controlador não consegue deslocar o tráfego do canary.",
+      "problems.traffic-route-missing.title": "Rota ausente",
+      "problems.traffic-route-missing.message": "O VirtualService {{fact:virtualService}} não tem uma rota HTTP chamada {{fact:route}}: o controlador não consegue definir o peso do canary.",
+      "problems.traffic-route-not-chosen.title": "Rota não escolhida",
+      "problems.traffic-route-not-chosen.message": "O VirtualService {{fact:virtualService}} tem várias rotas HTTP e o Rollout não nomeia nenhuma: o controlador não consegue saber qual editar.",
+      "problems.traffic-route-without-canary.title": "Rota sem o canary",
+      "problems.traffic-route-without-canary.message": "Uma rota do VirtualService {{fact:virtualService}} não tem o destino {{fact:target}} para o canary.",
+      "problems.traffic-route-without-stable.title": "Rota sem a versão estável",
+      "problems.traffic-route-without-stable.message": "Uma rota do VirtualService {{fact:virtualService}} não tem o destino {{fact:target}} para a versão estável.",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule ausente",
+      "problems.traffic-destination-rule-missing.message": "A DestinationRule {{fact:name}} não existe: o controlador não consegue apontar os subsets para os Pods canary e estáveis.",
+      "problems.traffic-subset-missing.title": "Subset ausente",
+      "problems.traffic-subset-missing.message": "A DestinationRule {{fact:destinationRule}} não tem o subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary não isolado",
+      "problems.traffic-same-hash.message": "O tráfego canary e o estável vão para os mesmos Pods (hash de modelo {{fact:hash}}) enquanto o canary tem peso {{fact:weight}}: o canary não está isolado e sua análise mede a versão antiga.",
+      "problems.template-metric-always-passes.title": "Métrica sempre passa",
+      "problems.template-metric-always-passes.message": "A métrica {{fact:metric}} não tem successCondition nem failureCondition: toda medição conta como sucesso.",
+      "problems.template-metric-nan-passes.title": "Métrica passa com NaN",
+      "problems.template-metric-nan-passes.message": "A métrica {{fact:metric}} passa com NaN, que é o que 0/0 dá quando não há tráfego: ela tem só uma failureCondition, ou sua successCondition aceita isNaN ou isInf.",
+      "problems.template-metric-no-data-passes.title": "Métrica passa sem dados",
+      "problems.template-metric-no-data-passes.message": "A métrica {{fact:metric}} passa sem dados: sua successCondition aceita um resultado vazio ou um valor padrão.",
+      "problems.template-metric-cannot-fail.title": "Métrica não pode falhar",
+      "problems.template-metric-cannot-fail.message": "A métrica {{fact:metric}} não pode falhar: seu failureLimit {{fact:failureLimit}} nunca é excedido.",
+      "problems.template-metric-dry-run.title": "Métrica em dry-run",
+      "problems.template-metric-dry-run.message": "A métrica {{fact:metric}} roda em dry-run: suas falhas são registradas, mas nunca fazem a análise falhar.",
+      "problems.rollout-promoted-on-time.title": "Promovido sem verificação",
+      "problems.rollout-promoted-on-time.message": "Nenhuma análise ou pausa manual verifica este rollout {{fact:strategy}}: uma nova versão é promovida apenas pelo tempo.",
+      "problems.rollout-weights-without-check.title": "Pesos sem verificação",
+      "problems.rollout-weights-without-check.message": "O canary vai de {{fact:from}}% para {{fact:to}}% sem pausa ou análise entre os dois passos.",
+      "problems.rollout-first-step-full.title": "Primeiro passo envia todo o tráfego",
+      "problems.rollout-first-step-full.message": "O primeiro passo de tráfego envia {{fact:weight}}% ao canary: não há mudança gradual.",
+      "problems.rollout-all-pods-unavailable.title": "Todos os Pods podem ficar indisponíveis",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} permite que todos os Pods fiquem indisponíveis durante uma atualização.",
+      "problems.cluster-template-metric-always-passes.title": "Métrica sempre passa (modelo de cluster)",
+      "problems.cluster-template-metric-always-passes.message": "A métrica {{fact:metric}} não tem successCondition nem failureCondition: toda medição conta como sucesso.",
+      "problems.cluster-template-metric-nan-passes.title": "Métrica passa com NaN (modelo de cluster)",
+      "problems.cluster-template-metric-nan-passes.message": "A métrica {{fact:metric}} passa com NaN, que é o que 0/0 dá quando não há tráfego: ela tem só uma failureCondition, ou sua successCondition aceita isNaN ou isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "Métrica passa sem dados (modelo de cluster)",
+      "problems.cluster-template-metric-no-data-passes.message": "A métrica {{fact:metric}} passa sem dados: sua successCondition aceita um resultado vazio ou um valor padrão.",
+      "problems.cluster-template-metric-cannot-fail.title": "Métrica não pode falhar (modelo de cluster)",
+      "problems.cluster-template-metric-cannot-fail.message": "A métrica {{fact:metric}} não pode falhar: seu failureLimit {{fact:failureLimit}} nunca é excedido.",
+      "problems.cluster-template-metric-dry-run.title": "Métrica em dry-run (modelo de cluster)",
+      "problems.cluster-template-metric-dry-run.message": "A métrica {{fact:metric}} roda em dry-run: suas falhas são registradas, mas nunca fazem a análise falhar."
     },
     "it": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: i rollout con passi, pesi, ReplicaSet ed esecuzioni di analisi; promuovere, interrompere, riprovare, mettere in pausa e riprendere con esattamente le patch di kubectl argo rollouts, mostrate prima; problemi di rollout degradati o interrotti e di analisi fallite.",
+      "description": "Argo Rollouts: rollout con passi, pesi, ReplicaSet ed esecuzioni di analisi; promuovere, interrompere, riprovare, mettere in pausa e riprendere con esattamente le patch di kubectl argo rollouts, mostrate prima; problemi di rollout degradati, interrotti, in pausa da tempo o non conclusivi, di analisi fallite e di traffico che non raggiunge il canary; controllo facoltativo della sicurezza del canary; il Rollout a cui un Deployment fa da modello; diagnosi in sola lettura per gli agenti IA.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1545,11 +2591,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Diagnostica un rollout",
+      "problemCategories.canary-safety.title": "Sicurezza del canary",
+      "problems.paused-long.title": "In pausa da oltre un giorno",
+      "problems.paused-long.message": "In pausa da più di un giorno ({{.status.pauseConditions[0].reason}}): attende di essere promosso, ripreso o interrotto.",
+      "problems.analysis-inconclusive.title": "Analisi non conclusiva",
+      "problems.analysis-inconclusive.message": "In pausa perché un'analisi o un esperimento non è stato conclusivo: attende che una persona lo promuova o lo interrompa.",
+      "problems.workload-missing.title": "Deployment modello mancante",
+      "problems.workload-missing.message": "Il modello dei Pod viene dal Deployment {{.spec.workloadRef.name}} (spec.workloadRef), che non esiste.",
+      "problems.traffic-virtual-service-missing.title": "VirtualService mancante",
+      "problems.traffic-virtual-service-missing.message": "Il VirtualService {{fact:namespace}}/{{fact:name}} non esiste: il controller non può spostare il traffico del canary.",
+      "problems.traffic-route-missing.title": "Route mancante",
+      "problems.traffic-route-missing.message": "Il VirtualService {{fact:virtualService}} non ha una route HTTP chiamata {{fact:route}}: il controller non può impostare il peso del canary.",
+      "problems.traffic-route-not-chosen.title": "Route non scelta",
+      "problems.traffic-route-not-chosen.message": "Il VirtualService {{fact:virtualService}} ha più route HTTP e il Rollout non ne nomina nessuna: il controller non può sapere quale modificare.",
+      "problems.traffic-route-without-canary.title": "Route senza il canary",
+      "problems.traffic-route-without-canary.message": "Una route del VirtualService {{fact:virtualService}} non ha la destinazione {{fact:target}} per il canary.",
+      "problems.traffic-route-without-stable.title": "Route senza la versione stabile",
+      "problems.traffic-route-without-stable.message": "Una route del VirtualService {{fact:virtualService}} non ha la destinazione {{fact:target}} per la versione stabile.",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule mancante",
+      "problems.traffic-destination-rule-missing.message": "La DestinationRule {{fact:name}} non esiste: il controller non può indirizzare i subset ai Pod canary e stabili.",
+      "problems.traffic-subset-missing.title": "Subset mancante",
+      "problems.traffic-subset-missing.message": "La DestinationRule {{fact:destinationRule}} non ha il subset {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary non isolato",
+      "problems.traffic-same-hash.message": "Il traffico canary e quello stabile vanno agli stessi Pod (hash del modello {{fact:hash}}) mentre il canary ha peso {{fact:weight}}: il canary non è isolato e la sua analisi misura la versione vecchia.",
+      "problems.template-metric-always-passes.title": "La metrica passa sempre",
+      "problems.template-metric-always-passes.message": "La metrica {{fact:metric}} non ha né successCondition né failureCondition: ogni misura conta come un successo.",
+      "problems.template-metric-nan-passes.title": "La metrica passa con NaN",
+      "problems.template-metric-nan-passes.message": "La metrica {{fact:metric}} passa con NaN, come dà 0/0 quando non c'è traffico: ha solo una failureCondition, oppure la sua successCondition accetta isNaN o isInf.",
+      "problems.template-metric-no-data-passes.title": "La metrica passa senza dati",
+      "problems.template-metric-no-data-passes.message": "La metrica {{fact:metric}} passa senza dati: la sua successCondition accetta un risultato vuoto o un valore predefinito.",
+      "problems.template-metric-cannot-fail.title": "La metrica non può fallire",
+      "problems.template-metric-cannot-fail.message": "La metrica {{fact:metric}} non può fallire: il suo failureLimit {{fact:failureLimit}} non viene mai superato.",
+      "problems.template-metric-dry-run.title": "Metrica in dry-run",
+      "problems.template-metric-dry-run.message": "La metrica {{fact:metric}} gira in dry-run: i suoi fallimenti vengono registrati ma non fanno mai fallire l'analisi.",
+      "problems.rollout-promoted-on-time.title": "Promosso senza controllo",
+      "problems.rollout-promoted-on-time.message": "Nessuna analisi né pausa manuale controlla questo rollout {{fact:strategy}}: una nuova versione viene promossa solo in base al tempo.",
+      "problems.rollout-weights-without-check.title": "Pesi senza controllo",
+      "problems.rollout-weights-without-check.message": "Il canary passa dal {{fact:from}}% al {{fact:to}}% senza pausa né analisi tra i due passi.",
+      "problems.rollout-first-step-full.title": "Il primo passo invia tutto il traffico",
+      "problems.rollout-first-step-full.message": "Il primo passo di traffico invia il {{fact:weight}}% al canary: non c'è uno spostamento graduale.",
+      "problems.rollout-all-pods-unavailable.title": "Tutti i Pod possono essere non disponibili",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} consente che tutti i Pod siano non disponibili durante un aggiornamento.",
+      "problems.cluster-template-metric-always-passes.title": "La metrica passa sempre (modello del cluster)",
+      "problems.cluster-template-metric-always-passes.message": "La metrica {{fact:metric}} non ha né successCondition né failureCondition: ogni misura conta come un successo.",
+      "problems.cluster-template-metric-nan-passes.title": "La metrica passa con NaN (modello del cluster)",
+      "problems.cluster-template-metric-nan-passes.message": "La metrica {{fact:metric}} passa con NaN, come dà 0/0 quando non c'è traffico: ha solo una failureCondition, oppure la sua successCondition accetta isNaN o isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "La metrica passa senza dati (modello del cluster)",
+      "problems.cluster-template-metric-no-data-passes.message": "La metrica {{fact:metric}} passa senza dati: la sua successCondition accetta un risultato vuoto o un valore predefinito.",
+      "problems.cluster-template-metric-cannot-fail.title": "La metrica non può fallire (modello del cluster)",
+      "problems.cluster-template-metric-cannot-fail.message": "La metrica {{fact:metric}} non può fallire: il suo failureLimit {{fact:failureLimit}} non viene mai superato.",
+      "problems.cluster-template-metric-dry-run.title": "Metrica in dry-run (modello del cluster)",
+      "problems.cluster-template-metric-dry-run.message": "La metrica {{fact:metric}} gira in dry-run: i suoi fallimenti vengono registrati ma non fanno mai fallire l'analisi."
     },
     "pl": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: rollouty z ich krokami, wagami, ReplicaSetami i przebiegami analiz; promowanie, przerywanie, ponawianie, wstrzymywanie i wznawianie dokładnie tymi łatkami, które wysyła kubectl argo rollouts, pokazanymi najpierw; problemy zdegradowanych i przerwanych rolloutów oraz nieudanych analiz.",
+      "description": "Argo Rollouts: rollouty z krokami, wagami, ReplicaSetami i przebiegami analiz; promowanie, przerywanie, ponawianie, wstrzymywanie i wznawianie dokładnie łatkami kubectl argo rollouts, pokazanymi najpierw; problemy zdegradowanych, przerwanych, długo wstrzymanych i nierozstrzygniętych rolloutów, nieudanych analiz oraz ruchu, który nie dociera do canary; opcjonalne sprawdzenie bezpieczeństwa canary; Rollout, któremu Deployment służy za szablon; diagnostyka tylko do odczytu dla agentów AI.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1609,11 +2708,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Zdiagnozuj rollout",
+      "problemCategories.canary-safety.title": "Bezpieczeństwo canary",
+      "problems.paused-long.title": "Wstrzymany ponad dobę",
+      "problems.paused-long.message": "Wstrzymany od ponad doby ({{.status.pauseConditions[0].reason}}): czeka na promowanie, wznowienie lub przerwanie.",
+      "problems.analysis-inconclusive.title": "Nierozstrzygnięta analiza",
+      "problems.analysis-inconclusive.message": "Wstrzymany, ponieważ analiza lub eksperyment dały nierozstrzygnięty wynik: czeka, aż ktoś go wypromuje lub przerwie.",
+      "problems.workload-missing.title": "Brak Deployment szablonu",
+      "problems.workload-missing.message": "Szablon Poda pochodzi z Deployment {{.spec.workloadRef.name}} (spec.workloadRef), którego nie ma.",
+      "problems.traffic-virtual-service-missing.title": "Brak VirtualService",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} nie istnieje: kontroler nie może przesunąć ruchu canary.",
+      "problems.traffic-route-missing.title": "Brak trasy",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}} nie ma trasy HTTP o nazwie {{fact:route}}: kontroler nie może ustawić wagi canary.",
+      "problems.traffic-route-not-chosen.title": "Nie wybrano trasy",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}} ma kilka tras HTTP, a Rollout nie wskazuje żadnej z nich: kontroler nie wie, którą edytować.",
+      "problems.traffic-route-without-canary.title": "Trasa bez canary",
+      "problems.traffic-route-without-canary.message": "Trasa VirtualService {{fact:virtualService}} nie ma miejsca docelowego {{fact:target}} dla canary.",
+      "problems.traffic-route-without-stable.title": "Trasa bez stabilnej wersji",
+      "problems.traffic-route-without-stable.message": "Trasa VirtualService {{fact:virtualService}} nie ma miejsca docelowego {{fact:target}} dla stabilnej wersji.",
+      "problems.traffic-destination-rule-missing.title": "Brak DestinationRule",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} nie istnieje: kontroler nie może skierować subsetów na Pody canary i stabilne Pody.",
+      "problems.traffic-subset-missing.title": "Brak subsetu",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}} nie ma subsetu {{fact:subset}}.",
+      "problems.traffic-same-hash.title": "Canary nie jest odizolowany",
+      "problems.traffic-same-hash.message": "Ruch canary i stabilny trafia do tych samych Podów (hash szablonu {{fact:hash}}), choć canary ma wagę {{fact:weight}}: canary nie jest odizolowany, a jego analiza mierzy starą wersję.",
+      "problems.template-metric-always-passes.title": "Metryka zawsze przechodzi",
+      "problems.template-metric-always-passes.message": "Metryka {{fact:metric}} nie ma ani successCondition, ani failureCondition: każdy pomiar liczy się jako sukces.",
+      "problems.template-metric-nan-passes.title": "Metryka przechodzi przy NaN",
+      "problems.template-metric-nan-passes.message": "Metryka {{fact:metric}} przechodzi przy NaN, które daje 0/0, gdy nie ma ruchu: ma tylko failureCondition albo jej successCondition akceptuje isNaN lub isInf.",
+      "problems.template-metric-no-data-passes.title": "Metryka przechodzi bez danych",
+      "problems.template-metric-no-data-passes.message": "Metryka {{fact:metric}} przechodzi bez danych: jej successCondition akceptuje pusty wynik lub wartość domyślną.",
+      "problems.template-metric-cannot-fail.title": "Metryka nie może zawieść",
+      "problems.template-metric-cannot-fail.message": "Metryka {{fact:metric}} nie może zawieść: jej failureLimit {{fact:failureLimit}} nigdy nie zostaje przekroczony.",
+      "problems.template-metric-dry-run.title": "Metryka w trybie dry-run",
+      "problems.template-metric-dry-run.message": "Metryka {{fact:metric}} działa w trybie dry-run: jej niepowodzenia są zapisywane, ale nigdy nie powodują niepowodzenia analizy.",
+      "problems.rollout-promoted-on-time.title": "Promowanie bez sprawdzenia",
+      "problems.rollout-promoted-on-time.message": "Żadna analiza ani ręczna pauza nie sprawdza tego rolloutu {{fact:strategy}}: nowa wersja jest promowana wyłącznie po upływie czasu.",
+      "problems.rollout-weights-without-check.title": "Wagi bez sprawdzenia",
+      "problems.rollout-weights-without-check.message": "Canary przechodzi z {{fact:from}}% do {{fact:to}}% bez pauzy ani analizy między tymi dwoma krokami.",
+      "problems.rollout-first-step-full.title": "Pierwszy krok wysyła cały ruch",
+      "problems.rollout-first-step-full.message": "Pierwszy krok ruchu wysyła {{fact:weight}}% do canary: nie ma stopniowego przesunięcia.",
+      "problems.rollout-all-pods-unavailable.title": "Wszystkie Pody mogą być niedostępne",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} pozwala, by podczas aktualizacji każdy Pod był niedostępny.",
+      "problems.cluster-template-metric-always-passes.title": "Metryka zawsze przechodzi (szablon klastra)",
+      "problems.cluster-template-metric-always-passes.message": "Metryka {{fact:metric}} nie ma ani successCondition, ani failureCondition: każdy pomiar liczy się jako sukces.",
+      "problems.cluster-template-metric-nan-passes.title": "Metryka przechodzi przy NaN (szablon klastra)",
+      "problems.cluster-template-metric-nan-passes.message": "Metryka {{fact:metric}} przechodzi przy NaN, które daje 0/0, gdy nie ma ruchu: ma tylko failureCondition albo jej successCondition akceptuje isNaN lub isInf.",
+      "problems.cluster-template-metric-no-data-passes.title": "Metryka przechodzi bez danych (szablon klastra)",
+      "problems.cluster-template-metric-no-data-passes.message": "Metryka {{fact:metric}} przechodzi bez danych: jej successCondition akceptuje pusty wynik lub wartość domyślną.",
+      "problems.cluster-template-metric-cannot-fail.title": "Metryka nie może zawieść (szablon klastra)",
+      "problems.cluster-template-metric-cannot-fail.message": "Metryka {{fact:metric}} nie może zawieść: jej failureLimit {{fact:failureLimit}} nigdy nie zostaje przekroczony.",
+      "problems.cluster-template-metric-dry-run.title": "Metryka w trybie dry-run (szablon klastra)",
+      "problems.cluster-template-metric-dry-run.message": "Metryka {{fact:metric}} działa w trybie dry-run: jej niepowodzenia są zapisywane, ale nigdy nie powodują niepowodzenia analizy."
     },
     "tr": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: adımları, ağırlıkları, ReplicaSet'leri ve analiz çalıştırmalarıyla rollout'lar; kubectl argo rollouts'un tam yamalarıyla, önce gösterilerek yükseltme, iptal etme, yeniden deneme, duraklatma ve sürdürme; bozulmuş ve iptal edilmiş rollout'ların ve başarısız analizlerin sorunları.",
+      "description": "Argo Rollouts: adımları, ağırlıkları, ReplicaSet'leri ve analiz çalıştırmalarıyla rollout'lar; kubectl argo rollouts'un tam yamalarıyla, önce gösterilerek yükseltme, iptal, yeniden deneme, duraklatma ve sürdürme; bozulmuş, iptal edilmiş, uzun süre duraklatılmış ve sonuçsuz rollout'ların, başarısız analizlerin ve canary'ye ulaşmayan trafiğin sorunları; isteğe bağlı canary güvenliği denetimi; bir Deployment'ın şablon olduğu Rollout; yapay zekâ ajanları için salt okunur bir tanılama aracı.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1673,11 +2825,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Rollout'u tanıla",
+      "problemCategories.canary-safety.title": "Canary güvenliği",
+      "problems.paused-long.title": "Bir günden uzun süredir duraklatılmış",
+      "problems.paused-long.message": "Bir günden uzun süredir duraklatılmış ({{.status.pauseConditions[0].reason}}): yükseltilmeyi, sürdürülmeyi veya iptal edilmeyi bekliyor.",
+      "problems.analysis-inconclusive.title": "Sonuçsuz analiz",
+      "problems.analysis-inconclusive.message": "Bir analiz veya deney sonuçsuz kaldığı için duraklatıldı: birinin yükseltmesini veya iptal etmesini bekliyor.",
+      "problems.workload-missing.title": "Şablon Deployment'ı yok",
+      "problems.workload-missing.message": "Pod şablonu Deployment {{.spec.workloadRef.name}} (spec.workloadRef) kaynağından geliyor, ancak bu Deployment mevcut değil.",
+      "problems.traffic-virtual-service-missing.title": "VirtualService yok",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} mevcut değil: denetleyici canary'nin trafiğini kaydıramaz.",
+      "problems.traffic-route-missing.title": "Rota yok",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}} içinde {{fact:route}} adlı bir HTTP rotası yok: denetleyici canary'nin ağırlığını ayarlayamaz.",
+      "problems.traffic-route-not-chosen.title": "Rota seçilmemiş",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}} birden çok HTTP rotasına sahip ve Rollout bunların hiçbirini adlandırmıyor: denetleyici hangisini düzenleyeceğini bilemez.",
+      "problems.traffic-route-without-canary.title": "Canary'siz rota",
+      "problems.traffic-route-without-canary.message": "VirtualService {{fact:virtualService}} rotalarından birinde canary için {{fact:target}} hedefi yok.",
+      "problems.traffic-route-without-stable.title": "Kararlı sürümsüz rota",
+      "problems.traffic-route-without-stable.message": "VirtualService {{fact:virtualService}} rotalarından birinde kararlı sürüm için {{fact:target}} hedefi yok.",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule yok",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} mevcut değil: denetleyici subset'leri canary ve kararlı Pod'lara yönlendiremez.",
+      "problems.traffic-subset-missing.title": "Subset yok",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}} içinde {{fact:subset}} subset'i yok.",
+      "problems.traffic-same-hash.title": "Canary yalıtılmamış",
+      "problems.traffic-same-hash.message": "Canary'nin ağırlığı {{fact:weight}} iken canary ve kararlı trafik aynı Pod'lara gidiyor (şablon hash'i {{fact:hash}}): canary yalıtılmamış ve analizi eski sürümü ölçüyor.",
+      "problems.template-metric-always-passes.title": "Metrik her zaman geçiyor",
+      "problems.template-metric-always-passes.message": "{{fact:metric}} metriğinin ne successCondition'ı ne de failureCondition'ı var: her ölçüm başarı sayılıyor.",
+      "problems.template-metric-nan-passes.title": "Metrik NaN'da geçiyor",
+      "problems.template-metric-nan-passes.message": "{{fact:metric}} metriği, trafik olmadığında 0/0'ın verdiği NaN'da geçiyor: yalnızca bir failureCondition'ı var veya successCondition'ı isNaN ya da isInf kabul ediyor.",
+      "problems.template-metric-no-data-passes.title": "Metrik veri olmadan geçiyor",
+      "problems.template-metric-no-data-passes.message": "{{fact:metric}} metriği veri olmadan geçiyor: successCondition'ı boş bir sonucu veya varsayılan bir değeri kabul ediyor.",
+      "problems.template-metric-cannot-fail.title": "Metrik başarısız olamıyor",
+      "problems.template-metric-cannot-fail.message": "{{fact:metric}} metriği başarısız olamıyor: failureLimit {{fact:failureLimit}} değeri hiçbir zaman aşılmıyor.",
+      "problems.template-metric-dry-run.title": "Metrik dry-run modunda",
+      "problems.template-metric-dry-run.message": "{{fact:metric}} metriği dry-run modunda çalışıyor: başarısızlıkları kaydediliyor ama analizi hiçbir zaman başarısız kılmıyor.",
+      "problems.rollout-promoted-on-time.title": "Denetimsiz yükseltme",
+      "problems.rollout-promoted-on-time.message": "Bu {{fact:strategy}} rollout'unu hiçbir analiz veya elle duraklatma denetlemiyor: yeni bir sürüm yalnızca süre dolunca yükseltiliyor.",
+      "problems.rollout-weights-without-check.title": "Denetimsiz ağırlıklar",
+      "problems.rollout-weights-without-check.message": "Canary, iki adım arasında duraklatma veya analiz olmadan %{{fact:from}} değerinden %{{fact:to}} değerine geçiyor.",
+      "problems.rollout-first-step-full.title": "İlk adım tüm trafiği gönderiyor",
+      "problems.rollout-first-step-full.message": "İlk trafik adımı canary'ye %{{fact:weight}} gönderiyor: kademeli bir geçiş yok.",
+      "problems.rollout-all-pods-unavailable.title": "Tüm Pod'lar kullanılamaz olabilir",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}}, bir güncelleme sırasında her Pod'un kullanılamaz olmasına izin veriyor.",
+      "problems.cluster-template-metric-always-passes.title": "Metrik her zaman geçiyor (küme şablonu)",
+      "problems.cluster-template-metric-always-passes.message": "{{fact:metric}} metriğinin ne successCondition'ı ne de failureCondition'ı var: her ölçüm başarı sayılıyor.",
+      "problems.cluster-template-metric-nan-passes.title": "Metrik NaN'da geçiyor (küme şablonu)",
+      "problems.cluster-template-metric-nan-passes.message": "{{fact:metric}} metriği, trafik olmadığında 0/0'ın verdiği NaN'da geçiyor: yalnızca bir failureCondition'ı var veya successCondition'ı isNaN ya da isInf kabul ediyor.",
+      "problems.cluster-template-metric-no-data-passes.title": "Metrik veri olmadan geçiyor (küme şablonu)",
+      "problems.cluster-template-metric-no-data-passes.message": "{{fact:metric}} metriği veri olmadan geçiyor: successCondition'ı boş bir sonucu veya varsayılan bir değeri kabul ediyor.",
+      "problems.cluster-template-metric-cannot-fail.title": "Metrik başarısız olamıyor (küme şablonu)",
+      "problems.cluster-template-metric-cannot-fail.message": "{{fact:metric}} metriği başarısız olamıyor: failureLimit {{fact:failureLimit}} değeri hiçbir zaman aşılmıyor.",
+      "problems.cluster-template-metric-dry-run.title": "Metrik dry-run modunda (küme şablonu)",
+      "problems.cluster-template-metric-dry-run.message": "{{fact:metric}} metriği dry-run modunda çalışıyor: başarısızlıkları kaydediliyor ama analizi hiçbir zaman başarısız kılmıyor."
     },
     "zh-CN": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts：rollout 及其步骤、权重、ReplicaSet 和分析运行；以 kubectl argo rollouts 的原样补丁晋级、中止、重试、暂停和恢复，发送前先展示；降级和中止的 rollout 以及失败的分析会列为问题。",
+      "description": "Argo Rollouts：rollout 及其步骤、权重、ReplicaSet 和分析运行；以 kubectl argo rollouts 的原样补丁晋级、中止、重试、暂停和恢复，发送前先展示；降级、中止、长时间暂停和分析无定论的 rollout、失败的分析以及未到达金丝雀的金丝雀流量会列为问题；可选启用的金丝雀配置安全性检查；以某个 Deployment 为模板的 Rollout；以及供 AI 代理使用的只读诊断工具。",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1737,11 +2942,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "诊断 rollout",
+      "problemCategories.canary-safety.title": "金丝雀安全性",
+      "problems.paused-long.title": "暂停超过一天",
+      "problems.paused-long.message": "已暂停超过一天（{{.status.pauseConditions[0].reason}}）：等待晋级、恢复或中止。",
+      "problems.analysis-inconclusive.title": "分析无定论",
+      "problems.analysis-inconclusive.message": "因分析或实验无定论而暂停：等待有人晋级或中止。",
+      "problems.workload-missing.title": "缺少模板 Deployment",
+      "problems.workload-missing.message": "Pod 模板来自 Deployment {{.spec.workloadRef.name}}（spec.workloadRef），但它不存在。",
+      "problems.traffic-virtual-service-missing.title": "缺少 VirtualService",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} 不存在：控制器无法转移金丝雀的流量。",
+      "problems.traffic-route-missing.title": "缺少路由",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}} 没有名为 {{fact:route}} 的 HTTP 路由：控制器无法设置金丝雀的权重。",
+      "problems.traffic-route-not-chosen.title": "未选择路由",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}} 有多个 HTTP 路由，而 Rollout 没有指定其中任何一个：控制器无法判断要编辑哪一个。",
+      "problems.traffic-route-without-canary.title": "路由缺少金丝雀",
+      "problems.traffic-route-without-canary.message": "VirtualService {{fact:virtualService}} 的某条路由没有用于金丝雀的目标 {{fact:target}}。",
+      "problems.traffic-route-without-stable.title": "路由缺少稳定版本",
+      "problems.traffic-route-without-stable.message": "VirtualService {{fact:virtualService}} 的某条路由没有用于稳定版本的目标 {{fact:target}}。",
+      "problems.traffic-destination-rule-missing.title": "缺少 DestinationRule",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} 不存在：控制器无法将 subset 指向金丝雀 Pod 和稳定 Pod。",
+      "problems.traffic-subset-missing.title": "缺少 subset",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}} 没有 subset {{fact:subset}}。",
+      "problems.traffic-same-hash.title": "金丝雀未隔离",
+      "problems.traffic-same-hash.message": "金丝雀权重为 {{fact:weight}}，但金丝雀流量和稳定流量发往相同的 Pod（模板哈希 {{fact:hash}}）：金丝雀未被隔离，其分析测量的是旧版本。",
+      "problems.template-metric-always-passes.title": "指标总是通过",
+      "problems.template-metric-always-passes.message": "指标 {{fact:metric}} 既没有 successCondition 也没有 failureCondition：每次测量都算作成功。",
+      "problems.template-metric-nan-passes.title": "指标在 NaN 时通过",
+      "problems.template-metric-nan-passes.message": "指标 {{fact:metric}} 在 NaN 时通过，而没有流量时 0/0 得出的正是 NaN：它只有 failureCondition，或者其 successCondition 接受 isNaN 或 isInf。",
+      "problems.template-metric-no-data-passes.title": "指标在无数据时通过",
+      "problems.template-metric-no-data-passes.message": "指标 {{fact:metric}} 在没有数据时通过：其 successCondition 接受空结果或默认值。",
+      "problems.template-metric-cannot-fail.title": "指标不会失败",
+      "problems.template-metric-cannot-fail.message": "指标 {{fact:metric}} 不会失败：其 failureLimit {{fact:failureLimit}} 永远不会被超过。",
+      "problems.template-metric-dry-run.title": "指标以 dry-run 运行",
+      "problems.template-metric-dry-run.message": "指标 {{fact:metric}} 以 dry-run 方式运行：其失败会被记录，但永远不会使分析失败。",
+      "problems.rollout-promoted-on-time.title": "未经检查即晋级",
+      "problems.rollout-promoted-on-time.message": "没有分析或手动暂停检查这个 {{fact:strategy}} rollout：新版本仅凭时间就会晋级。",
+      "problems.rollout-weights-without-check.title": "权重变化未经检查",
+      "problems.rollout-weights-without-check.message": "金丝雀从 {{fact:from}}% 变为 {{fact:to}}%，两个步骤之间没有暂停或分析。",
+      "problems.rollout-first-step-full.title": "第一步发送全部流量",
+      "problems.rollout-first-step-full.message": "第一个流量步骤将 {{fact:weight}}% 发送给金丝雀：没有逐步切换。",
+      "problems.rollout-all-pods-unavailable.title": "所有 Pod 都可能不可用",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} 允许在更新期间所有 Pod 都不可用。",
+      "problems.cluster-template-metric-always-passes.title": "指标总是通过（集群模板）",
+      "problems.cluster-template-metric-always-passes.message": "指标 {{fact:metric}} 既没有 successCondition 也没有 failureCondition：每次测量都算作成功。",
+      "problems.cluster-template-metric-nan-passes.title": "指标在 NaN 时通过（集群模板）",
+      "problems.cluster-template-metric-nan-passes.message": "指标 {{fact:metric}} 在 NaN 时通过，而没有流量时 0/0 得出的正是 NaN：它只有 failureCondition，或者其 successCondition 接受 isNaN 或 isInf。",
+      "problems.cluster-template-metric-no-data-passes.title": "指标在无数据时通过（集群模板）",
+      "problems.cluster-template-metric-no-data-passes.message": "指标 {{fact:metric}} 在没有数据时通过：其 successCondition 接受空结果或默认值。",
+      "problems.cluster-template-metric-cannot-fail.title": "指标不会失败（集群模板）",
+      "problems.cluster-template-metric-cannot-fail.message": "指标 {{fact:metric}} 不会失败：其 failureLimit {{fact:failureLimit}} 永远不会被超过。",
+      "problems.cluster-template-metric-dry-run.title": "指标以 dry-run 运行（集群模板）",
+      "problems.cluster-template-metric-dry-run.message": "指标 {{fact:metric}} 以 dry-run 方式运行：其失败会被记录，但永远不会使分析失败。"
     },
     "zh-TW": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts：rollout 及其步驟、權重、ReplicaSet 與分析執行；以 kubectl argo rollouts 的原樣修補升級、中止、重試、暫停與繼續，送出前先顯示；降級與中止的 rollout 以及失敗的分析會列為問題。",
+      "description": "Argo Rollouts：rollout 及其步驟、權重、ReplicaSet 與分析執行；以 kubectl argo rollouts 的原樣修補升級、中止、重試、暫停與繼續，送出前先顯示；降級、中止、長時間暫停與分析無定論的 rollout、失敗的分析，以及未到達金絲雀的金絲雀流量會列為問題；可選擇啟用的金絲雀設定安全性檢查；以某個 Deployment 為範本的 Rollout；以及供 AI 代理程式使用的唯讀診斷工具。",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1801,11 +3059,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "診斷 rollout",
+      "problemCategories.canary-safety.title": "金絲雀安全性",
+      "problems.paused-long.title": "暫停超過一天",
+      "problems.paused-long.message": "已暫停超過一天（{{.status.pauseConditions[0].reason}}）：等待升級、繼續或中止。",
+      "problems.analysis-inconclusive.title": "分析無定論",
+      "problems.analysis-inconclusive.message": "因分析或實驗無定論而暫停：等待有人升級或中止。",
+      "problems.workload-missing.title": "缺少範本 Deployment",
+      "problems.workload-missing.message": "Pod 範本來自 Deployment {{.spec.workloadRef.name}}（spec.workloadRef），但它不存在。",
+      "problems.traffic-virtual-service-missing.title": "缺少 VirtualService",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} 不存在：控制器無法轉移金絲雀的流量。",
+      "problems.traffic-route-missing.title": "缺少路由",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}} 沒有名為 {{fact:route}} 的 HTTP 路由：控制器無法設定金絲雀的權重。",
+      "problems.traffic-route-not-chosen.title": "未選擇路由",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}} 有多條 HTTP 路由，而 Rollout 未指定其中任何一條：控制器無法判斷要編輯哪一條。",
+      "problems.traffic-route-without-canary.title": "路由缺少金絲雀",
+      "problems.traffic-route-without-canary.message": "VirtualService {{fact:virtualService}} 的某條路由沒有用於金絲雀的目的地 {{fact:target}}。",
+      "problems.traffic-route-without-stable.title": "路由缺少穩定版本",
+      "problems.traffic-route-without-stable.message": "VirtualService {{fact:virtualService}} 的某條路由沒有用於穩定版本的目的地 {{fact:target}}。",
+      "problems.traffic-destination-rule-missing.title": "缺少 DestinationRule",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} 不存在：控制器無法將 subset 指向金絲雀 Pod 與穩定 Pod。",
+      "problems.traffic-subset-missing.title": "缺少 subset",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}} 沒有 subset {{fact:subset}}。",
+      "problems.traffic-same-hash.title": "金絲雀未隔離",
+      "problems.traffic-same-hash.message": "金絲雀權重為 {{fact:weight}}，但金絲雀流量與穩定流量送往相同的 Pod（範本雜湊 {{fact:hash}}）：金絲雀未被隔離，其分析量測的是舊版本。",
+      "problems.template-metric-always-passes.title": "指標一律通過",
+      "problems.template-metric-always-passes.message": "指標 {{fact:metric}} 既沒有 successCondition 也沒有 failureCondition：每次量測都算成功。",
+      "problems.template-metric-nan-passes.title": "指標在 NaN 時通過",
+      "problems.template-metric-nan-passes.message": "指標 {{fact:metric}} 在 NaN 時通過，而沒有流量時 0/0 得出的正是 NaN：它只有 failureCondition，或其 successCondition 接受 isNaN 或 isInf。",
+      "problems.template-metric-no-data-passes.title": "指標在無資料時通過",
+      "problems.template-metric-no-data-passes.message": "指標 {{fact:metric}} 在沒有資料時通過：其 successCondition 接受空結果或預設值。",
+      "problems.template-metric-cannot-fail.title": "指標不會失敗",
+      "problems.template-metric-cannot-fail.message": "指標 {{fact:metric}} 不會失敗：其 failureLimit {{fact:failureLimit}} 永遠不會被超過。",
+      "problems.template-metric-dry-run.title": "指標以 dry-run 執行",
+      "problems.template-metric-dry-run.message": "指標 {{fact:metric}} 以 dry-run 方式執行：其失敗會被記錄，但永遠不會使分析失敗。",
+      "problems.rollout-promoted-on-time.title": "未經檢查即升級",
+      "problems.rollout-promoted-on-time.message": "沒有分析或手動暫停檢查這個 {{fact:strategy}} rollout：新版本只憑時間就會升級。",
+      "problems.rollout-weights-without-check.title": "權重變化未經檢查",
+      "problems.rollout-weights-without-check.message": "金絲雀從 {{fact:from}}% 變為 {{fact:to}}%，兩個步驟之間沒有暫停或分析。",
+      "problems.rollout-first-step-full.title": "第一步傳送全部流量",
+      "problems.rollout-first-step-full.message": "第一個流量步驟將 {{fact:weight}}% 傳送給金絲雀：沒有逐步切換。",
+      "problems.rollout-all-pods-unavailable.title": "所有 Pod 都可能無法使用",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} 允許在更新期間所有 Pod 都無法使用。",
+      "problems.cluster-template-metric-always-passes.title": "指標一律通過（叢集範本）",
+      "problems.cluster-template-metric-always-passes.message": "指標 {{fact:metric}} 既沒有 successCondition 也沒有 failureCondition：每次量測都算成功。",
+      "problems.cluster-template-metric-nan-passes.title": "指標在 NaN 時通過（叢集範本）",
+      "problems.cluster-template-metric-nan-passes.message": "指標 {{fact:metric}} 在 NaN 時通過，而沒有流量時 0/0 得出的正是 NaN：它只有 failureCondition，或其 successCondition 接受 isNaN 或 isInf。",
+      "problems.cluster-template-metric-no-data-passes.title": "指標在無資料時通過（叢集範本）",
+      "problems.cluster-template-metric-no-data-passes.message": "指標 {{fact:metric}} 在沒有資料時通過：其 successCondition 接受空結果或預設值。",
+      "problems.cluster-template-metric-cannot-fail.title": "指標不會失敗（叢集範本）",
+      "problems.cluster-template-metric-cannot-fail.message": "指標 {{fact:metric}} 不會失敗：其 failureLimit {{fact:failureLimit}} 永遠不會被超過。",
+      "problems.cluster-template-metric-dry-run.title": "指標以 dry-run 執行（叢集範本）",
+      "problems.cluster-template-metric-dry-run.message": "指標 {{fact:metric}} 以 dry-run 方式執行：其失敗會被記錄，但永遠不會使分析失敗。"
     },
     "ja": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: ステップ、重み、ReplicaSet、分析実行を含む Rollout。kubectl argo rollouts と同じパッチを先に表示してから、プロモート、中止、再試行、一時停止、再開を行います。劣化・中止した Rollout と失敗した分析を問題として表示します。",
+      "description": "Argo Rollouts: ステップ、重み、ReplicaSet、分析実行を含む Rollout。kubectl argo rollouts と同じパッチを先に表示してから、プロモート、中止、再試行、一時停止、再開を行います。劣化・中止した Rollout、長く一時停止している Rollout、分析の結論が出ない Rollout、失敗した分析、カナリアに届かないカナリアのトラフィックを問題として表示します。カナリアの設定がどれだけ安全かをオプトインで確認します。Deployment をテンプレートとする Rollout を表示します。AI エージェント向けの読み取り専用の診断ツールもあります。",
       "kinds.0.title": "Rollout",
       "kinds.1.title": "AnalysisRun",
       "kinds.2.title": "AnalysisTemplate",
@@ -1865,11 +3176,64 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "Rollout を診断",
+      "problemCategories.canary-safety.title": "カナリアの安全性",
+      "problems.paused-long.title": "1 日以上一時停止しています",
+      "problems.paused-long.message": "1 日以上一時停止しています（{{.status.pauseConditions[0].reason}}）。プロモート、再開、または中止を待っています。",
+      "problems.analysis-inconclusive.title": "分析の結論が出ていません",
+      "problems.analysis-inconclusive.message": "分析または実験の結論が出なかったため一時停止しています。人がプロモートまたは中止するのを待っています。",
+      "problems.workload-missing.title": "テンプレートの Deployment がありません",
+      "problems.workload-missing.message": "Pod テンプレートは Deployment {{.spec.workloadRef.name}}（spec.workloadRef）から取得されますが、その Deployment は存在しません。",
+      "problems.traffic-virtual-service-missing.title": "VirtualService がありません",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}} が存在しません。コントローラーはカナリアのトラフィックを移せません。",
+      "problems.traffic-route-missing.title": "ルートがありません",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}} に {{fact:route}} という名前の HTTP ルートがありません。コントローラーはカナリアの重みを設定できません。",
+      "problems.traffic-route-not-chosen.title": "ルートが選ばれていません",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}} には HTTP ルートが複数あり、Rollout はそのどれも指定していません。コントローラーはどれを編集すべきか判断できません。",
+      "problems.traffic-route-without-canary.title": "カナリアのないルート",
+      "problems.traffic-route-without-canary.message": "VirtualService {{fact:virtualService}} のルートに、カナリア用の宛先 {{fact:target}} がありません。",
+      "problems.traffic-route-without-stable.title": "安定版のないルート",
+      "problems.traffic-route-without-stable.message": "VirtualService {{fact:virtualService}} のルートに、安定版用の宛先 {{fact:target}} がありません。",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule がありません",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}} が存在しません。コントローラーは subset をカナリアの Pod と安定版の Pod に向けられません。",
+      "problems.traffic-subset-missing.title": "subset がありません",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}} に subset {{fact:subset}} がありません。",
+      "problems.traffic-same-hash.title": "カナリアが分離されていません",
+      "problems.traffic-same-hash.message": "カナリアの重みが {{fact:weight}} なのに、カナリアと安定版のトラフィックが同じ Pod（テンプレートハッシュ {{fact:hash}}）に送られています。カナリアは分離されておらず、その分析は古いバージョンを測っています。",
+      "problems.template-metric-always-passes.title": "メトリクスが常に成功します",
+      "problems.template-metric-always-passes.message": "メトリクス {{fact:metric}} には successCondition も failureCondition もありません。すべての測定が成功とみなされます。",
+      "problems.template-metric-nan-passes.title": "メトリクスが NaN で成功します",
+      "problems.template-metric-nan-passes.message": "メトリクス {{fact:metric}} は NaN で成功します。NaN はトラフィックがないときに 0/0 が返す値です。failureCondition しかないか、successCondition が isNaN または isInf を受け入れています。",
+      "problems.template-metric-no-data-passes.title": "メトリクスがデータなしで成功します",
+      "problems.template-metric-no-data-passes.message": "メトリクス {{fact:metric}} はデータがなくても成功します。successCondition が空の結果または既定値を受け入れています。",
+      "problems.template-metric-cannot-fail.title": "メトリクスが失敗しません",
+      "problems.template-metric-cannot-fail.message": "メトリクス {{fact:metric}} は失敗しません。failureLimit {{fact:failureLimit}} を超えることがありません。",
+      "problems.template-metric-dry-run.title": "メトリクスが dry-run で実行されます",
+      "problems.template-metric-dry-run.message": "メトリクス {{fact:metric}} は dry-run で実行されます。失敗は記録されますが、分析を失敗させることはありません。",
+      "problems.rollout-promoted-on-time.title": "確認なしでプロモートされます",
+      "problems.rollout-promoted-on-time.message": "この {{fact:strategy}} の Rollout は、分析も手動の一時停止も確認していません。新しいバージョンは時間だけでプロモートされます。",
+      "problems.rollout-weights-without-check.title": "確認なしで重みが変わります",
+      "problems.rollout-weights-without-check.message": "カナリアが {{fact:from}}% から {{fact:to}}% に進みますが、2 つのステップの間に一時停止も分析もありません。",
+      "problems.rollout-first-step-full.title": "最初のステップで全トラフィックを送ります",
+      "problems.rollout-first-step-full.message": "最初のトラフィックステップでカナリアに {{fact:weight}}% を送ります。段階的な移行がありません。",
+      "problems.rollout-all-pods-unavailable.title": "すべての Pod が利用不可になり得ます",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}} では、更新中にすべての Pod が利用不可になり得ます。",
+      "problems.cluster-template-metric-always-passes.title": "メトリクスが常に成功します（クラスターテンプレート）",
+      "problems.cluster-template-metric-always-passes.message": "メトリクス {{fact:metric}} には successCondition も failureCondition もありません。すべての測定が成功とみなされます。",
+      "problems.cluster-template-metric-nan-passes.title": "メトリクスが NaN で成功します（クラスターテンプレート）",
+      "problems.cluster-template-metric-nan-passes.message": "メトリクス {{fact:metric}} は NaN で成功します。NaN はトラフィックがないときに 0/0 が返す値です。failureCondition しかないか、successCondition が isNaN または isInf を受け入れています。",
+      "problems.cluster-template-metric-no-data-passes.title": "メトリクスがデータなしで成功します（クラスターテンプレート）",
+      "problems.cluster-template-metric-no-data-passes.message": "メトリクス {{fact:metric}} はデータがなくても成功します。successCondition が空の結果または既定値を受け入れています。",
+      "problems.cluster-template-metric-cannot-fail.title": "メトリクスが失敗しません（クラスターテンプレート）",
+      "problems.cluster-template-metric-cannot-fail.message": "メトリクス {{fact:metric}} は失敗しません。failureLimit {{fact:failureLimit}} を超えることがありません。",
+      "problems.cluster-template-metric-dry-run.title": "メトリクスが dry-run で実行されます（クラスターテンプレート）",
+      "problems.cluster-template-metric-dry-run.message": "メトリクス {{fact:metric}} は dry-run で実行されます。失敗は記録されますが、分析を失敗させることはありません。"
     },
     "ko": {
       "name": "Argo Rollouts",
-      "description": "Argo Rollouts: 단계, 가중치, ReplicaSet, 분석 실행이 있는 rollout. kubectl argo rollouts와 똑같은 패치를 먼저 보여 준 뒤 승격, 중단, 다시 시도, 일시 중지, 재개를 수행합니다. 저하되거나 중단된 rollout과 실패한 분석을 문제로 표시합니다.",
+      "description": "Argo Rollouts: 단계, 가중치, ReplicaSet, 분석 실행이 있는 rollout. kubectl argo rollouts와 똑같은 패치를 먼저 보여 준 뒤 승격, 중단, 다시 시도, 일시 중지, 재개를 수행합니다. 저하되거나 중단된 rollout, 오래 일시 중지된 rollout, 분석 결론이 나지 않은 rollout, 실패한 분석, 카나리에 닿지 않는 카나리 트래픽을 문제로 표시합니다. 카나리가 얼마나 안전하게 설정되었는지 선택적으로 검사합니다. Deployment를 템플릿으로 쓰는 Rollout을 보여 줍니다. AI 에이전트를 위한 읽기 전용 진단 도구도 제공합니다.",
       "kinds.0.title": "Rollouts",
       "kinds.1.title": "Analysis Runs",
       "kinds.2.title": "Analysis Templates",
@@ -1929,7 +3293,60 @@
       "columns.rollout-status.cases.5.text": "Paused",
       "columns.rollout-status.cases.6.text": "Progressing",
       "columns.rollout-strategy.cases.0.text": "Canary",
-      "columns.rollout-strategy.cases.1.text": "BlueGreen"
+      "columns.rollout-strategy.cases.1.text": "BlueGreen",
+      "detailsSections.managed-by-rollout.title": "Argo Rollout",
+      "agentTools.diagnose-rollout.title": "rollout 진단",
+      "problemCategories.canary-safety.title": "카나리 안전성",
+      "problems.paused-long.title": "하루 넘게 일시 중지됨",
+      "problems.paused-long.message": "하루 넘게 일시 중지되어 있습니다({{.status.pauseConditions[0].reason}}). 승격, 재개 또는 중단을 기다립니다.",
+      "problems.analysis-inconclusive.title": "결론 없는 분석",
+      "problems.analysis-inconclusive.message": "분석 또는 실험의 결론이 나지 않아 일시 중지되었습니다. 사람이 승격하거나 중단하기를 기다립니다.",
+      "problems.workload-missing.title": "템플릿 Deployment 없음",
+      "problems.workload-missing.message": "Pod 템플릿은 Deployment {{.spec.workloadRef.name}}(spec.workloadRef)에서 오지만 이 Deployment가 없습니다.",
+      "problems.traffic-virtual-service-missing.title": "VirtualService 없음",
+      "problems.traffic-virtual-service-missing.message": "VirtualService {{fact:namespace}}/{{fact:name}}이(가) 없습니다. 컨트롤러가 카나리의 트래픽을 옮길 수 없습니다.",
+      "problems.traffic-route-missing.title": "라우트 없음",
+      "problems.traffic-route-missing.message": "VirtualService {{fact:virtualService}}에 {{fact:route}}(이)라는 HTTP 라우트가 없습니다. 컨트롤러가 카나리의 가중치를 설정할 수 없습니다.",
+      "problems.traffic-route-not-chosen.title": "라우트가 선택되지 않음",
+      "problems.traffic-route-not-chosen.message": "VirtualService {{fact:virtualService}}에 HTTP 라우트가 여러 개 있지만 Rollout이 그중 어느 것도 지정하지 않습니다. 컨트롤러가 어느 라우트를 편집할지 알 수 없습니다.",
+      "problems.traffic-route-without-canary.title": "카나리 없는 라우트",
+      "problems.traffic-route-without-canary.message": "VirtualService {{fact:virtualService}}의 라우트에 카나리용 대상 {{fact:target}}이(가) 없습니다.",
+      "problems.traffic-route-without-stable.title": "안정 버전 없는 라우트",
+      "problems.traffic-route-without-stable.message": "VirtualService {{fact:virtualService}}의 라우트에 안정 버전용 대상 {{fact:target}}이(가) 없습니다.",
+      "problems.traffic-destination-rule-missing.title": "DestinationRule 없음",
+      "problems.traffic-destination-rule-missing.message": "DestinationRule {{fact:name}}이(가) 없습니다. 컨트롤러가 subset을 카나리 Pod와 안정 Pod로 지정할 수 없습니다.",
+      "problems.traffic-subset-missing.title": "subset 없음",
+      "problems.traffic-subset-missing.message": "DestinationRule {{fact:destinationRule}}에 subset {{fact:subset}}이(가) 없습니다.",
+      "problems.traffic-same-hash.title": "카나리가 격리되지 않음",
+      "problems.traffic-same-hash.message": "카나리의 가중치가 {{fact:weight}}인데 카나리 트래픽과 안정 트래픽이 같은 Pod(템플릿 해시 {{fact:hash}})로 갑니다. 카나리가 격리되지 않았으며 그 분석은 이전 버전을 측정합니다.",
+      "problems.template-metric-always-passes.title": "메트릭이 항상 통과함",
+      "problems.template-metric-always-passes.message": "메트릭 {{fact:metric}}에 successCondition도 failureCondition도 없습니다. 모든 측정이 성공으로 간주됩니다.",
+      "problems.template-metric-nan-passes.title": "메트릭이 NaN에서 통과함",
+      "problems.template-metric-nan-passes.message": "메트릭 {{fact:metric}}은(는) 트래픽이 없을 때 0/0이 내는 NaN에서 통과합니다. failureCondition만 있거나 successCondition이 isNaN 또는 isInf를 받아들입니다.",
+      "problems.template-metric-no-data-passes.title": "메트릭이 데이터 없이 통과함",
+      "problems.template-metric-no-data-passes.message": "메트릭 {{fact:metric}}은(는) 데이터 없이 통과합니다. successCondition이 빈 결과나 기본값을 받아들입니다.",
+      "problems.template-metric-cannot-fail.title": "메트릭이 실패할 수 없음",
+      "problems.template-metric-cannot-fail.message": "메트릭 {{fact:metric}}은(는) 실패할 수 없습니다. failureLimit {{fact:failureLimit}}을(를) 넘는 일이 없습니다.",
+      "problems.template-metric-dry-run.title": "메트릭이 dry-run으로 실행됨",
+      "problems.template-metric-dry-run.message": "메트릭 {{fact:metric}}은(는) dry-run으로 실행됩니다. 실패는 기록되지만 분석을 실패시키지 않습니다.",
+      "problems.rollout-promoted-on-time.title": "검사 없이 승격됨",
+      "problems.rollout-promoted-on-time.message": "이 {{fact:strategy}} rollout은 분석도 수동 일시 중지도 검사하지 않습니다. 새 버전이 시간만으로 승격됩니다.",
+      "problems.rollout-weights-without-check.title": "검사 없는 가중치 변경",
+      "problems.rollout-weights-without-check.message": "카나리가 두 단계 사이에 일시 중지나 분석 없이 {{fact:from}}%에서 {{fact:to}}%로 넘어갑니다.",
+      "problems.rollout-first-step-full.title": "첫 단계가 모든 트래픽을 보냄",
+      "problems.rollout-first-step-full.message": "첫 트래픽 단계가 카나리에 {{fact:weight}}%를 보냅니다. 점진적인 전환이 없습니다.",
+      "problems.rollout-all-pods-unavailable.title": "모든 Pod가 사용 불가일 수 있음",
+      "problems.rollout-all-pods-unavailable.message": "maxUnavailable {{fact:maxUnavailable}}은(는) 업데이트 중 모든 Pod가 사용 불가 상태가 되는 것을 허용합니다.",
+      "problems.cluster-template-metric-always-passes.title": "메트릭이 항상 통과함 (클러스터 템플릿)",
+      "problems.cluster-template-metric-always-passes.message": "메트릭 {{fact:metric}}에 successCondition도 failureCondition도 없습니다. 모든 측정이 성공으로 간주됩니다.",
+      "problems.cluster-template-metric-nan-passes.title": "메트릭이 NaN에서 통과함 (클러스터 템플릿)",
+      "problems.cluster-template-metric-nan-passes.message": "메트릭 {{fact:metric}}은(는) 트래픽이 없을 때 0/0이 내는 NaN에서 통과합니다. failureCondition만 있거나 successCondition이 isNaN 또는 isInf를 받아들입니다.",
+      "problems.cluster-template-metric-no-data-passes.title": "메트릭이 데이터 없이 통과함 (클러스터 템플릿)",
+      "problems.cluster-template-metric-no-data-passes.message": "메트릭 {{fact:metric}}은(는) 데이터 없이 통과합니다. successCondition이 빈 결과나 기본값을 받아들입니다.",
+      "problems.cluster-template-metric-cannot-fail.title": "메트릭이 실패할 수 없음 (클러스터 템플릿)",
+      "problems.cluster-template-metric-cannot-fail.message": "메트릭 {{fact:metric}}은(는) 실패할 수 없습니다. failureLimit {{fact:failureLimit}}을(를) 넘는 일이 없습니다.",
+      "problems.cluster-template-metric-dry-run.title": "메트릭이 dry-run으로 실행됨 (클러스터 템플릿)",
+      "problems.cluster-template-metric-dry-run.message": "메트릭 {{fact:metric}}은(는) dry-run으로 실행됩니다. 실패는 기록되지만 분석을 실패시키지 않습니다."
     }
   }
 }

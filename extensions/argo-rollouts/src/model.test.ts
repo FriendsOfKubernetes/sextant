@@ -139,9 +139,18 @@ function hover(id: string, obj: KubeObject): string | undefined {
   return engine.fillTemplate(holding.tooltip, obj) ?? own();
 }
 
-const rules = manifest.contributes.problems;
+/** The rules of the built-in category `rollouts` (1.0.0): what the first tests compare with the built-in view. */
+const BUILT_IN = ["degraded", "aborted", "step-analysis-failed", "background-analysis-failed", "pre-promotion-analysis-failed", "post-promotion-analysis-failed"];
+const rules = manifest.contributes.problems.filter((r) => BUILT_IN.includes(r.id));
+/** The rules one object decides alone (no judge, no lookup of other objects), of the extension's main category. */
+const ownRules = manifest.contributes.problems.filter((r) => {
+  const when = JSON.stringify(r.when);
+  return !("category" in r) && !when.includes('"judged"') && !when.includes('"missing"');
+});
 /** The reasons the manifest's rules find, as Sextant judges them (grace not applied). */
-const detected = (obj: KubeObject) => rules.flatMap((rule) => engine.detectRule({ notify: true, toldThroughOwner: false, graceMinutes: 0, ...rule }, obj));
+const detectedBy = (list: readonly unknown[], obj: KubeObject) =>
+  list.flatMap((rule) => engine.detectRule({ notify: true, toldThroughOwner: false, graceMinutes: 0, ...(rule as object) }, obj));
+const detected = (obj: KubeObject) => detectedBy(rules, obj);
 
 const ACTIONS = Object.keys(ACTION_IDS) as RolloutAction[];
 const actionOf = (action: RolloutAction) => manifest.contributes.actions.find((a) => a.id === ACTION_IDS[action])!;
@@ -377,7 +386,8 @@ describe("the manifest's problem rules", () => {
   });
 
   it("share the group `rollout`, so an analysis that fails and aborts the update notifies once", () => {
-    expect(new Set(rules.map((r) => (r as { group?: string }).group))).toEqual(new Set(["rollout"]));
+    const main = manifest.contributes.problems.filter((r) => !("category" in r));
+    expect(new Set(main.map((r) => (r as { group?: string }).group))).toEqual(new Set(["rollout"]));
     expect(detected(aborted).map((p) => p.group)).toEqual(["rollout", "rollout"]);
   });
 
@@ -787,5 +797,48 @@ describe("the manifest's columns", () => {
     st(run).metricResults = [{ name: "ok", phase: "Successful", message: "fine" }];
     expect(cell("run-message", run)).toBeUndefined();
     expect(analysisFailure(run)).toBeUndefined();
+  });
+});
+
+describe("the rules of 1.5.0 (#341)", () => {
+  it("tell a pause of more than a day, whatever paused it, but not an aborted update", () => {
+    const now = Date.parse("2026-10-21T10:00:00Z");
+    const paused = (since: string) => {
+      const ro = copy(canary);
+      st(ro).pauseConditions = [{ reason: "CanaryPauseStep", startTime: since }];
+      return ro;
+    };
+    const rule = manifest.contributes.problems.find((r) => r.id === "paused-long")!;
+    expect(holdsNow(rule.when, paused("2026-10-20T09:00:00Z"), now)).toBe(true);
+    expect(holdsNow(rule.when, paused("2026-10-21T09:00:00Z"), now)).toBe(false);
+    const gone = copy(canary);
+    st(gone).pauseConditions = null;
+    expect(holdsNow(rule.when, gone, now)).toBe(false);
+    const abortedLong = paused("2026-10-01T00:00:00Z");
+    st(abortedLong).abort = true;
+    expect(holdsNow(rule.when, abortedLong, now)).toBe(false);
+    const [found] = detectedBy([rule], paused("2026-10-20T09:00:00Z"));
+    expect(found?.message).toBe("Paused for more than a day (CanaryPauseStep): it waits to be promoted, resumed or aborted.");
+  });
+
+  it("tell an inconclusive analysis or experiment that waits for a person", () => {
+    const rule = manifest.contributes.problems.find((r) => r.id === "analysis-inconclusive")!;
+    for (const reason of ["InconclusiveAnalysisRun", "InconclusiveExperiment"]) {
+      const ro = copy(canary);
+      st(ro).pauseConditions = [{ reason, startTime: "2026-10-20T09:00:00Z" }];
+      expect(holdsNow(rule.when, ro), reason).toBe(true);
+    }
+    expect(holdsNow(rule.when, canary)).toBe(false);
+  });
+
+  it("decide alone only the rules that need no other object", () => {
+    expect(ownRules.map((r) => r.id)).toEqual([...BUILT_IN, "paused-long", "analysis-inconclusive"]);
+  });
+
+  it("put the canary-safety checks in their opt-in category", () => {
+    expect(manifest.contributes.problemCategories).toEqual([{ id: "canary-safety", title: "Canary safety", optIn: true }]);
+    const safety = manifest.contributes.problems.filter((r) => "category" in r);
+    expect(safety.every((r) => JSON.stringify(r.when).includes('"judge":"safety"'))).toBe(true);
+    expect(manifest.contributes.problems.filter((r) => JSON.stringify(r.when).includes('"judge":"safety"'))).toEqual(safety);
   });
 });

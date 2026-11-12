@@ -100,5 +100,17 @@
   "whyNot.abort": "Przerwać można tylko trwającą aktualizację.",
   "whyNot.retry": "Ponowić można tylko przerwany rollout.",
   "whyNot.pause": "Rollout jest już wstrzymany ręcznie.",
-  "whyNot.resume": "Rollout nie jest wstrzymany."
+  "whyNot.resume": "Rollout nie jest wstrzymany.",
+  "workload.rollout": "Rollout",
+  "workload.scaleDown": "Skalowanie w dół",
+  "workload.template": "Argo Rollout bierze szablon Poda z tego Deployment (spec.workloadRef): Pody działają w ReplicaSetach tego Rollout.",
+  "workload.scaledDown": "Jego 0 replik jest oczekiwane: kontroler skaluje Deployment w dół (scaleDown {{scaleDown}}).",
+  "workload.scaledByHand": "Jego 0 replik jest oczekiwane: przy scaleDown never przeskalowano go w dół ręcznie.",
+  "workload.runsBeside": "Przy scaleDown never kontroler zostawia jego repliki bez zmian: jego własne Pody działają obok Podów tego Rollout.",
+  "workload.willScaleDown": "Kontroler przeskaluje go w dół, gdy tylko pierwsza rewizja Rollout będzie zdrowa (scaleDown {{scaleDown}}).",
+  "workload.several_one": "{{count}} Rollout bierze szablon z tego Deployment.",
+  "workload.several_few": "{{count}} Rollouty biorą szablon z tego Deployment.",
+  "workload.several_many": "{{count}} Rolloutów bierze szablon z tego Deployment.",
+  "workload.several_other": "{{count}} Rolloutu bierze szablon z tego Deployment.",
+  "workload.stays": "Jego własne Pody działają obok Podów tego Rollout: przy scaleDown {{scaleDown}} kontroler skaluje Deployment w dół tylko podczas wdrażania pierwszej rewizji Rollout, więc zostaną, dopóki nie zostanie przeskalowany ręcznie."
 }
