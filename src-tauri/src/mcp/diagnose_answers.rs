@@ -256,6 +256,37 @@ pub fn agent_categories(settings: &sextant_core::settings::AppSettings) -> Vec<S
     enabled
 }
 
+/// The categories `ext:<id>` of the enabled extensions that judge problems (they were agreed some kinds for their rules)
+/// and whose problems the user has not let agents get (`mcp.extensionProblems`, ADR-0146), sorted: `get_problems` names
+/// them so that an empty answer is not read as "nothing wrong" there (#341). The ids only, never what they judge.
+pub fn not_shared(
+    settings: &sextant_core::settings::AppSettings,
+    enabled: &[String],
+) -> Vec<String> {
+    let mut ids: Vec<String> = settings
+        .extensions
+        .iter()
+        .filter(|e| {
+            e.enabled
+                && e.granted_problems
+                    .as_ref()
+                    .is_some_and(|kinds| !kinds.is_empty())
+        })
+        .map(|e| format!("ext:{}", e.id))
+        .filter(|category| !enabled.iter().any(|c| c == category))
+        .collect();
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
+/// Whether `category` (`ext:<id>`) is an extension installed and enabled here.
+pub fn extension_installed(settings: &sextant_core::settings::AppSettings, category: &str) -> bool {
+    category
+        .strip_prefix("ext:")
+        .is_some_and(|id| settings.extensions.iter().any(|e| e.enabled && e.id == id))
+}
+
 /// Longest message of an extension's problem an agent gets (the window keeps up to its `MAX_MESSAGE_CHARS`, 1200).
 pub const MAX_EXTENSION_MESSAGE_CHARS: usize = 300;
 

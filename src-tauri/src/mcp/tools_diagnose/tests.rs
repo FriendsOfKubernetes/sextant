@@ -1012,6 +1012,93 @@ async fn unknown_fields_are_refused_before_anything_and_without_a_window_the_too
     state.close_all();
 }
 
+fn installed_with_problems(
+    id: &str,
+    enabled: bool,
+    problems: bool,
+) -> sextant_core::extensions::InstalledExtension {
+    use sextant_core::extensions::{ExtensionPermissions, ExtensionSource, InstalledExtension};
+    InstalledExtension {
+        id: id.to_owned(),
+        version: "1.0.0".to_owned(),
+        name: id.to_owned(),
+        source: ExtensionSource::File {
+            name: format!("{id}.sextant-ext"),
+        },
+        enabled,
+        granted: ExtensionPermissions::none(),
+        installed_at: 1,
+        granted_backend: None,
+        granted_problems: problems.then(|| vec![KindPattern::new("argoproj.io", "Rollout")]),
+        granted_metric_queries: None,
+        granted_commands: None,
+        granted_services: None,
+        granted_agent_tools: None,
+        granted_kinds_from: None,
+    }
+}
+
+#[test]
+fn the_extensions_whose_problems_agents_do_not_get_are_named() {
+    let mut settings = sextant_core::settings::AppSettings::default();
+    settings.extensions = vec![
+        installed_with_problems("sextant.argo-rollouts", true, true),
+        installed_with_problems("sextant.flux", true, true),
+        // Turned off, or judging nothing: not named.
+        installed_with_problems("sextant.kueue", false, true),
+        installed_with_problems("sextant.velero", true, false),
+    ];
+    settings.mcp.extension_problems = vec!["sextant.flux".into()];
+    let enabled = answers::agent_categories(&settings);
+    assert_eq!(
+        answers::not_shared(&settings, &enabled),
+        ["ext:sextant.argo-rollouts"]
+    );
+    assert!(answers::extension_installed(&settings, "ext:sextant.flux"));
+    assert!(!answers::extension_installed(
+        &settings,
+        "ext:sextant.kueue"
+    ));
+    assert!(!answers::extension_installed(&settings, "ext:sextant.mesh"));
+    assert!(!answers::extension_installed(&settings, "nodes"));
+}
+
+#[tokio::test]
+async fn get_problems_names_what_it_did_not_look_at() {
+    let dir = tempfile::tempdir().unwrap();
+    let (state, window, cluster) = state_at(dir.path(), &fake_cluster().await, window_answers());
+    set_access(&state, &cluster, custom(vec![rule_all_read()]));
+    state
+        .settings
+        .update(|s| {
+            s.extensions = vec![installed_with_problems("sextant.argo-rollouts", true, true)];
+        })
+        .unwrap();
+    // Asked for one category of an extension that is not installed: nothing judges it, and nothing is asked.
+    let ask = json!({ "cluster": cluster.0, "categories": ["ext:sextant.mesh"] });
+    let answer = call(&state, "get_problems", ask).await.unwrap();
+    assert_eq!(answer["notInstalled"], json!(["ext:sextant.mesh"]));
+    assert_eq!(answer["off"], json!([]));
+    assert!(answer.get("notShared").is_none());
+    assert!(window.asked().is_empty());
+    // An installed one the user keeps from agents is off.
+    let ask = json!({ "cluster": cluster.0, "categories": ["ext:sextant.argo-rollouts"] });
+    let answer = call(&state, "get_problems", ask).await.unwrap();
+    assert_eq!(answer["off"], json!(["ext:sextant.argo-rollouts"]));
+    // Asked for everything: the extension is named as not shared.
+    let answer = call(&state, "get_problems", json!({ "cluster": cluster.0 }))
+        .await
+        .unwrap();
+    assert_eq!(answer["notShared"], json!(["ext:sextant.argo-rollouts"]));
+    assert!(
+        answer["notSharedNote"]
+            .as_str()
+            .unwrap()
+            .contains("AI agents (MCP)")
+    );
+    state.close_all();
+}
+
 #[tokio::test]
 async fn opt_in_problem_categories_are_computed_only_while_the_user_has_them_on() {
     let dir = tempfile::tempdir().unwrap();
