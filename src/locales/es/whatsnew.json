@@ -2,6 +2,12 @@
   "title": "Novedades de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Entendido",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "Espacios de trabajo de carpetas kubeconfig",
+      "text": "Los archivos que están directamente en una carpeta kubeconfig forman ahora un espacio de trabajo con el nombre de la carpeta, así que varias carpetas añadidas una a una son un espacio de trabajo cada una. Para editar el espacio de una carpeta, cópialo en uno propio en «Gestionar espacios de trabajo»."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Bloques de extensiones en Linux",

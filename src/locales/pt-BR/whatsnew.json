@@ -2,6 +2,12 @@
   "title": "Novidades do Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Entendi",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "Espaços de trabalho de pastas kubeconfig",
+      "text": "Os arquivos diretamente em uma pasta kubeconfig agora formam um espaço de trabalho com o nome da pasta, então várias pastas adicionadas uma a uma são um espaço de trabalho cada. Para editar o espaço de uma pasta, copie-o para um seu em \"Gerenciar espaços de trabalho\"."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Blocos de extensões no Linux",

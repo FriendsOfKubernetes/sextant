@@ -2,6 +2,12 @@
   "title": "Neu in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Verstanden",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "Arbeitsbereiche aus kubeconfig-Ordnern",
+      "text": "Die Dateien direkt in einem kubeconfig-Ordner bilden jetzt einen Arbeitsbereich mit dem Namen des Ordners, sodass mehrere einzeln hinzugefügte Ordner je ein Arbeitsbereich sind. Um den Arbeitsbereich eines Ordners zu bearbeiten, kopieren Sie ihn unter „Arbeitsbereiche verwalten“ in einen eigenen."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Erweiterungsblöcke unter Linux",

@@ -15,6 +15,11 @@ export interface ReleaseNotes {
 /** Newest first. */
 export const NOTES: readonly ReleaseNotes[] = [
   {
+    version: "0.30.3",
+    items: ["folderWorkspaces"],
+    extensions: [],
+  },
+  {
     version: "0.30.2",
     items: ["hiddenSections", "rollouts", "coverage"],
     extensions: [],

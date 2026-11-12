@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} の新機能",
   "version": "Sextant {{version}}",
   "close": "閉じる",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "kubeconfig フォルダーのワークスペース",
+      "text": "kubeconfig フォルダー直下のファイルが、フォルダー名のワークスペースになるようになりました。1 つずつ追加した複数のフォルダーは、それぞれ 1 つのワークスペースになります。フォルダーのワークスペースを編集するには、「ワークスペースの管理」で自分のワークスペースにコピーしてください。"
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Linux での拡張機能のブロック",

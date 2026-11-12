@@ -2,6 +2,12 @@
   "title": "Co nowego w Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Rozumiem",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "Obszary robocze z folderów kubeconfig",
+      "text": "Pliki bezpośrednio w folderze kubeconfig tworzą teraz obszar roboczy nazwany jak folder, więc kilka folderów dodanych po kolei to po jednym obszarze na każdy. Aby edytować obszar folderu, skopiuj go do własnego w „Zarządzaj obszarami roboczymi”."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Bloki rozszerzeń w Linuksie",

@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} sürümünde yenilikler",
   "version": "Sextant {{version}}",
   "close": "Anladım",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "kubeconfig klasörlerinin çalışma alanları",
+      "text": "Bir kubeconfig klasöründeki dosyalar artık klasörün adını taşıyan bir çalışma alanı oluşturuyor; tek tek eklenen birkaç klasörün her biri bir çalışma alanı olur. Bir klasörün çalışma alanını düzenlemek için \"Çalışma alanlarını yönet\"te onu kendi alanlarınızdan birine kopyalayın."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Linux'ta uzantı blokları",

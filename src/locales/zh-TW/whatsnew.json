@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "kubeconfig 資料夾的工作區",
+      "text": "kubeconfig 資料夾中直接存放的檔案現在會組成一個以該資料夾命名的工作區，因此逐一加入的多個資料夾各成一個工作區。要編輯資料夾的工作區，請在「管理工作區」中把它複製為你自己的工作區。"
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Linux 上的擴充功能區塊",

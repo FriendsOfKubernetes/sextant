@@ -2,6 +2,12 @@
   "title": "What's new in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Got it",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "Workspaces of kubeconfig folders",
+      "text": "The files directly in a kubeconfig folder now make a workspace named after the folder, so several folders added one by one are a workspace each. To edit a folder's workspace, copy it into one of your own in Manage workspaces."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Extension blocks on Linux",

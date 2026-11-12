@@ -2,6 +2,12 @@
   "title": "Nouveautés de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Compris",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "Espaces de travail des dossiers kubeconfig",
+      "text": "Les fichiers placés directement dans un dossier kubeconfig forment désormais un espace de travail au nom du dossier : plusieurs dossiers ajoutés un par un sont chacun un espace de travail. Pour modifier l'espace d'un dossier, copiez-le dans un des vôtres depuis « Gérer les espaces de travail »."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Blocs d'extensions sous Linux",

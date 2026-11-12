@@ -2,6 +2,12 @@
   "title": "Sextant {{version}}의 새로운 기능",
   "version": "Sextant {{version}}",
   "close": "확인",
+  "v0_30_3": {
+    "folderWorkspaces": {
+      "title": "kubeconfig 폴더의 작업 공간",
+      "text": "kubeconfig 폴더에 바로 있는 파일이 이제 폴더 이름의 작업 공간이 되므로, 하나씩 추가한 여러 폴더는 각각 작업 공간이 됩니다. 폴더의 작업 공간을 편집하려면 \"작업 공간 관리\"에서 내 작업 공간으로 복사하세요."
+    }
+  },
   "v0_30_2": {
     "hiddenSections": {
       "title": "Linux의 확장 블록",
