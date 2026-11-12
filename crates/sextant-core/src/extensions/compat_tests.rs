@@ -34,7 +34,7 @@ fn inspect(path: &Path) -> Package {
 #[test]
 fn every_frozen_package_is_accepted_and_installs() {
     let packages = frozen_packages();
-    assert!(packages.len() >= 11, "{packages:?}");
+    assert!(packages.len() >= 13, "{packages:?}");
     let dir = tempfile::tempdir().unwrap();
     for path in packages {
         let package = inspect(&path);
@@ -61,7 +61,7 @@ fn grants_stored_by_earlier_sextants_are_read_and_still_cover_their_packages() {
         })
         .collect();
     files.sort();
-    assert!(files.len() >= 5, "{files:?}");
+    assert!(files.len() >= 6, "{files:?}");
     for file in files {
         let text = std::fs::read_to_string(&file).unwrap();
         let written: serde_json::Value = serde_json::from_str(&text).unwrap();

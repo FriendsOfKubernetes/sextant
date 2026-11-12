@@ -21,6 +21,8 @@ are what users have installed. Today's Sextant and SDK must keep running them, a
 | `published/sextant.rook-ceph-1.2.0.sextant-ext` | 3 | the release `rook-ceph-v1.2.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.29) | `d525cc3d4f08a20eca5e32afd7005f064899f8867c8be694fade73419b5795db` |
 | `published/sextant.argo-rollouts-1.4.0.sextant-ext` | 4 | the release `argo-rollouts-v1.4.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.30.0) | `743912892cafa8daa97a84c91c3858eb4b48541d2fdc55ec25d10e495f2d0146` |
 | `published/sextant.cert-manager-1.0.0.sextant-ext` | 4 | the release `cert-manager-v1.0.0` of FriendsOfKubernetes/sextant-extensions (SDK 0.30.0) | `78f0900c30151115436ffbbd24f152f0fce8a2391f480d8ed7ae34d833195b76` |
+| `sdk-0.30.1/sextant.karpenter-1.1.0.sextant-ext` | 5 | the SDK of the release `v0.30.1` (`sdk:build` + `sdk:pack` of its `extensions/karpenter`) | `0368483753058ed638fc20335fe60b50e1259b5a3b896f289b7645a3eae260fd` |
+| `sdk-0.30.1/sextant.k3s-1.1.0.sextant-ext` | 5 | the SDK of the release `v0.30.1` (`sdk:build` + `sdk:pack` of its `extensions/k3s`; `maskedSecrets`) | `ab0a92c8bc519c4fc585b0c2fda94e9ccb39e606a71ffa45c060eead8d8ce954` |
 
 The `published/` files equal the release assets: their SHA-256 is the `digest` GitHub shows for each.
 
@@ -28,7 +30,7 @@ The `published/` files equal the release assets: their SHA-256 is the `digest` G
 consent:
 - `granted` holds the manifest's permissions, with `confirm` written out;
 - `grantedBackend`, `grantedProblems`, `grantedMetricQueries` and `grantedCommands` appear only in versions that had them;
-- `settings-0.30.0.json` is written as 0.30.0's install from the catalog writes it, with the catalog source.
+- `settings-0.30.0.json` and `settings-0.30.1.json` are written as that version's install from the catalog writes them, with the catalog source (`settings-0.30.1.json` holds k3s's `maskedSecrets` grant).
 
 Each entry names a package above by id and version.
 

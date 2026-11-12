@@ -218,6 +218,8 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
       "published/sextant.rook-ceph-1.2.0.sextant-ext",
       "published/sextant.argo-rollouts-1.4.0.sextant-ext",
       "published/sextant.cert-manager-1.0.0.sextant-ext",
+      "sdk-0.30.1/sextant.karpenter-1.1.0.sextant-ext",
+      "sdk-0.30.1/sextant.k3s-1.1.0.sextant-ext",
     ];
     const found = readdirSync(COMPAT, { withFileTypes: true })
       .filter((e) => e.isDirectory())
@@ -327,6 +329,34 @@ describe("extensions of API 4 (Sextant 0.30.0)", () => {
     );
     await vi.waitFor(() => expect(doc.body.textContent).toContain("shop.example.com"), { timeout: 4000 });
     expect(doc.body.textContent).toContain("letsencrypt");
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
+});
+
+describe("extensions of API 5 (Sextant 0.30.1)", () => {
+  const refOf = (o: KubeObject) => ({
+    kind: { group: groupOf(o.apiVersion), version: o.apiVersion.split("/").pop()!, kind: o.kind },
+    namespace: o.metadata.namespace ?? null,
+    name: o.metadata.name,
+  });
+
+  it("sdk-0.30.1/sextant.karpenter-1.1.0.sextant-ext: a NodePool's details section draws it", async () => {
+    const objects = objectsIn(fixture("karpenter/fixtures/objects.json"));
+    serve(objects);
+    const pool = objects.find((o) => o.kind === "NodePool" && o.metadata.name === "default")!;
+    const doc = open(
+      "sdk-0.30.1/sextant.karpenter-1.1.0.sextant-ext",
+      context("sextant.karpenter", { view: "details", contribution: "node-pool", selection: [refOf(pool)], resourceVersion: "1" }),
+    );
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("Limits and disruption"), { timeout: 4000 });
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
+
+  it("sdk-0.30.1/sextant.k3s-1.1.0.sextant-ext: the Distribution page lists the k3s and RKE2 nodes", async () => {
+    serve(objectsIn(fixture("k3s/fixtures/objects.json")));
+    const doc = open("sdk-0.30.1/sextant.k3s-1.1.0.sextant-ext", context("sextant.k3s", { contribution: "distribution" }));
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("k3s-server-1"), { timeout: 4000 });
+    expect(calls()).toContain("resources.watch");
     expect(onFrameError).not.toHaveBeenCalled();
   });
 });

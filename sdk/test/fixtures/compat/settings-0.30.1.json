@@ -1,0 +1,191 @@
+{
+  "extensions": [
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "karpenter.sh",
+                  "kind": "NodePool"
+                },
+                {
+                  "group": "karpenter.sh",
+                  "kind": "NodeClaim"
+                },
+                {
+                  "group": "karpenter.k8s.aws",
+                  "kind": "EC2NodeClass"
+                },
+                {
+                  "group": "karpenter.azure.com",
+                  "kind": "AKSNodeClass"
+                },
+                {
+                  "group": "",
+                  "kind": "Event"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ]
+      },
+      "id": "sextant.karpenter",
+      "installedAt": 1762900000000,
+      "name": "Karpenter",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "maskedSecrets": [
+          {
+            "group": "",
+            "kind": "Node"
+          },
+          {
+            "group": "helm.cattle.io",
+            "kind": "HelmChart"
+          },
+          {
+            "group": "helm.cattle.io",
+            "kind": "HelmChartConfig"
+          }
+        ],
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "helm.cattle.io",
+                  "kind": "HelmChart"
+                },
+                {
+                  "group": "helm.cattle.io",
+                  "kind": "HelmChartConfig"
+                },
+                {
+                  "group": "k3s.cattle.io",
+                  "kind": "Addon"
+                },
+                {
+                  "group": "k3s.cattle.io",
+                  "kind": "ETCDSnapshotFile"
+                },
+                {
+                  "group": "batch",
+                  "kind": "Job"
+                },
+                {
+                  "group": "",
+                  "kind": "Node"
+                },
+                {
+                  "group": "",
+                  "kind": "Service"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          },
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "apps",
+                  "kind": "Deployment"
+                },
+                {
+                  "group": "apps",
+                  "kind": "DaemonSet"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "namespaces": [
+                "kube-system"
+              ],
+              "type": "only"
+            }
+          },
+          {
+            "actions": [
+              "logs"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "",
+                  "kind": "Pod"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ]
+      },
+      "grantedProblems": [
+        {
+          "group": "helm.cattle.io",
+          "kind": "HelmChart"
+        },
+        {
+          "group": "batch",
+          "kind": "Job"
+        },
+        {
+          "group": "apps",
+          "kind": "Deployment"
+        }
+      ],
+      "id": "sextant.k3s",
+      "installedAt": 1762900000000,
+      "name": "k3s / RKE2",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.1.0"
+    }
+  ]
+}
