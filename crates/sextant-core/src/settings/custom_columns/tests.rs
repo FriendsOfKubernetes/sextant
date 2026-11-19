@@ -426,3 +426,39 @@ fn a_trimmed_pair_reads_blank_text_and_a_missing_field_as_empty() {
     assert_eq!(parse_field_path(".a[b!~=\"\"]"), None);
     assert_eq!(parse_field_path(".a[~=\"\"]"), None);
 }
+
+#[test]
+fn a_match_of_several_values_and_by_name() {
+    // ADR-0172: one of several values, none of them when negated.
+    let steps =
+        parse_field_path(".status.apps[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\")].message").unwrap();
+    assert!(uses_gaps_syntax(&steps));
+    let PathStep::Match { pairs, pick } = &steps[2] else {
+        panic!("a match step")
+    };
+    assert_eq!(*pick, MatchPick::First);
+    let apps = json!([{ "status": "RUNNING" }, { "status": "UNHEALTHY", "message": "b" }, { "status": "DEPLOY_FAILED" }]);
+    assert_eq!(PathStep::matching(pairs, &apps).len(), 2);
+    let none = parse_field_path(".a[status!=(\"RUNNING\",\"UNHEALTHY\")]").unwrap();
+    let PathStep::Match { pairs, .. } = &none[1] else {
+        panic!("a match step")
+    };
+    assert_eq!(PathStep::matching(pairs, &apps).len(), 1);
+    for broken in [".a[s=(A,B)]", ".a[s=(\"A\",)]", ".a[s=()]", ".a[s=(\"A\"]"] {
+        assert_eq!(parse_field_path(broken), None, "{broken}");
+    }
+    // `^`: a map's values by the names of their keys (lower case, then as written), not by code point.
+    let by_name = parse_field_path(".status.apps[status=\"UNHEALTHY\",^].message").unwrap();
+    assert!(uses_gaps_syntax(&by_name));
+    let PathStep::Match { pairs, pick } = &by_name[2] else {
+        panic!("a match step")
+    };
+    assert_eq!(*pick, MatchPick::ByName);
+    let map = json!({ "b": { "status": "UNHEALTHY", "message": "lower b" }, "C": { "status": "UNHEALTHY", "message": "upper C" } });
+    assert_eq!(PathStep::pick(pairs, &map).unwrap()["message"], "upper C");
+    assert_eq!(
+        PathStep::by_name(pairs, &map).unwrap()["message"],
+        "lower b"
+    );
+    assert!(!uses_gaps_syntax(&parse_field_path(".a[b=\"c\"]").unwrap()));
+}

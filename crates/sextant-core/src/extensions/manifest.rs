@@ -30,7 +30,7 @@ pub const MANIFEST_FILE: &str = "sextant-extension.json";
 /// (ADR-0137), 3 `contributes.sectionBadges`, rules across objects and `contributes.commands` (ADR-0143, ADR-0144,
 /// ADR-0147), 4 sources and `not` in problem rules, computed columns, action conditions, kinds in a section of their
 /// own, status patches, port-forwards, cluster menu items, services and agent tools (ADR-0152 to ADR-0159).
-pub const SUPPORTED_API: u32 = 5;
+pub const SUPPORTED_API: u32 = 6;
 /// The oldest one it still reads: every extension once accepted keeps working (ADR-0142).
 pub const MIN_API: u32 = 1;
 
@@ -470,6 +470,20 @@ pub struct ColumnContribution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub value_text: Option<String>,
+    /// `"time"`: an `age` column sorts by the time itself, the oldest first, as a built-in column that sorted by its
+    /// timestamp (ADR-0172); its age by default. `sextantApi` 6.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub sort_as: Option<ColumnSortAs>,
+}
+
+/// What an `age` column sorts by (`sortAs`, ADR-0172).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum ColumnSortAs {
+    /// The time, the oldest first.
+    Time,
 }
 
 /// A value picked from a list by an index field (#387): `field` of the item of `list` that `index` names (an index the
@@ -585,6 +599,12 @@ pub struct ColumnItems {
 pub struct ColumnItemCase {
     pub when: ProblemCondition,
     pub text: String,
+    /// What the item gives the column's value (its sort, and its filter and search by `"value"`) in place of its
+    /// text (ADR-0172): text with the item's placeholders — a Knative Route's latest revision sorted without its word.
+    /// `sextantApi` 6.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub value: Option<String>,
 }
 
 /// A text a column shows where `when` holds.
@@ -622,6 +642,12 @@ pub struct ColumnCase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub text_forms: Option<std::collections::BTreeMap<String, String>>,
+    /// `true`: while the case holds the cell has no value (ADR-0172) — it shows nothing, sorts last and filters as
+    /// nothing, as a built-in number column left a cell blank (KServe's Canary % without a split). Its `text` is `""`.
+    /// `sextantApi` 6.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub blank: Option<bool>,
 }
 
 fn yes() -> bool {
@@ -1266,6 +1292,7 @@ mod tests {
                 width: None,
                 lookup: None,
                 value_text: None,
+                sort_as: None,
             }
         );
         assert_eq!(
@@ -1450,7 +1477,7 @@ mod tests {
 
     #[test]
     fn an_unsupported_api_version_is_its_own_error() {
-        for api in [0, 6, 99] {
+        for api in [0, 7, 99] {
             // Even with fields this Sextant does not know: the version is the reason.
             let value = with(
                 with(minimal(), "/sextantApi", json!(api)),
@@ -1914,7 +1941,7 @@ mod tests {
         let rejected = [
             with(minimal(), "/extra", json!(1)),
             without(minimal(), "/entry"),
-            with(minimal(), "/sextantApi", json!(6)),
+            with(minimal(), "/sextantApi", json!(7)),
             with(minimal(), "/id", json!("Bad Id")),
             with(full(), "/permissions/rules/0/actions", json!(["exec"])),
             with(full(), "/contributes/columns/0/jsonPath", json!("nope")),

@@ -248,6 +248,7 @@ export const MANIFEST_SHAPES = {
     width: "optional",
     lookup: "optional",
     valueText: "optional",
+    sortAs: "optional",
   }),
   ManifestKind: described<ManifestKind>(`${CONTRIBUTION}/kinds/items`, {
     group: "required",

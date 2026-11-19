@@ -4,4 +4,10 @@ import type { ProblemCondition } from "./ProblemCondition";
 /**
  * An item's text where a condition on the item holds: paths read from the item (`.revisionName`).
  */
-export type ColumnItemCase = { when: ProblemCondition, text: string, };
+export type ColumnItemCase = { when: ProblemCondition, text: string, 
+/**
+ * What the item gives the column's value (its sort, and its filter and search by `"value"`) in place of its
+ * text (ADR-0172): text with the item's placeholders — a Knative Route's latest revision sorted without its word.
+ * `sextantApi` 6.
+ */
+value?: string, };

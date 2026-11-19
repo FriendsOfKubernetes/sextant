@@ -327,13 +327,48 @@ pub(crate) fn check_problem_judges(manifest: &ExtensionManifest) -> Result<(), M
             }
         }
         if category.is_none() {
-            return Err(at(
-                &here.key("id"),
-                "no rule judges with it (a `judged` condition naming it)",
-            ));
+            // A judge only computed columns ask (ADR-0172) runs with the extension's main problem category, whose
+            // sources hold the kinds it reads: so the extension has rules of it.
+            let columns = manifest.sextant_api >= super::problems::GAPS_API
+                && column_judges(manifest).contains(&judge.id.as_str());
+            if !columns {
+                return Err(at(
+                    &here.key("id"),
+                    "no rule judges with it (a `judged` condition naming it)",
+                ));
+            }
+            if !manifest
+                .contributes
+                .problems
+                .iter()
+                .any(|rule| rule.category.is_none())
+            {
+                return Err(at(
+                    &here.key("id"),
+                    "is asked by columns only, so it runs with the extension's main problem category: the extension needs a rule of it",
+                ));
+            }
         }
     }
     Ok(())
+}
+
+/// The judges computed columns' cases ask (`judged`, ADR-0172), each once.
+pub fn column_judges(manifest: &ExtensionManifest) -> Vec<&str> {
+    let mut out: Vec<&str> = Vec::new();
+    for case in manifest
+        .contributes
+        .columns
+        .iter()
+        .flat_map(|c| c.cases.iter().flatten())
+    {
+        for (judge, _) in judged_in(&case.when) {
+            if !out.contains(&judge) {
+                out.push(judge);
+            }
+        }
+    }
+    out
 }
 
 /// The `judged` condition of a rule of `kind` (`check_condition`): a declared judge and fact, a kind it reads.

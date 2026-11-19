@@ -10,7 +10,7 @@ import { TextDecoder, TextEncoder } from "node:util";
 
 export const MANIFEST_FILE = "sextant-extension.json";
 /** The newest extension API Sextant implements; 2 brought `contributes.problems` (ADR-0137), 3 `contributes.sectionBadges` (ADR-0143). */
-export const SUPPORTED_API = 5;
+export const SUPPORTED_API = 6;
 /** The oldest one it still reads: every extension once accepted keeps working (ADR-0142). */
 export const MIN_API = 1;
 export const MAX_MANIFEST_BYTES = 512 * 1024;
@@ -562,10 +562,31 @@ export function parseFieldPath(path) {
           if (eq < 0) return null;
           const field = chars.slice(at, eq).join("");
           // Names joined by dots, optionally ending in `~` (compared trimmed, ADR-0169) and then `!` (#404).
-          if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*~?!?$/.test(field) || chars[eq + 1] !== '"') return null;
-          const close = chars.indexOf('"', eq + 2);
-          if (close < 0) return null;
-          const value = chars.slice(eq + 2, close).join("");
+          if (!/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*~?!?$/.test(field)) return null;
+          let value;
+          let close;
+          if (chars[eq + 1] === "(") {
+            // `("a","b",…)` (ADR-0172): one of several values, joined by a quote in the one value text (Rust's).
+            const values = [];
+            let j = eq + 2;
+            for (;;) {
+              if (chars[j] !== '"') return null;
+              const end = chars.indexOf('"', j + 1);
+              if (end < 0) return null;
+              values.push(chars.slice(j + 1, end).join(""));
+              if (values.length > 12) return null;
+              if (chars[end + 1] === ",") j = end + 2;
+              else if (chars[end + 1] === ")") {
+                value = values.join('"');
+                close = end + 1;
+                break;
+              } else return null;
+            }
+          } else if (chars[eq + 1] === '"') {
+            close = chars.indexOf('"', eq + 2);
+            if (close < 0) return null;
+            value = chars.slice(eq + 2, close).join("");
+          } else return null;
           // eslint-disable-next-line no-control-regex
           if (/[\\\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
           pairs.push([field, value]);
@@ -576,7 +597,14 @@ export function parseFieldPath(path) {
           }
           if (chars[close + 1] !== ",") return null;
           at = close + 2;
-          // A last part: `*` (every match) or `<field` (the earliest by it), then `]` (#399).
+          // A last part: `*` (every match), `<field` (the earliest by it) or `^` (the first by name, ADR-0172), then
+          // `]` (#399).
+          if (chars[at] === "^") {
+            if (chars[at + 1] !== "]") return null;
+            pick = "byName";
+            at += 2;
+            break;
+          }
           if (chars[at] === "*") {
             if (chars[at + 1] !== "]") return null;
             pick = "all";
@@ -661,6 +689,8 @@ const ACROSS_API = 3;
 const SOURCES_API = 4;
 /** The API of what the moved views still lacked after 0.30.0 (`PARITY_API`, #417, ADR-0169): Sextant 0.30.1. */
 const PARITY_API = 5;
+/** The API of the last gaps #417 named after 0.30.1 (`GAPS_API`, ADR-0172): Sextant 0.30.5. */
+const GAPS_API = 6;
 const MAX_SELECTOR_CHARS = 1000;
 
 /** A rule's path: no secret, and under `.metadata` when its source watches metadata only (`check_rule_path`). */
@@ -755,7 +785,10 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
   }
   if (condition.type === "judged") {
     // The extension's backend decides it (ADR-0168): `check_judged`.
-    if (counter.single) fail([...segments, "type"], "`judged` is decided by the extension's backend: only problem rules may use it");
+    // A computed column's case may ask a judge (ADR-0172); nothing else judged by one object.
+    const columnCase = counter.single && counter.case && (counter.judges ?? []).length > 0 && counter.api >= GAPS_API;
+    if (counter.single && !columnCase) fail([...segments, "type"], "`judged` is decided by the extension's backend: only problem rules may use it (from sextantApi 6 also a computed column's cases)");
+    if (columnCase && condition.each !== undefined) fail([...segments, "each"], "is for a rule: a cell shows one fact");
     if (counter.api < SOURCES_API) fail([...segments, "type"], `\`judged\` needs sextantApi ${SOURCES_API} or later`);
     if (inside !== "top") fail([...segments, "type"], "`judged` cannot be inside `any` or `not`: a judge that cannot tell would make it unknown");
     // One problem per fact (`each`): the rule's whole `when`, so nothing else decides which of them stand.
@@ -771,6 +804,12 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     if (counter.single) fail([...segments, "type"], "`served` is told by discovery: only problem rules may use it");
     if (counter.api < PARITY_API) fail([...segments, "type"], `\`served\` needs sextantApi ${PARITY_API} or later`);
     if (inside !== "top") fail([...segments, "type"], "`served` cannot be inside `any` or `not`: before discovery answers it is unknown");
+    return;
+  }
+  if (condition.type === "isTime") {
+    // A text that reads as a time (ADR-0172), as `olderThan` reads one.
+    if (counter.api < GAPS_API) fail([...segments, "type"], `\`isTime\` needs sextantApi ${GAPS_API} or later`);
+    checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     return;
   }
   if (condition.type === "fits") {
@@ -811,6 +850,7 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
       });
     }
     checkRelatedParts(condition, segments, counter);
+    checkLookupModes(condition, inside, segments, counter);
     if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
       counter.kinds.push(condition.kind);
       const maxKinds = ruleLimits(counter.api)[1];
@@ -861,6 +901,7 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
     if (condition.optional !== undefined && inside === "lookups") fail([...segments, "optional"], "is for a `related` outside `any`: an optional lookup decides nothing");
     checkRelatedParts(condition, segments, counter);
+    checkLookupModes(condition, inside, segments, counter);
     if (!counter.kinds.some((k) => sameKind(k, condition.kind))) {
       counter.kinds.push(condition.kind);
       const maxKinds = ruleLimits(counter.api)[1];
@@ -935,6 +976,23 @@ function checkCondition(condition, kind, segments, depth, counter, inside = "top
     return;
   }
   checkRulePath(condition.path, kind, [...segments, "path"], counter.metadataOnly);
+}
+
+/**
+ * `check_lookup_modes` (ADR-0172): `unless` and `each` of a `related`/`relatedBy` — sextantApi 6, at the top of a
+ * rule, neither with `optional`, `givesSince` or `newest`, and not together.
+ */
+function checkLookupModes(condition, inside, segments, counter) {
+  for (const key of ["unless", "each"]) {
+    if (condition[key] === undefined) continue;
+    if (counter.api < GAPS_API) fail([...segments, key], `needs sextantApi ${GAPS_API} or later`);
+    if (condition[key] !== true) fail([...segments, key], "is `true` or left out");
+    if (inside !== "top") fail([...segments, key], "is for a lookup at the top of a rule, not inside `any`");
+    for (const other of ["optional", "givesSince", "newest"]) {
+      if (condition[other] !== undefined) fail([...segments, key], `does not go with \`${other}\``);
+    }
+  }
+  if (condition.unless !== undefined && condition.each !== undefined) fail([...segments, "each"], "does not go with `unless`: no object is told apart where none holds");
 }
 
 /** `is_inline_secret_field`: a path naming exactly one inline secret field of the kind, by names only (ADR-0169). */
@@ -1427,8 +1485,24 @@ function checkProblemJudges(manifest) {
         );
       }
     });
-    if (first === undefined) fail([...here, "id"], "no rule judges with it (a `judged` condition naming it)");
+    if (first === undefined) {
+      // A judge only computed columns ask (ADR-0172) runs with the extension's main problem category.
+      const columns = manifest.sextantApi >= GAPS_API && columnJudges(manifest).includes(judge.id);
+      if (!columns) fail([...here, "id"], "no rule judges with it (a `judged` condition naming it)");
+      if (!rules.some((rule) => rule.category === undefined)) {
+        fail([...here, "id"], "is asked by columns only, so it runs with the extension's main problem category: the extension needs a rule of it");
+      }
+    }
   });
+}
+
+/** `column_judges` (ADR-0172): the judges computed columns' cases ask, each once. */
+export function columnJudges(manifest) {
+  const out = [];
+  for (const column of manifest.contributes?.columns ?? []) {
+    for (const c of column.cases ?? []) for (const [judge] of judgedIn(c.when)) if (!out.includes(judge)) out.push(judge);
+  }
+  return out;
 }
 
 /**
@@ -1458,6 +1532,19 @@ function checkMessage(text, kind, segments, metadataOnly, item = false) {
     const tried = splitOutsideQuotes(field, "??");
     if (tried.length > MAX_ADDED_PATHS) fail(segments, `tries at most ${MAX_ADDED_PATHS} paths`);
     if (tried.length > 1 && addedPaths(field).length > 1) fail(segments, "adds paths with `+` or tries them with `??`, not both");
+    // `|sumOf:` (ADR-0172): a list's items each adding the product of their factors, a RayCluster's workers.
+    const sumArg = filters[0]?.trim().startsWith("sumOf:") ? filters[0].trim().slice(6) : undefined;
+    if (sumArg !== undefined) {
+      if (filters.length > 1 || tried.length > 1 || addedPaths(field).length > 1) fail(segments, "has `|sumOf:` alone, after one path");
+      const factors = sumOfFactors(sumArg);
+      if (factors === undefined) {
+        fail(segments, "has `|sumOf:` with 1 to 4 factors joined by ` * `, each 1 to 4 item paths (`.replicas`, `.hosts>0`) or numbers joined by ` ?? `");
+      }
+      checkRulePath(field.trim(), kind, segments, metadataOnly);
+      if (!listsMatches(field)) fail(segments, "has `|sumOf:` after a path whose last step, and no other, lists the items (`.spec.groups[*]`)");
+      for (const alt of factors.flat()) if (alt.path !== undefined) checkRulePath(`${field.trim()}${alt.path}`, kind, segments, metadataOnly);
+      continue;
+    }
     if (tried.length > 1) {
       // The last may be a literal (#404): `{{.status.updated ?? 0}}`, `{{.value ?? "*"}}`.
       tried.forEach((one, i) => {
@@ -1517,6 +1604,37 @@ export function placeholderLiteral(text) {
 /** `MAX_ADDED_PATHS` (#404). */
 const MAX_ADDED_PATHS = 4;
 
+/**
+ * `sum_of_factors` (ADR-0172): the factors of `|sumOf:<factor> * <factor>…`, 1 to 4, each 1 to 4 alternatives joined
+ * by ` ?? ` — an item path (`.replicas`; `.numOfHosts>0` a positive number only) or a number; `undefined` otherwise.
+ */
+export function sumOfFactors(arg) {
+  const factors = splitOutsideQuotes(arg, " * ");
+  if (factors.length === 0 || factors.length > MAX_ADDED_PATHS) return undefined;
+  const out = [];
+  for (const factor of factors) {
+    const alternatives = splitOutsideQuotes(factor, "??");
+    if (alternatives.length > MAX_ADDED_PATHS) return undefined;
+    const alts = [];
+    for (const raw of alternatives) {
+      const alt = raw.trim();
+      if (!alt.startsWith(".")) {
+        // A number only, never a text.
+        if (alt.startsWith('"') || placeholderLiteral(alt) === undefined || !Number.isFinite(Number(alt))) return undefined;
+        alts.push({ number: Number(alt) });
+        continue;
+      }
+      const positive = alt.endsWith(">0");
+      const path = positive ? alt.slice(0, -2).trimEnd() : alt;
+      const steps = parseFieldPath(path);
+      if (!steps || steps.some((s) => s.pick === "all")) return undefined;
+      alts.push({ path, positive });
+    }
+    out.push(alts);
+  }
+  return out;
+}
+
 /** `added_paths`: a placeholder's path split at each `+` outside a quoted match value. */
 export function addedPaths(field) {
   return splitOutsideQuotes(field, "+");
@@ -1552,35 +1670,47 @@ function listsMatches(text) {
 }
 
 /**
- * `check_parity_syntax` (ADR-0169): below sextantApi 5, no path or placeholder of `contributes` uses lists three deep,
- * a match field compared trimmed, `|positions`, `|uniqueKey`, `|quantity` in a text or `{{selectsNone:namespaces}}`; strings visited in key
+ * `check_parity_syntax` (ADR-0169, ADR-0172): below sextantApi 5, no path or placeholder of `contributes` uses lists
+ * three deep, a match field compared trimmed, `|positions`, `|uniqueKey`, `|quantity` in a text or
+ * `{{selectsNone:namespaces}}`; below 6, a match of several values or by name or `|sumOf:`; strings visited in key
  * order, as Rust does.
  */
 function checkParitySyntax(manifest) {
-  if (!(manifest.sextantApi < PARITY_API) || !isObject(manifest.contributes)) return;
+  if (!(manifest.sextantApi < GAPS_API) || !isObject(manifest.contributes)) return;
+  const api = manifest.sextantApi;
+  /** What a path uses of an API newer than the manifest's, and that API (Rust's `new_in`). */
   const newIn = (text) => {
     // A compared path may end in a filter (`|count`).
     const trimmed = splitOutsideQuotes(text, "|")[0].trim();
     const steps = parseFieldPath(trimmed.startsWith("$") ? trimmed.slice(1) : trimmed);
     if (!steps) return undefined;
-    if (steps.filter((s) => s.pick === "all").length > 2) return "a path with lists three deep (`[*]`)";
-    if (steps.some((s) => s.match?.some(([f]) => (f.endsWith("!") ? f.slice(0, -1) : f).endsWith("~")))) return 'a match field compared trimmed (`[field~="…"]`)';
-    return undefined;
+    const uses = [
+      [steps.filter((s) => s.pick === "all").length > 2, "a path with lists three deep (`[*]`)", PARITY_API],
+      [steps.some((s) => s.match?.some(([f]) => (f.endsWith("!") ? f.slice(0, -1) : f).endsWith("~"))), 'a match field compared trimmed (`[field~="…"]`)', PARITY_API],
+      [steps.some((s) => s.pick === "byName" || s.match?.some(([, v]) => v.includes('"'))), 'a match of several values (`[field=("a","b")]`) or by name (`^`)', GAPS_API],
+    ];
+    const use = uses.find(([used, , needs]) => used && api < needs);
+    return use ? [use[1], use[2]] : undefined;
   };
   const visit = (value, here) => {
     if (typeof value === "string") {
-      let found = newIn(value);
+      let found;
+      const note = (use) => {
+        if (found === undefined && use !== undefined && api < use[1]) found = use;
+      };
+      note(newIn(value));
       for (const inner of placeholders(value) ?? []) {
         const [field, ...filters] = inner.split("|");
-        if (filters.some((f) => f.trim() === "positions")) found ??= "`|positions`";
-        if (filters.some((f) => f.trim() === "uniqueKey")) found ??= "`|uniqueKey`";
-        if (filters.some((f) => f.trim() === "quantity")) found ??= "`|quantity` in a text";
-        if (filters.some((f) => f.trim().startsWith("cut:"))) found ??= "`|cut:<n>`";
-        if (relatedPlaceholder(inner) !== undefined) found ??= "`{{related:…}}`";
-        if (inner.trim() === SELECTS_NONE_NAMESPACES) found ??= "`{{selectsNone:namespaces}}`";
-        for (const one of splitOutsideQuotes(field, "??").flatMap((p) => splitOutsideQuotes(p, "+")).flatMap((p) => splitOutsideQuotes(p, " * "))) found ??= newIn(one);
+        if (filters.some((f) => f.trim() === "positions")) note(["`|positions`", PARITY_API]);
+        if (filters.some((f) => f.trim() === "uniqueKey")) note(["`|uniqueKey`", PARITY_API]);
+        if (filters.some((f) => f.trim() === "quantity")) note(["`|quantity` in a text", PARITY_API]);
+        if (filters.some((f) => f.trim().startsWith("cut:"))) note(["`|cut:<n>`", PARITY_API]);
+        if (filters.some((f) => f.trim().startsWith("sumOf:"))) note(["`|sumOf:…`", GAPS_API]);
+        if (relatedPlaceholder(inner) !== undefined) note(["`{{related:…}}`", PARITY_API]);
+        if (inner.trim() === SELECTS_NONE_NAMESPACES) note(["`{{selectsNone:namespaces}}`", PARITY_API]);
+        for (const one of splitOutsideQuotes(field, "??").flatMap((p) => splitOutsideQuotes(p, "+")).flatMap((p) => splitOutsideQuotes(p, " * "))) note(newIn(one));
       }
-      if (found !== undefined) fail(here, `${found} needs sextantApi ${PARITY_API} or later`);
+      if (found !== undefined) fail(here, `${found[0]} needs sextantApi ${found[1]} or later`);
     } else if (Array.isArray(value)) value.forEach((item, i) => visit(item, [...here, i]));
     else if (isObject(value)) for (const key of sortedKeys(value)) visit(value[key], [...here, key]);
   };
@@ -2233,7 +2363,21 @@ function checkSections(manifest) {
 
 /** A condition of an action or a column (`check_object_condition`): no `missing`, no secret of any of `kinds`. */
 /** `numeric_path` (#407): a compared path without its `|sum` or `|count`. */
+/** `compared_default` (ADR-0172): `<path> ?? <literal>`, the path and the literal; `undefined` without one. */
+export function comparedDefault(text) {
+  const parts = splitOutsideQuotes(text, "??");
+  if (parts.length !== 2) return undefined;
+  const literal = parts[1].trim();
+  return placeholderLiteral(literal) === undefined ? undefined : [parts[0].trim(), literal];
+}
+
 function numericPath(text, api, segments) {
+  // ` ?? <literal>` (ADR-0172): the value where the path holds nothing.
+  const fallback = comparedDefault(text);
+  if (fallback !== undefined) {
+    if (api < GAPS_API) fail(segments, `a default (\` ?? <literal>\`) needs sextantApi ${GAPS_API} or later`);
+    text = fallback[0];
+  }
   const bar = text.lastIndexOf("|");
   if (bar < 0) return text;
   const filter = text.slice(bar + 1).trim();
@@ -2257,10 +2401,36 @@ function checkObjectCondition(condition, kinds, segments, api) {
   for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true });
 }
 
-/** `check_case_condition`: a computed column's case, which may ask what the extension's rules say (`problem`, ADR-0169). */
-function checkCaseCondition(condition, kinds, segments, api) {
-  for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true, case: true });
+/** `check_column_case_condition` (ADR-0172): a computed column's case, which may also ask a judge (`judged`). */
+function checkColumnCaseCondition(condition, kinds, segments, api, judges) {
+  for (const kind of kinds) checkCondition(condition, kind, segments, 1, { count: 0, api, kinds: [], metadataOnly: false, single: true, case: true, judges });
 }
+
+/** `fact_values`: the value names of the facts a condition's `judged` conditions name. */
+const factValues = (judges, condition) => [
+  ...new Set(judgedIn(condition).flatMap(([judge, fact]) => judges.find((j) => j.id === judge)?.facts.find((f) => f.id === fact)?.values ?? [])),
+];
+
+/** `strip_fact_placeholders` (ADR-0172): a case's text without its `{{fact:<name>}}`, each a value its facts give. */
+function stripFactPlaceholders(text, allowed, segments) {
+  let rest = "";
+  let tail = text;
+  for (;;) {
+    const start = tail.indexOf("{{");
+    if (start < 0) break;
+    const after = tail.slice(start + 2);
+    const end = after.indexOf("}}");
+    if (end < 0) break;
+    const name = factPlaceholder(after.slice(0, end));
+    if (name !== undefined) {
+      if (!allowed.includes(name)) fail(segments, `has \`{{fact:${name}}}\`, which no fact of the case's \`judged\` conditions gives`);
+      rest += tail.slice(0, start);
+    } else rest += tail.slice(0, start + 2 + end + 2);
+    tail = after.slice(end + 2);
+  }
+  return rest + tail;
+}
+
 
 /** `asks_problems` (ADR-0169). */
 function asksProblems(condition) {
@@ -2503,11 +2673,14 @@ function checkColumns(manifest) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "width"], `needs sextantApi ${WINDOW_API} or later`);
       if (!isColumnWidth(column.width)) fail([...here, "width"], "is `<n>px` or `minmax(<n>px, <m>fr)`, n from 40 to 600 and m from 0.5 to 5");
     }
-    if (column.searchBy !== undefined && (column.searchBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0)) fail([...here, "searchBy"], 'is `"value"` on a text column with `cases`');
+    // By value: a text column's cases' values, or a list column's items' (ADR-0172).
+    const byValue = ((column.format ?? "text") === "text" && (column.cases ?? []).length > 0) || (column.format === "list" && (column.items?.cases ?? []).some((c) => c.value !== undefined));
+    const byValueText = 'is `"value"` on a text column with `cases` or a list column whose items have a `value`';
+    if (column.searchBy !== undefined && (column.searchBy !== "value" || !byValue)) fail([...here, "searchBy"], byValueText);
     if (column.listTooltip !== undefined && !isList(column.format)) fail([...here, "listTooltip"], 'goes with `format: "list"` or `"firstPlus"`');
     if (column.filterBy !== undefined) {
       if (manifest.sextantApi < WINDOW_API) fail([...here, "filterBy"], `needs sextantApi ${WINDOW_API} or later`);
-      if (column.filterBy !== "value" || (column.format ?? "text") !== "text" || (column.cases ?? []).length === 0) fail([...here, "filterBy"], 'is `"value"` on a text column with `cases`');
+      if (column.filterBy !== "value" || !byValue) fail([...here, "filterBy"], byValueText);
     }
     if (column.sorted !== undefined && !isList(column.format)) fail([...here, "sorted"], 'goes with `format: "list"` or `"firstPlus"`');
     if (column.format === "firstPlus" && manifest.sextantApi < WINDOW_API) fail([...here, "format"], `\`firstPlus\` needs sextantApi ${WINDOW_API} or later`);
@@ -2534,6 +2707,12 @@ function checkColumns(manifest) {
         checkObjectCondition(itemCondition(c.when), [column.kind], [...at, "cases", j, "when"], manifest.sextantApi);
         if (c.text.trim() === "" || Array.from(c.text).length > 200) fail([...at, "cases", j, "text"], "is a text of 1 to 200 characters");
         checkMessage(c.text, column.kind, [...at, "cases", j, "text"], false, true);
+        // What the item gives the column's value (ADR-0172): its sort, and its filter and search by `"value"`.
+        if (c.value !== undefined) {
+          if (manifest.sextantApi < GAPS_API) fail([...at, "cases", j, "value"], `needs sextantApi ${GAPS_API} or later`);
+          if (c.value === "" || Array.from(c.value).length > 200) fail([...at, "cases", j, "value"], "is a text of 1 to 200 characters");
+          checkMessage(c.value, column.kind, [...at, "cases", j, "value"], false, true);
+        }
       });
       if (column.items.separator !== undefined) checkSeparator(column.items.separator, [...at, "separator"]);
     }
@@ -2575,17 +2754,32 @@ function checkColumns(manifest) {
         fail([...here, "tones"], `names values of 1 to ${MAX_TONE_VALUE_CHARS} characters`);
       }
     }
+    // An age sorted by its time, the oldest first (ADR-0172).
+    if (column.sortAs !== undefined) {
+      if (manifest.sextantApi < GAPS_API) fail([...here, "sortAs"], `needs sextantApi ${GAPS_API} or later`);
+      if (format !== "age") fail([...here, "sortAs"], 'goes with `format: "age"`');
+    }
+    const judges = manifest.contributes?.problemJudges ?? [];
     (column.cases ?? []).forEach((c, j) => {
-      checkCaseCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi);
+      checkColumnCaseCondition(c.when, [column.kind], [...here, "cases", j, "when"], manifest.sextantApi, judges);
+      // The texts of the facts its `judged` conditions name (ADR-0172), filled by the window.
+      const facts = factValues(judges, c.when);
       // What the rules say of a row (ADR-0169): of a kind they judge.
       const judged = (manifest.contributes?.problems ?? []).some((rule) => rule.kindsFrom === undefined && rule.kind !== undefined && sameKind(rule.kind, column.kind));
       if (asksProblems(c.when) && !judged) fail([...here, "cases", j, "when"], "asks what the extension's rules say (`problem`) of a kind no rule of it judges");
       // Field values in the text, as a problem message has them (#368). An empty text leaves the cell blank (#404).
       if (c.text === "" ? manifest.sextantApi < WINDOW_API : c.text.trim() === "") fail([...here, "cases", j, "text"], c.text === "" ? `is empty only from sextantApi ${WINDOW_API}` : "must not be blank");
+      // A cell with no value while the case holds (ADR-0172): it sorts last and filters as nothing.
+      if (c.blank !== undefined) {
+        const at = [...here, "cases", j, "blank"];
+        if (manifest.sextantApi < GAPS_API) fail(at, `needs sextantApi ${GAPS_API} or later`);
+        if (c.blank !== true) fail(at, "is `true` or left out");
+        if (c.text !== "" || c.value !== undefined || c.tone !== undefined || c.pluralBy !== undefined) fail(at, "goes with an empty `text` and no `value`, `tone` or `pluralBy`: the cell shows nothing");
+      }
       // `{{value}}` (ADR-0169): the text the cell shows when no case holds, with this case's tone.
       const [own, rest] = ownTextPlaceholders(c.text);
       if (own && manifest.sextantApi < PARITY_API) fail([...here, "cases", j, "text"], `\`{{value}}\` (the cell's own text) needs sextantApi ${PARITY_API} or later`);
-      checkMessage(rest, column.kind, [...here, "cases", j, "text"], false);
+      checkMessage(stripFactPlaceholders(rest, facts, [...here, "cases", j, "text"]), column.kind, [...here, "cases", j, "text"], false);
       if (c.value !== undefined) {
         // A text column's value may be a text with placeholders, the reason a row sorts by (#404).
         const bad = 'goes with `format: "number"`, `"text"`, `"count"` or `"sum"`';
@@ -2596,7 +2790,7 @@ function checkColumns(manifest) {
           checkMessage(c.value, column.kind, [...here, "cases", j, "value"], false);
         } else if (!["number", "text", "count", "sum"].includes(format)) fail([...here, "cases", j, "value"], bad);
       }
-      if (c.tooltip !== undefined) checkMessage(c.tooltip, column.kind, [...here, "cases", j, "tooltip"], false);
+      if (c.tooltip !== undefined) checkMessage(stripFactPlaceholders(c.tooltip, facts, [...here, "cases", j, "tooltip"]), column.kind, [...here, "cases", j, "tooltip"], false);
       // The text by plural form (#404).
       if (c.pluralBy !== undefined && c.textForms === undefined) fail([...here, "cases", j, "pluralBy"], "goes with `textForms`");
       if (c.textForms !== undefined && c.pluralBy === undefined) fail([...here, "cases", j, "textForms"], "goes with `pluralBy`");

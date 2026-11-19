@@ -32,6 +32,8 @@ pub const ACROSS_API: u32 = 3;
 pub const SOURCES_API: u32 = 4;
 /// The API of what the moved views still lacked after 0.30.0 (#417, ADR-0169): Sextant 0.30.1.
 pub const PARITY_API: u32 = 5;
+/// The API of the last gaps #417 named after 0.30.1 (ADR-0172): Sextant 0.30.5.
+pub const GAPS_API: u32 = 6;
 /// Longest label selector of a rule's source (the schema's `maxLength`).
 pub const MAX_SELECTOR_CHARS: usize = 1000;
 /// Rules per extension before `sextantApi` 4.
@@ -701,6 +703,12 @@ pub enum ProblemCondition {
         )]
         #[ts(optional)]
         gives_since: Option<bool>,
+        /// Holds unless the named object is found and `when` holds for it (ADR-0172): also while it is not there or its
+        /// list cannot tell — a paused Cluster's Machines, whose problems the built-in view kept while it could not
+        /// read the Cluster. Not with `optional` or `givesSince`; `sextantApi` 6.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        unless: Option<bool>,
     },
     /// The label selector at `selector` (`matchLabels`, `matchExpressions`) picks no object of `kind` in the
     /// namespaces it covers (#404): every namespace where `anyNamespacesPath` is `true`, the names at `namespacesPath`,
@@ -788,11 +796,25 @@ pub enum ProblemCondition {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         #[ts(optional)]
         prefer: Option<Vec<FieldPair>>,
+        /// As `related`'s (ADR-0172): holds unless an object the pairs find holds `when`. `sextantApi` 6.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        unless: Option<bool>,
+        /// One problem for each object the pairs find that holds `when` (ADR-0172), told apart by it and named by
+        /// `{{found}}`: each HPA fighting a VPA. Not with `optional`, `newest` or `unless`; `sextantApi` 6.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        each: Option<bool>,
     },
     /// The cluster serves `kind` (ADR-0169), as discovery says: Addons on a k3s or RKE2 server. Unknown (not holding)
     /// before discovery answered; not inside `any` or `not`; problem rules only. `sextantApi` 5.
     Served {
         kind: KindPattern,
+    },
+    /// The text at `path` reads as a time (ADR-0172), as `olderThan` reads one: a Strimzi restart time that is there
+    /// but no time. `sextantApi` 6.
+    IsTime {
+        path: String,
     },
     /// The text at `path` fits one of `patterns` (ADR-0169): `*` any text, `#` one or more ASCII digits, every other
     /// character itself (a kubelet version `*+k3s#`). No pattern language, so no backtracking. `sextantApi` 5.
@@ -1448,18 +1470,52 @@ pub(crate) fn check_object_condition(
     path: &JsonPath,
     api: u32,
 ) -> Result<(), ManifestError> {
-    check_single(condition, kinds, path, api, false)
+    check_single(condition, kinds, path, api, false, &[])
 }
 
 /// A computed column's case (ADR-0153): an object condition that may also ask what the extension's rules say of the
-/// row (`problem`, ADR-0169).
-pub(crate) fn check_case_condition(
+/// row (`problem`, ADR-0169) and, from `sextantApi` 6, a judge of the extension's (`judged`, ADR-0172): its fact is a
+/// cell's text the rules cannot write.
+pub(crate) fn check_column_case_condition(
     condition: &ProblemCondition,
     kinds: &[KindPattern],
     path: &JsonPath,
     api: u32,
+    judges: &[super::problem_judges::ProblemJudgeContribution],
 ) -> Result<(), ManifestError> {
-    check_single(condition, kinds, path, api, true)
+    check_single(condition, kinds, path, api, true, judges)
+}
+
+/// A text of a column case without its `{{fact:<name>}}` placeholders (ADR-0172), each a value of a fact its `when`
+/// names; refused when another fact's.
+pub(crate) fn strip_fact_placeholders(
+    text: &str,
+    allowed: &[&str],
+    path: &JsonPath,
+) -> Result<String, ManifestError> {
+    let mut rest = String::with_capacity(text.len());
+    let mut tail = text;
+    while let Some(start) = tail.find("{{") {
+        let after = &tail[start + 2..];
+        let Some(end) = after.find("}}") else { break };
+        let inner = &after[..end];
+        if let Some(name) = super::problem_judges::fact_placeholder(inner) {
+            if !allowed.contains(&name) {
+                return Err(at(
+                    path,
+                    format!(
+                        "has `{{{{fact:{name}}}}}`, which no fact of the case's `judged` conditions gives"
+                    ),
+                ));
+            }
+            rest.push_str(&tail[..start]);
+        } else {
+            rest.push_str(&tail[..start + 2 + end + 2]);
+        }
+        tail = &after[end + 2..];
+    }
+    rest.push_str(tail);
+    Ok(rest)
 }
 
 fn check_single(
@@ -1468,6 +1524,7 @@ fn check_single(
     path: &JsonPath,
     api: u32,
     case: bool,
+    judges: &[super::problem_judges::ProblemJudgeContribution],
 ) -> Result<(), ManifestError> {
     for kind in kinds {
         let mut seen = Vec::new();
@@ -1479,7 +1536,7 @@ fn check_single(
             metadata_only: false,
             single: true,
             narrowed: false,
-            judges: &[],
+            judges,
             case,
         };
         check_condition(condition, kind, path, 1, Inside::Top, &mut checks)?;
@@ -1726,6 +1783,8 @@ fn check_condition<'k>(
             gives_since,
             newest,
             prefer,
+            unless,
+            each,
         } => {
             if checks.single {
                 return Err(at(
@@ -1805,6 +1864,18 @@ fn check_condition<'k>(
                 }
             }
             check_related_parts(when, target, *optional, *gives_since, path, checks)?;
+            check_lookup_modes(
+                LookupModes {
+                    unless: *unless,
+                    each: *each,
+                    optional: *optional,
+                    gives_since: *gives_since,
+                    newest: *newest,
+                },
+                inside,
+                path,
+                checks,
+            )?;
             if !checks.kinds.iter().any(|k| same_kind(k, target)) {
                 checks.kinds.push(target);
                 let max_kinds = rule_limits(checks.api).1;
@@ -1837,6 +1908,15 @@ fn check_condition<'k>(
                 ));
             }
             Ok(())
+        }
+        ProblemCondition::IsTime { path: field } => {
+            if checks.api < GAPS_API {
+                return Err(at(
+                    &path.key("type"),
+                    format!("`isTime` needs sextantApi {GAPS_API} or later"),
+                ));
+            }
+            check_rule_path(field, kind, &path.key("path"), checks.metadata_only)
         }
         ProblemCondition::Fits {
             path: field,
@@ -1995,6 +2075,7 @@ fn check_condition<'k>(
             when,
             optional,
             gives_since,
+            unless,
         } => {
             if checks.single {
                 return Err(at(
@@ -2027,6 +2108,18 @@ fn check_condition<'k>(
             // The named object's own condition: paths of its kind, nothing across objects, no time below sextantApi 5
             // (it is judged when that object changes, not as time passes).
             check_related_parts(when, target, *optional, *gives_since, path, checks)?;
+            check_lookup_modes(
+                LookupModes {
+                    unless: *unless,
+                    each: None,
+                    optional: *optional,
+                    gives_since: *gives_since,
+                    newest: None,
+                },
+                inside,
+                path,
+                checks,
+            )?;
             if !checks.kinds.iter().any(|k| same_kind(k, target)) {
                 checks.kinds.push(target);
                 let max_kinds = rule_limits(checks.api).1;
@@ -2242,10 +2335,19 @@ fn check_condition<'k>(
             Ok(())
         }
         ProblemCondition::Judged { judge, fact, each } => {
-            if checks.single {
+            // A computed column's case may ask a judge (ADR-0172); nothing else judged by one object.
+            let column_case =
+                checks.single && checks.case && !checks.judges.is_empty() && checks.api >= GAPS_API;
+            if checks.single && !column_case {
                 return Err(at(
                     &path.key("type"),
-                    "`judged` is decided by the extension's backend: only problem rules may use it",
+                    "`judged` is decided by the extension's backend: only problem rules may use it (from sextantApi 6 also a computed column's cases)",
+                ));
+            }
+            if column_case && each.is_some() {
+                return Err(at(
+                    &path.key("each"),
+                    "is for a rule: a cell shows one fact",
                 ));
             }
             if checks.api < SOURCES_API {
@@ -2353,6 +2455,17 @@ pub(crate) fn numeric_path<'t>(
     api: u32,
     path: &JsonPath,
 ) -> Result<&'t str, ManifestError> {
+    // ` ?? <literal>` (ADR-0172): the value where the path holds nothing — a restart count Strimzi left out read as 0.
+    let text = match compared_default(text) {
+        Some(_) if api < GAPS_API => {
+            return Err(at(
+                path,
+                format!("a default (` ?? <literal>`) needs sextantApi {GAPS_API} or later"),
+            ));
+        }
+        Some((field, _)) => field,
+        None => text,
+    };
     let Some((field, filter)) = text.rsplit_once('|') else {
         return Ok(text);
     };
@@ -2378,6 +2491,65 @@ pub(crate) fn numeric_path<'t>(
         ));
     }
     Ok(field.trim())
+}
+
+/// A compared path's default (ADR-0172): `<path> ?? <literal>`, a number or a quoted text the condition reads where
+/// the path holds nothing or `null`; the path and the literal, or `None` without one.
+pub fn compared_default(text: &str) -> Option<(&str, &str)> {
+    let parts = split_outside_quotes(text, "??");
+    if parts.len() != 2 {
+        return None;
+    }
+    let literal = parts[1].trim();
+    placeholder_literal(literal)?;
+    Some((parts[0].trim(), literal))
+}
+
+/// One factor of `|sumOf:` (ADR-0172): its alternatives tried in turn, each an item path (`.replicas`, `.numOfHosts>0`
+/// for a positive number only) or a number.
+#[derive(Debug, Clone, PartialEq)]
+pub enum SumAlternative<'t> {
+    Path { path: &'t str, positive: bool },
+    Number(f64),
+}
+
+/// The factors of `|sumOf:<factor> * <factor>…` (ADR-0172): 1 to 4 factors, each 1 to 4 alternatives joined by
+/// ` ?? `. Each item adds the product of its factors, a factor being its first alternative that reads a number; an
+/// item none of whose alternatives of a factor does adds nothing. `None` when it does not read so.
+pub fn sum_of_factors(arg: &str) -> Option<Vec<Vec<SumAlternative<'_>>>> {
+    let factors = split_outside_quotes(arg, " * ");
+    if factors.is_empty() || factors.len() > MAX_ADDED_PATHS {
+        return None;
+    }
+    factors
+        .into_iter()
+        .map(|factor| {
+            let alternatives = split_outside_quotes(factor, "??");
+            if alternatives.len() > MAX_ADDED_PATHS {
+                return None;
+            }
+            alternatives
+                .into_iter()
+                .map(|alt| {
+                    let alt = alt.trim();
+                    if !alt.starts_with('.') {
+                        // A number only, never a text.
+                        if alt.starts_with('"') {
+                            return None;
+                        }
+                        let n = placeholder_literal(alt)?;
+                        return n.parse::<f64>().ok().map(SumAlternative::Number);
+                    }
+                    let (path, positive) = match alt.strip_suffix(">0") {
+                        Some(path) => (path.trim_end(), true),
+                        None => (alt, false),
+                    };
+                    let steps = parse_field_path(path)?;
+                    (list_steps(&steps) == 0).then_some(SumAlternative::Path { path, positive })
+                })
+                .collect()
+        })
+        .collect()
 }
 
 /// Whether a condition holds only from or until a time (`olderThan`, `enteredWithin`).
@@ -2473,6 +2645,59 @@ fn check_related_parts(
         return Err(at(
             &path.key("when"),
             "reads no `expiring`: the user's setting moves it, and the named object's row is judged when it changes",
+        ));
+    }
+    Ok(())
+}
+
+/// The API-6 ways of a `related` or `relatedBy` (ADR-0172), beside the API-5 ones they exclude.
+struct LookupModes {
+    unless: Option<bool>,
+    each: Option<bool>,
+    optional: Option<bool>,
+    gives_since: Option<bool>,
+    newest: Option<bool>,
+}
+
+/// `unless` (holds unless the found object holds `when`) and `each` (a problem per found object): `sextantApi` 6, at
+/// the top of a rule only, and neither with a way that reads the found object's window, time or a single one of them.
+fn check_lookup_modes(
+    modes: LookupModes,
+    inside: Inside,
+    path: &JsonPath,
+    checks: &ConditionChecks<'_, '_>,
+) -> Result<(), ManifestError> {
+    for (key, set) in [("unless", modes.unless), ("each", modes.each)] {
+        let Some(set) = set else { continue };
+        if checks.api < GAPS_API {
+            return Err(at(
+                &path.key(key),
+                format!("needs sextantApi {GAPS_API} or later"),
+            ));
+        }
+        if !set {
+            return Err(at(&path.key(key), "is `true` or left out"));
+        }
+        if !matches!(inside, Inside::Top) {
+            return Err(at(
+                &path.key(key),
+                "is for a lookup at the top of a rule, not inside `any`",
+            ));
+        }
+        for (other, with) in [
+            ("optional", modes.optional.is_some()),
+            ("givesSince", modes.gives_since.is_some()),
+            ("newest", modes.newest.is_some()),
+        ] {
+            if with {
+                return Err(at(&path.key(key), format!("does not go with `{other}`")));
+            }
+        }
+    }
+    if modes.unless.is_some() && modes.each.is_some() {
+        return Err(at(
+            &path.key("each"),
+            "does not go with `unless`: no object is told apart where none holds",
         ));
     }
     Ok(())
@@ -2735,6 +2960,35 @@ fn check_placeholders(
                 "adds paths with `+` or tries them with `??`, not both",
             ));
         }
+        // `|sumOf:` (ADR-0172): a list's items each adding the product of their factors, a RayCluster's workers.
+        if let Some(arg) = filters.first().and_then(|f| f.strip_prefix("sumOf:")) {
+            if filters.len() > 1 || tried.len() > 1 || added_paths(field).len() > 1 {
+                return Err(at(path, "has `|sumOf:` alone, after one path"));
+            }
+            let Some(factors) = sum_of_factors(arg) else {
+                return Err(at(
+                    path,
+                    "has `|sumOf:` with 1 to 4 factors joined by ` * `, each 1 to 4 item paths (`.replicas`, `.hosts>0`) or numbers joined by ` ?? `",
+                ));
+            };
+            check_placeholder_path(field, kind, path, metadata_only, item)?;
+            if !lists_matches(field) {
+                return Err(at(
+                    path,
+                    "has `|sumOf:` after a path whose last step, and no other, lists the items (`.spec.groups[*]`)",
+                ));
+            }
+            for alt in factors.iter().flatten() {
+                if let SumAlternative::Path {
+                    path: item_path, ..
+                } = alt
+                {
+                    let joined = format!("{}{}", field.trim(), item_path);
+                    check_placeholder_path(&joined, kind, path, metadata_only, item)?;
+                }
+            }
+            continue;
+        }
         check_filters(&filters, kind, path, metadata_only, item)?;
         if tried.len() > 1 {
             let last = tried.len() - 1;
@@ -2810,63 +3064,87 @@ fn lists_matches(text: &str) -> bool {
 
 /// Below `sextantApi` 5, no path or placeholder of `contributes` (the raw manifest, before defaults) uses what came
 /// with it (ADR-0169): lists three deep, a match field compared trimmed (`[field~="…"]`), `|positions`, `|uniqueKey`,
-/// `|quantity` in a text, `{{selectsNone:namespaces}}`. An older
-/// Sextant refuses them, so a manifest that names an older API must not use them (#420). Strings are visited in key
-/// order, as the SDK's `checkParitySyntax`.
+/// `|quantity` in a text, `{{selectsNone:namespaces}}`; below 6 what came with that (ADR-0172): a match of several
+/// values (`[field=("a","b")]`) or by name (`^`), `|sumOf:…`. An older Sextant refuses them, so a manifest that names
+/// an older API must not use them (#420). Strings are visited in key order, as the SDK's `checkParitySyntax`.
 pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), ManifestError> {
-    if api >= PARITY_API {
+    if api >= GAPS_API {
         return Ok(());
     }
-    fn new_in(text: &str) -> Option<&'static str> {
+    /// What a path uses of an API newer than `api`, and that API.
+    fn new_in(text: &str, api: u32) -> Option<(&'static str, u32)> {
         // A compared path may end in a filter (`|count`).
         let text = split_outside_quotes(text, "|")[0].trim();
         let steps = parse_field_path(text.strip_prefix('$').unwrap_or(text))?;
-        if list_steps(&steps) > 2 {
-            Some("a path with lists three deep (`[*]`)")
-        } else if compares_trimmed(&steps) {
-            Some("a match field compared trimmed (`[field~=\"…\"]`)")
-        } else {
-            None
-        }
+        [
+            (
+                list_steps(&steps) > 2,
+                "a path with lists three deep (`[*]`)",
+                PARITY_API,
+            ),
+            (
+                compares_trimmed(&steps),
+                "a match field compared trimmed (`[field~=\"…\"]`)",
+                PARITY_API,
+            ),
+            (
+                crate::settings::custom_columns::uses_gaps_syntax(&steps),
+                "a match of several values (`[field=(\"a\",\"b\")]`) or by name (`^`)",
+                GAPS_API,
+            ),
+        ]
+        .into_iter()
+        .find(|(used, _, needs)| *used && api < *needs)
+        .map(|(_, what, needs)| (what, needs))
     }
-    fn visit(value: &Value, here: &JsonPath) -> Result<(), ManifestError> {
+    fn visit(api: u32, value: &Value, here: &JsonPath) -> Result<(), ManifestError> {
         match value {
             Value::String(text) => {
-                let mut found = new_in(text);
+                // The first use this manifest's API does not have.
+                let mut found: Option<(&str, u32)> = None;
+                let mut note = |use_of: Option<(&'static str, u32)>| {
+                    if found.is_none() {
+                        found = use_of.filter(|(_, needs)| api < *needs);
+                    }
+                };
+                note(new_in(text, api));
                 for inner in placeholders(text).unwrap_or_default() {
                     let mut parts = inner.split('|');
                     let field = parts.next().unwrap_or_default();
                     let filters: Vec<&str> = parts.map(str::trim).collect();
-                    if filters.contains(&"positions") {
-                        found = found.or(Some("`|positions`"));
-                    }
-                    if filters.contains(&"uniqueKey") {
-                        found = found.or(Some("`|uniqueKey`"));
-                    }
-                    if filters.contains(&"quantity") {
-                        found = found.or(Some("`|quantity` in a text"));
+                    for (name, what) in [
+                        ("positions", "`|positions`"),
+                        ("uniqueKey", "`|uniqueKey`"),
+                        ("quantity", "`|quantity` in a text"),
+                    ] {
+                        if filters.contains(&name) {
+                            note(Some((what, PARITY_API)));
+                        }
                     }
                     if filters.iter().any(|f| f.starts_with("cut:")) {
-                        found = found.or(Some("`|cut:<n>`"));
+                        note(Some(("`|cut:<n>`", PARITY_API)));
+                    }
+                    if filters.iter().any(|f| f.starts_with("sumOf:")) {
+                        note(Some(("`|sumOf:…`", GAPS_API)));
                     }
                     if related_placeholder(inner).is_some() {
-                        found = found.or(Some("`{{related:…}}`"));
+                        note(Some(("`{{related:…}}`", PARITY_API)));
                     }
                     if inner.trim() == SELECTS_NONE_NAMESPACES {
-                        found = found.or(Some("`{{selectsNone:namespaces}}`"));
+                        note(Some(("`{{selectsNone:namespaces}}`", PARITY_API)));
                     }
                     for one in split_outside_quotes(field, "??")
                         .into_iter()
                         .flat_map(|p| split_outside_quotes(p, "+"))
                         .flat_map(|p| split_outside_quotes(p, " * "))
                     {
-                        found = found.or_else(|| new_in(one));
+                        note(new_in(one, api));
                     }
                 }
                 match found {
-                    Some(what) => Err(at(
+                    Some((what, needs)) => Err(at(
                         here,
-                        format!("{what} needs sextantApi {PARITY_API} or later"),
+                        format!("{what} needs sextantApi {needs} or later"),
                     )),
                     None => Ok(()),
                 }
@@ -2874,17 +3152,17 @@ pub(crate) fn check_parity_syntax(api: u32, contributes: &Value) -> Result<(), M
             Value::Array(items) => items
                 .iter()
                 .enumerate()
-                .try_for_each(|(i, item)| visit(item, &here.index(i))),
+                .try_for_each(|(i, item)| visit(api, item, &here.index(i))),
             Value::Object(fields) => {
                 let mut keys: Vec<&String> = fields.keys().collect();
                 keys.sort();
                 keys.into_iter()
-                    .try_for_each(|key| visit(&fields[key], &here.key(key)))
+                    .try_for_each(|key| visit(api, &fields[key], &here.key(key)))
             }
             _ => Ok(()),
         }
     }
-    visit(contributes, &JsonPath::default().key("contributes"))
+    visit(api, contributes, &JsonPath::default().key("contributes"))
 }
 
 /// A placeholder's filters: the listed ones, `clip:<n>`, `after:<marker>`, `fqdn:<path>`, and `share` first in a list

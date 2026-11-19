@@ -259,3 +259,26 @@ describe("match steps with nested fields, negation and scalars (#404)", () => {
     for (const bad of ['.a[.b="x"]', '.a[b..c="x"]', '.a[b.="x"]', '.a[b!!="x"]']) expect(parseFieldPath(bad), bad).toBeNull();
   });
 });
+
+describe("a match of several values and by name (ADR-0172)", () => {
+  it("reads one of several values, none of them negated, and writes them back as written", () => {
+    const steps = parseFieldPath('.status.apps[status=("DEPLOY_FAILED","UNHEALTHY")].message');
+    expect(steps).not.toBeNull();
+    expect(formatFieldPath(steps!)).toBe('.status.apps[status=("DEPLOY_FAILED","UNHEALTHY")].message');
+    const o = { status: { apps: [{ status: "RUNNING", message: "a" }, { status: "UNHEALTHY", message: "b" }, { status: "DEPLOY_FAILED", message: "c" }] } } as unknown as KubeObject;
+    expect(readColumn(o, "field", steps, "")).toBe("b");
+    const none = parseFieldPath('.status.apps[status!=("RUNNING","UNHEALTHY")].message');
+    expect(readColumn(o, "field", none, "")).toBe("c");
+    expect(parseFieldPath(".status.apps[status=(A,B)].message")).toBeNull();
+    expect(parseFieldPath('.status.apps[status=("A",)].message')).toBeNull();
+  });
+
+  it("takes a map's first match in the UI language's order of its keys with `^`", () => {
+    const apps = { status: { apps: { b: { status: "UNHEALTHY", message: "lower b" }, C: { status: "UNHEALTHY", message: "upper C" }, a: { status: "RUNNING" } } } } as unknown as KubeObject;
+    // By code point "C" sorts before "b"; by name "b" comes first.
+    expect(readColumn(apps, "field", parseFieldPath('.status.apps[status="UNHEALTHY"].message'), "")).toBe("upper C");
+    const byName = parseFieldPath('.status.apps[status="UNHEALTHY",^].message');
+    expect(formatFieldPath(byName!)).toBe('.status.apps[status="UNHEALTHY",^].message');
+    expect(readColumn(apps, "field", byName, "")).toBe("lower b");
+  });
+});

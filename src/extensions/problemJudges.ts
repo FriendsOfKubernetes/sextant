@@ -300,6 +300,19 @@ export function judgedFacts(clusterId: string, extensionId: string, judgeId: str
   return entries && entries.length > 0 ? entries : null;
 }
 
+/**
+ * `fact`'s first texts for the object `uid` in whichever cluster's runner of the judge has it (a computed column's
+ * sort, which knows no cluster, ADR-0172): uids are unique, so at most one cluster's answer names it.
+ */
+export function judgedFactAnywhere(extensionId: string, judgeId: string, fact: string, uid: string): Record<string, string> | null {
+  for (const runner of runners.values()) {
+    if (runner.extensionId !== extensionId || runner.judgeId !== judgeId) continue;
+    const entries = runner.answer?.get(uid)?.get(fact);
+    if (entries && entries.length > 0) return entries[0]!.values;
+  }
+  return null;
+}
+
 /** What the judge read in the cluster: each kind and the namespaces its source watched (`null`: every one). */
 export function judgeReads(clusterId: string, extensionId: string, judgeId: string): Runner["reads"] {
   return runners.get(runnerKey(clusterId, extensionId, judgeId))?.reads ?? [];

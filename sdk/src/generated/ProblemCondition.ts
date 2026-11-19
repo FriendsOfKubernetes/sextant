@@ -87,7 +87,13 @@ optional?: boolean,
  * The problem's time is the named object's (ADR-0169): the `lastTransitionTime` of the entry its `when`'s
  * `condition` matched, over the rule's own. `sextantApi` 5.
  */
-givesSince?: boolean, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, 
+givesSince?: boolean, 
+/**
+ * Holds unless the named object is found and `when` holds for it (ADR-0172): also while it is not there or its
+ * list cannot tell — a paused Cluster's Machines, whose problems the built-in view kept while it could not
+ * read the Cluster. Not with `optional` or `givesSince`; `sextantApi` 6.
+ */
+unless?: boolean, } | { "type": "selectsNone", kind: KindPattern, selector: string, anyNamespacesPath?: string, namespacesPath?: string, 
 /**
  * The objects that select the judged one decide where its selector looks (ADR-0169), as Prometheus Operator's
  * `ignoreNamespaceSelectors`: when `ownNamespaceWhen` holds for every one of them, in its own namespace
@@ -119,7 +125,16 @@ newest?: boolean,
  * whose `theirs` holds that text (the Job a chart's `status.jobName` names, else `helm-install-<name>`).
  * 1 to 4; `sextantApi` 5.
  */
-prefer?: Array<FieldPair>, } | { "type": "served", kind: KindPattern, } | { "type": "fits", path: string, patterns: Array<string>, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
+prefer?: Array<FieldPair>, 
+/**
+ * As `related`'s (ADR-0172): holds unless an object the pairs find holds `when`. `sextantApi` 6.
+ */
+unless?: boolean, 
+/**
+ * One problem for each object the pairs find that holds `when` (ADR-0172), told apart by it and named by
+ * `{{found}}`: each HPA fighting a VPA. Not with `optional`, `newest` or `unless`; `sextantApi` 6.
+ */
+each?: boolean, } | { "type": "served", kind: KindPattern, } | { "type": "isTime", path: string, } | { "type": "fits", path: string, patterns: Array<string>, } | { "type": "all", of: Array<ProblemCondition>, } | { "type": "any", of: Array<ProblemCondition>, } | { "type": "not", of: ProblemCondition, } | { "type": "judged", judge: string, fact: string, 
 /**
  * One problem for each time the answer gives the fact for the object, each with its own texts and an
  * identity of them (notifications, "Only new since"), not one for the first; only as a rule's whole `when`.

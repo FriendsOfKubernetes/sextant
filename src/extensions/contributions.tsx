@@ -36,7 +36,7 @@ import { evalJsonPath, formatJsonPathValues } from "../resources/jsonpath";
 import { DEFAULT_ENTRY_ICON, extendActions, extendColumns, placeKind, placeSection, SIDEBAR_SECTIONS } from "../resources/registry";
 import { findKind } from "../resources";
 import { knownClusterKinds } from "../resources/useKinds";
-import { computedColumn, placement } from "./columns";
+import { computedColumn, judgedPairs, placement } from "./columns";
 import {
   registerClusterSettingsSection,
   registerClusterSettingsTab,
@@ -187,7 +187,11 @@ function contribute(info: ExtensionInfo & { entryUrl: string }): (() => void)[] 
   const api = info.manifest!.sextantApi;
   // How kinds the rules only look up are listed (ADR-0169).
   const lookupSources = contributes.lookupSources ?? [];
-  if (mainRules.length > 0) removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow, api, lookupSources));
+  // The judges computed columns ask (ADR-0172) run with the main category.
+  const columnJudges = [...new Set((contributes.columns ?? []).flatMap((column) => (column.cases ?? []).flatMap((c) => judgedPairs(c.when).map(([judge]) => judge))))];
+  if (mainRules.length > 0) {
+    removers.push(registerExtensionProblems(extensionId, contributes.problemsTitle ?? info.name, mainRules, undefined, judges, narrow, api, lookupSources, columnJudges));
+  }
   for (const own of contributes.problemCategories ?? []) {
     const rules = contributes.problems.filter((rule) => rule.category === own.id);
     if (rules.length > 0) removers.push(registerExtensionProblems(extensionId, own.title, rules, { id: own.id, optIn: own.optIn }, judges, narrow, api, lookupSources));

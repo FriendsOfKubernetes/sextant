@@ -74,6 +74,10 @@ fn at<'a>(value: &'a Value, steps: &[PathStep]) -> Option<&'a Value> {
             pairs,
             pick: MatchPick::Earliest(field),
         } => PathStep::earliest(pairs, field, v),
+        PathStep::Match {
+            pairs,
+            pick: MatchPick::ByName,
+        } => PathStep::by_name(pairs, v),
         // Every match is a list of its own: an agent's projection reads one value.
         PathStep::Match {
             pick: MatchPick::All,

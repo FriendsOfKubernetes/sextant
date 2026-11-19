@@ -10,6 +10,7 @@ import { StatusText } from "../resources/columns";
 import type { Tone } from "../resources/status";
 import { evaluate, fillTemplate, numberOf, sumOf, valueAt, type RuleContext } from "./problemRules";
 import { rowProblemStateNow, useRowProblemState } from "./rowProblems";
+import { judgedFactAnywhere } from "./problemJudges";
 import { extensionCategories } from "../features/problems/extensionCategories";
 import { cleanText } from "../resources/uri";
 import { currentLanguage, formatDateTime, formatList } from "../i18n/format";
@@ -75,19 +76,35 @@ function timeOf(value: unknown): number | undefined {
  * item's paths, or a text item as `{{.}}` (ADR-0167 amendment); `$…` reads `root`, the column's object.
  */
 function itemText(
-  cases: readonly { when: ColumnCase["when"]; text: string }[],
+  cases: readonly { when: ColumnCase["when"]; text: string; value?: string }[],
   item: unknown,
   now: number,
   root: KubeObject,
   siblings: readonly unknown[],
 ): string | undefined {
+  return itemWritten(cases, item, now, root, siblings)?.text;
+}
+
+/**
+ * An item's text and what it gives the column's value (ADR-0172): its case's `value` filled from the item, else its
+ * text; `undefined` when no case holds.
+ */
+function itemWritten(
+  cases: readonly { when: ColumnCase["when"]; text: string; value?: string }[],
+  item: unknown,
+  now: number,
+  root: KubeObject,
+  siblings: readonly unknown[],
+): { text: string; value: string } | undefined {
   const scalar = typeof item === "string" || typeof item === "number" || typeof item === "boolean";
   if (!scalar && (item === null || typeof item !== "object" || Array.isArray(item))) return undefined;
   const obj = item as KubeObject;
   for (const c of cases) {
     if (!holdsNow(c, obj, now)) continue;
     const filled = c.text.includes("{{") ? fillTemplate(c.text, item, { root, siblings }) : c.text;
-    if (filled !== null) return filled;
+    if (filled === null) continue;
+    const value = c.value === undefined ? filled : c.value.includes("{{") ? fillTemplate(c.value, item, { root, siblings }) : c.value;
+    return { text: filled, value: value ?? filled };
   }
   return undefined;
 }
@@ -122,7 +139,9 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
   for (const c of column.cases ?? []) {
     if (!holdsNow(c, obj, now, ctx)) continue;
     const template = caseText(c, obj);
-    const filled = template.includes("{{") ? fillCaseText(template, column, obj, now) : template;
+    // The texts of the facts its `judged` conditions name (ADR-0172), put in last.
+    const facts = caseFacts(c.when, obj, ctx);
+    const filled = template.includes("{{") ? withFactTexts(template, facts, (piece) => fillCaseText(piece, column, obj, now)) : template;
     if (filled === null) continue;
     // A tooltip whose placeholder has no value leaves the column's own tooltip (#380); with `tooltipOr` (#403) an empty
     // value skips to the next one.
@@ -130,7 +149,7 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
       c.tooltip === undefined
         ? undefined
         : c.tooltipOr === undefined
-          ? fillTemplate(c.tooltip, obj)
+          ? withFactTexts(c.tooltip, facts, (piece) => fillTemplate(piece, obj))
           : ([c.tooltip, ...c.tooltipOr].map((t) => fillTemplate(t, obj, { emptyIsMissing: true })).find((t) => t !== null) ?? null);
     return {
       ...c,
@@ -139,6 +158,49 @@ function caseOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: R
     };
   }
   return undefined;
+}
+
+/** The `judged` conditions of a case's `when` (ADR-0172), as `[judge, fact]`, nested ones included. */
+export function judgedPairs(condition: ProblemCondition): [string, string][] {
+  if (condition.type === "judged") return [[condition.judge, condition.fact]];
+  if (condition.type === "all" || condition.type === "any") return condition.of.flatMap(judgedPairs);
+  return condition.type === "not" ? judgedPairs(condition.of) : [];
+}
+
+/** The texts of the facts a case's `judged` conditions give the row (ADR-0172), merged in their order. */
+function caseFacts(when: ProblemCondition, obj: KubeObject, ctx: RuleContext): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [judge, fact] of judgedPairs(when)) {
+    const values = ctx.judged?.(obj, judge, fact);
+    if (values) for (const [name, text] of Object.entries(values)) out[name] ??= text;
+  }
+  return out;
+}
+
+/** `{{fact:<name>}}` in a case's text (ADR-0172), with or without spaces inside. */
+const FACT_TEXT = /\{\{\s*fact:([^}]*?)\s*\}\}/g;
+
+/**
+ * A text whose `{{fact:<name>}}` placeholders take the fact's texts last (ADR-0172), so that cluster text in them is
+ * never read as a placeholder; the rest filled by `fill`. `null` when a piece or a fact has no value.
+ */
+function withFactTexts(template: string, facts: Record<string, string>, fill: (piece: string) => string | null): string | null {
+  if (!template.includes("fact:")) return fill(template);
+  const out: string[] = [];
+  let last = 0;
+  for (const m of template.matchAll(FACT_TEXT)) {
+    const piece = template.slice(last, m.index);
+    const filled = piece.includes("{{") ? fill(piece) : piece;
+    const fact = facts[m[1]!.trim()];
+    if (filled === null || fact === undefined) return null;
+    out.push(filled, fact);
+    last = m.index + m[0].length;
+  }
+  const tail = template.slice(last);
+  const filled = tail.includes("{{") ? fill(tail) : tail;
+  if (filled === null) return null;
+  out.push(filled);
+  return out.join("");
 }
 
 /** `{{value}}` in a case's text (ADR-0169), with or without spaces inside. */
@@ -170,6 +232,11 @@ interface Cell {
  * one only in the status), or every repeat with `"keep"`; `items` write each item by the first case holding on it.
  */
 function listTexts(column: ColumnContribution, obj: KubeObject, value: unknown, now: number): string[] | undefined {
+  return listItems(column, obj, value, now)?.map((item) => item.text);
+}
+
+/** A list column's items as {@link listTexts} gives them, each with what it gives the column's value (ADR-0172). */
+function listItems(column: ColumnContribution, obj: KubeObject, value: unknown, now: number): { text: string; value: string }[] | undefined {
   // With `items`, a joined path holding one object is a list of it (ADR-0167 amendment): a Route's `spec.to` before
   // its `spec.alternateBackends`.
   const asList = (v: unknown): unknown => (column.items && v !== null && typeof v === "object" && !Array.isArray(v) ? [v] : v);
@@ -178,19 +245,22 @@ function listTexts(column: ColumnContribution, obj: KubeObject, value: unknown, 
   if (!lists.some(Array.isArray)) return undefined;
   const all = lists.flatMap((list) => (Array.isArray(list) ? list : []));
   // `items` (#404): each item written by the first case holding on it; an item none holds for is left out.
-  const texts = column.items
+  const texts: ({ text: string; value: string } | undefined)[] = column.items
     ? (() => {
         // `|share` reads the items the column writes (one a case holds for), as a Route's named backends.
         const written = all.filter((item) => column.items!.cases.some((c) => item !== null && typeof item === "object" && holdsNow(c, item as KubeObject, now)));
-        return all.map((item) => itemText(column.items!.cases, item, now, obj, written));
+        return all.map((item) => itemWritten(column.items!.cases, item, now, obj, written));
       })()
-    : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => String(v));
-  const cleaned = texts.map((v) => (v === undefined ? "" : (cleanText(v) ?? ""))).filter((v) => v !== "");
+    : all.filter((v) => typeof v === "string" || typeof v === "number" || typeof v === "boolean").map((v) => ({ text: String(v), value: String(v) }));
+  const cleaned = texts
+    .map((v) => (v === undefined ? undefined : { text: cleanText(v.text) ?? "", value: cleanText(v.value) ?? "" }))
+    .filter((v): v is { text: string; value: string } => v !== undefined && v.text !== "");
   // Joined lists name each item once (a listener declared and in the status); one list keeps its repeats (#404), and
   // so does `"keep"` (an identity written both ways, as the built-in Linkerd view).
-  const once = column.joinPaths === true ? [...new Set(cleaned)] : cleaned;
+  const once = column.joinPaths === true ? cleaned.filter((v, i) => cleaned.findIndex((w) => w.text === v.text) === i) : cleaned;
   // `sorted` (#404): in the UI language's order, as a built-in view sorted a stream's tags.
-  const shown = column.sorted ? [...once].sort(new Intl.Collator(currentLanguage()).compare) : once;
+  const collator = new Intl.Collator(currentLanguage());
+  const shown = column.sorted ? [...once].sort((a, b) => collator.compare(a.text, b.text)) : once;
   return shown.length === 0 ? undefined : shown;
 }
 
@@ -210,6 +280,8 @@ function toneOf(column: ColumnContribution, value: string | undefined): Tone | u
 function cellOf(column: ColumnContribution, obj: KubeObject, now: number, ctx: RuleContext = {}): Cell {
   const replaced = caseOf(column, obj, now, ctx);
   const tone = (value: string | undefined) => toneOf(column, value);
+  // A blank case (ADR-0172): no value at all while it holds — nothing shown, sorted last, filtered as nothing.
+  if (replaced?.blank === true) return { sort: undefined, text: undefined, draw: null };
   if (replaced !== undefined) {
     const { text } = replaced;
     // A case's own tone (it is translated, so `tones` cannot name it), else the tone `tones` gives its text.
@@ -241,7 +313,8 @@ function plainCell(column: ColumnContribution, obj: KubeObject, now: number): Ce
     case "age": {
       const t = timeOf(value);
       if (t === undefined) return { sort: undefined, text: undefined, draw: null };
-      return { sort: -t, text: undefined, draw: <Age timestamp={value as string} now={now} /> };
+      // `sortAs: "time"` (ADR-0172): by the time itself, the oldest first, as a built-in column sorted its timestamp.
+      return { sort: column.sortAs === "time" ? t : -t, text: undefined, draw: <Age timestamp={value as string} now={now} /> };
     }
     case "duration": {
       const start = timeOf(value);
@@ -271,8 +344,11 @@ function plainCell(column: ColumnContribution, obj: KubeObject, now: number): Ce
         return { sort: text, text, draw: text };
       }
       const separator = column.items?.separator ?? column.separator;
-      const text = textOf(separator === undefined ? formatList(shown) : shown.join(separator)) ?? "";
-      return { sort: text, text, draw: text };
+      const join = (parts: readonly string[]) => textOf(separator === undefined ? formatList(parts) : parts.join(separator)) ?? "";
+      const text = join(shown);
+      // What the items give the column's value (ADR-0172): its sort, and its filter and search by `"value"`.
+      const valued = column.items?.cases.some((c) => c.value !== undefined) ? (listItems(column, obj, value, now) ?? []).map((item) => item.value) : undefined;
+      return { sort: valued === undefined ? text : join(valued), text, draw: text };
     }
     case "count": {
       // How many items a list, or entries a map, has (#404).
@@ -373,6 +449,15 @@ function asksProblems(condition: ProblemCondition): boolean {
   return condition.type === "not" && asksProblems(condition.of);
 }
 
+/**
+ * The cell of a column whose cases ask a judge (ADR-0172): it holds the extension's problem sources while shown, which
+ * feed the judge, and is drawn again when they change (an answer makes the store look again).
+ */
+function JudgedCaseCell({ column, obj, ctx, extensionId, ruleCtx }: { column: ColumnContribution; obj: KubeObject; ctx: CellContext; extensionId: string; ruleCtx: RuleContext }) {
+  useRowProblemState(ctx.clusterId, extensionId, ctx.kind);
+  return <>{drawCell(column, obj, ctx.now, ruleCtx)}</>;
+}
+
 /** A cell drawn with its hover. */
 function drawCell(column: ColumnContribution, obj: KubeObject, now: number, ruleCtx: RuleContext = {}): ReactNode {
   const format = column.format ?? "text";
@@ -409,6 +494,11 @@ function problemObserver(extensionId: string) {
 export function computedColumn(id: string, column: ColumnContribution, ownIds?: (id: string) => string | undefined, extensionId?: string): ColumnDef {
   const format = column.format ?? "text";
   const timed = format === "age" || format === "duration" || (column.cases ?? []).length > 0;
+  // A judge's answer for the row (ADR-0172), read where any cluster's runner has it: a row's uid names one object.
+  const judging = extensionId !== undefined && (column.cases ?? []).some((c) => judgedPairs(c.when).length > 0);
+  const judgedCtx: RuleContext = judging
+    ? { judged: (obj, judge, fact) => (obj.metadata?.uid ? judgedFactAnywhere(extensionId!, judge, fact, obj.metadata.uid) : null) }
+    : {};
   if (extensionId !== undefined && (column.cases ?? []).some((c) => asksProblems(c.when))) {
     const ruleCtx = (ctx: CellContext): RuleContext => ({
       problemState: (obj) => rowProblemStateNow(ctx.clusterId, extensionId, extensionCategories(), ctx.kind, obj),
@@ -437,34 +527,42 @@ export function computedColumn(id: string, column: ColumnContribution, ownIds?: 
     ...(column.width !== undefined ? { width: column.width } : {}),
     fallback: "end",
     // Sorting and the default text; a time-dependent cell sorts as of now.
-    value: (obj) => cellOf(column, obj, Date.now()).sort,
-    render: (obj, ctx) => drawCell(column, obj, ctx.now),
+    value: (obj) => cellOf(column, obj, Date.now(), judgedCtx).sort,
+    render: (obj, ctx) =>
+      judging ? <JudgedCaseCell column={column} obj={obj} ctx={ctx} extensionId={extensionId!} ruleCtx={judgedCtx} /> : drawCell(column, obj, ctx.now),
     searchText: (obj, ctx) => {
-      const cell = cellOf(column, obj, ctx.now);
+      const cell = cellOf(column, obj, ctx.now, judgedCtx);
       // A column searched by its cases' values is found by them, not the words shown (a state's name in every
       // language, as some built-in columns were).
       if (column.searchBy === "value") return filterValue(cell);
       if (cell.text !== undefined) return cell.text;
       // An age sorts by the negated time (its age is now + sort), a duration by its length.
-      const ms = format === "age" ? ageMs(cell.sort, ctx.now) : format === "duration" ? numericSort(cell.sort) : undefined;
+      const ms = format === "age" ? ageMs(column, cell.sort, ctx.now) : format === "duration" ? numericSort(cell.sort) : undefined;
       if (ms === undefined) return undefined;
       const { unit, count } = ageParts(ms);
       return ctx.t(`common:age.${unit}`, { count });
     },
     searchTextTimed: timed,
-    filter:
+    filter: withJudgeObserver(
+      judging ? extensionId : undefined,
       // A count, a sum or a quantity filters as a number (#404), as a number column does.
       format === "number" || format === "ratio" || format === "count" || format === "sum" || format === "cpu" || format === "bytes"
-        ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now).sort) }
+        ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now, judgedCtx).sort) }
         : format === "age"
-          ? { type: "age", value: (obj, ctx) => ageMs(cellOf(column, obj, ctx.now).sort, ctx.now) }
+          ? { type: "age", value: (obj, ctx) => ageMs(column, cellOf(column, obj, ctx.now, judgedCtx).sort, ctx.now) }
           : format === "duration"
-            ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now).sort) }
+            ? { type: "number", value: (obj, ctx) => numericSort(cellOf(column, obj, ctx.now, judgedCtx).sort) }
             : column.filterBy === "value"
               ? // The cases' values, not the translated texts (#404): a state's name in every language.
-                { type: "string", value: (obj, ctx) => filterValue(cellOf(column, obj, ctx.now)) }
-              : { type: "string", value: (obj, ctx) => cellOf(column, obj, ctx.now).text },
+                { type: "string", value: (obj, ctx) => filterValue(cellOf(column, obj, ctx.now, judgedCtx)) }
+              : { type: "string", value: (obj, ctx) => cellOf(column, obj, ctx.now, judgedCtx).text },
+    ),
   };
+}
+
+/** A filter of a column whose cases ask a judge holds the extension's problem sources while it needs values (ADR-0172). */
+function withJudgeObserver(extensionId: string | undefined, filter: NonNullable<ColumnDef["filter"]>): NonNullable<ColumnDef["filter"]> {
+  return extensionId === undefined ? filter : { ...filter, observer: problemObserver(extensionId) };
 }
 
 /** The sort key as text; a case whose key has no value leaves nothing to filter by (#404), as the built-in had. */
@@ -476,7 +574,8 @@ function numericSort(sort: string | number | undefined): number | undefined {
   return typeof sort === "number" ? sort : undefined;
 }
 
-/** An age cell sorts by the negated time; its filter value is the age in ms. */
-function ageMs(sort: string | number | undefined, now: number): number | undefined {
-  return typeof sort === "number" ? Math.max(0, now + sort) : undefined;
+/** An age cell sorts by the negated time (by the time with `sortAs: "time"`, ADR-0172); its filter value is the age in ms. */
+function ageMs(column: ColumnContribution, sort: string | number | undefined, now: number): number | undefined {
+  if (typeof sort !== "number") return undefined;
+  return Math.max(0, column.sortAs === "time" ? now - sort : now + sort);
 }

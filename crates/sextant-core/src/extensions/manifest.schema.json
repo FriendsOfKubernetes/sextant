@@ -40,9 +40,9 @@
       "pattern": "\\S"
     },
     "sextantApi": {
-      "description": "Major version of the extension API the extension is written for; Sextant supports 1 to 5 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`, 3 adds `contributes.sectionBadges` and `contributes.commands`, 4 adds sources and `not` in problem rules, computed columns, action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`, `contributes.services` and `contributes.agentTools`, 5 (Sextant 0.30.1) what the moved views still lacked, ADR-0169). A newer Sextant keeps reading every version it once read (ADR-0142).",
+      "description": "Major version of the extension API the extension is written for; Sextant supports 1 to 6 (2 adds `contributes.problems`, `contributes.metricQueries` and `translations`, 3 adds `contributes.sectionBadges` and `contributes.commands`, 4 adds sources and `not` in problem rules, computed columns, action conditions, `contributes.kinds`, status patches, port-forwards, `contributes.menuItems`, `contributes.services` and `contributes.agentTools`, 5 (Sextant 0.30.1) what the moved views still lacked, ADR-0169, 6 (Sextant 0.30.5) the last of them, ADR-0172). A newer Sextant keeps reading every version it once read (ADR-0142).",
       "type": "integer",
-      "enum": [1, 2, 3, 4, 5]
+      "enum": [1, 2, 3, 4, 5, 6]
     },
     "entry": {
       "description": "The HTML file every view opens, relative to the package root, e.g. index.html or dist/index.html; no part may start with `.`, be `node_modules` (any case), end with `.` or a space, or be a Windows device name.",
@@ -511,7 +511,8 @@
                       "required": ["when", "text"],
                       "properties": {
                         "when": { "$ref": "#/$defs/problemCondition" },
-                        "text": { "description": "Text with `{{<field path>}}` placeholders read from the item: `{{.}}` is the item itself (a text item), `{{$.metadata.namespace}}` reads the object.", "type": "string", "minLength": 1, "maxLength": 200, "format": "non-blank", "pattern": "\\S" }
+                        "text": { "description": "Text with `{{<field path>}}` placeholders read from the item: `{{.}}` is the item itself (a text item), `{{$.metadata.namespace}}` reads the object.", "type": "string", "minLength": 1, "maxLength": 200, "format": "non-blank", "pattern": "\\S" },
+                        "value": { "description": "What the item gives the column's sort (and its filter and search by `\"value\"`) in place of its text: text with the item's placeholders (sextantApi 6).", "type": "string", "minLength": 1, "maxLength": 200 }
                       }
                     }
                   },
@@ -525,6 +526,7 @@
                 }
               },
               "sorted": { "description": "A list column's items in the UI language's order (sextantApi 4).", "type": "boolean" },
+              "sortAs": { "description": "\"time\": an age column sorts by the time itself, the oldest first (sextantApi 6).", "type": "string", "enum": ["time"] },
               "joinPaths": { "description": "A list column of every path's items in order, each once (`true`) or every repeat kept (`\"keep\"`), not the first path's (sextantApi 4).", "oneOf": [{ "type": "boolean" }, { "type": "string", "enum": ["keep"] }] },
               "width": {
                 "description": "Its width: `<n>px`, or `minmax(<n>px, <m>fr)` (sextantApi 4).",
@@ -553,6 +555,7 @@
                       "maxLength": 200
                     },
                     "tone": { "type": "string", "enum": ["ok", "warning", "error", "neutral", "muted"] },
+                    "blank": { "description": "true: while the case holds the cell has no value: it shows nothing, sorts last and filters as nothing; its text is empty (sextantApi 6).", "type": "boolean" },
                     "value": {
                       "description": "With `format: \"number\"`: the number the column sorts and filters by while the case holds; with `\"text\"` a number or a text with placeholders it sorts by; the text is still shown (sextantApi 4).",
                       "type": ["number", "string"]
@@ -1367,7 +1370,8 @@
             "kind": { "$ref": "#/$defs/kind" },
             "when": { "$ref": "#/$defs/problemCondition" },
             "optional": { "description": "Never decides whether the rule holds: when the object is found and `when` holds, its window, `since` and fields (`{{related:…}}`) apply (sextantApi 5).", "type": "boolean" },
-            "givesSince": { "description": "The problem's time is the named object's, from its `when`'s `condition` (sextantApi 5).", "type": "boolean" }
+            "givesSince": { "description": "The problem's time is the named object's, from its `when`'s `condition` (sextantApi 5).", "type": "boolean" },
+            "unless": { "description": "Holds unless the named object is found and `when` holds for it, also while it is not there or its list cannot tell; not with `optional` or `givesSince` (sextantApi 6).", "type": "boolean" }
           }
         },
         {
@@ -1404,7 +1408,9 @@
                 "required": ["theirs", "ours"],
                 "properties": { "theirs": { "$ref": "#/$defs/fieldPath" }, "ours": { "$ref": "#/$defs/fieldPath" } }
               }
-            }
+            },
+            "unless": { "description": "As `related`'s: holds unless an object the pairs find holds `when` (sextantApi 6).", "type": "boolean" },
+            "each": { "description": "One problem for each object the pairs find that holds `when`, named by `{{found}}`; not with `optional`, `newest` or `unless` (sextantApi 6).", "type": "boolean" }
           }
         },
         {
@@ -1415,6 +1421,16 @@
           "properties": {
             "type": { "const": "served" },
             "kind": { "$ref": "#/$defs/kind" }
+          }
+        },
+        {
+          "description": "The text at `path` reads as a time, as `olderThan` reads one (sextantApi 6).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "path"],
+          "properties": {
+            "type": { "const": "isTime" },
+            "path": { "$ref": "#/$defs/fieldPath" }
           }
         },
         {

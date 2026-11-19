@@ -397,13 +397,18 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 "goes with `format: \"list\"` or `\"firstPlus\"`",
             ));
         }
-        if column.search_by.is_some()
-            && (column.format.unwrap_or(ColumnFormat::Text) != ColumnFormat::Text
-                || column.cases.as_ref().is_none_or(|c| c.is_empty()))
-        {
+        // By value: a text column's cases' values, or a list column's items' (ADR-0172).
+        let by_value = (column.format.unwrap_or(ColumnFormat::Text) == ColumnFormat::Text
+            && column.cases.as_ref().is_some_and(|c| !c.is_empty()))
+            || (column.format == Some(ColumnFormat::List)
+                && column
+                    .items
+                    .as_ref()
+                    .is_some_and(|i| i.cases.iter().any(|c| c.value.is_some())));
+        if column.search_by.is_some() && !by_value {
             return Err(at(
                 &here.key("searchBy"),
-                "is `\"value\"` on a text column with `cases`",
+                "is `\"value\"` on a text column with `cases` or a list column whose items have a `value`",
             ));
         }
         if column.filter_by.is_some() {
@@ -413,12 +418,10 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                     format!("needs sextantApi {WINDOW_API} or later"),
                 ));
             }
-            if column.format.unwrap_or(ColumnFormat::Text) != ColumnFormat::Text
-                || column.cases.as_ref().is_none_or(|c| c.is_empty())
-            {
+            if !by_value {
                 return Err(at(
                     &here.key("filterBy"),
-                    "is `\"value\"` on a text column with `cases`",
+                    "is `\"value\"` on a text column with `cases` or a list column whose items have a `value`",
                 ));
             }
         }
@@ -547,6 +550,18 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
         }
+        // An age sorted by its time, the oldest first (ADR-0172).
+        if column.sort_as.is_some() {
+            if manifest.sextant_api < super::problems::GAPS_API {
+                return Err(at(
+                    &here.key("sortAs"),
+                    format!("needs sextantApi {} or later", super::problems::GAPS_API),
+                ));
+            }
+            if column.format != Some(ColumnFormat::Age) {
+                return Err(at(&here.key("sortAs"), "goes with `format: \"age\"`"));
+            }
+        }
         if column.sorted.is_some() && !is_list(column.format) {
             return Err(at(
                 &here.key("sorted"),
@@ -560,12 +575,18 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             ));
         }
         for (j, case) in column.cases.iter().flatten().enumerate() {
-            super::problems::check_case_condition(
+            super::problems::check_column_case_condition(
                 &case.when,
                 std::slice::from_ref(&column.kind),
                 &here.key("cases").index(j).key("when"),
                 manifest.sextant_api,
+                &manifest.contributes.problem_judges,
             )?;
+            // The texts of the facts its `judged` conditions name (ADR-0172), filled by the window.
+            let facts = super::problem_judges::fact_values(
+                &manifest.contributes.problem_judges,
+                &case.when,
+            );
             // What the rules say of a row (ADR-0169): of a kind they judge.
             if super::problems::asks_problems(&case.when)
                 && !manifest.contributes.problems.iter().any(|rule| {
@@ -624,6 +645,29 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
             if !case.text.is_empty() && case.text.trim().is_empty() {
                 return Err(at(&text_at, "must not be blank"));
             }
+            // A cell with no value while the case holds (ADR-0172): it sorts last and filters as nothing.
+            if let Some(blank) = case.blank {
+                let blank_at = here.key("cases").index(j).key("blank");
+                if manifest.sextant_api < super::problems::GAPS_API {
+                    return Err(at(
+                        &blank_at,
+                        format!("needs sextantApi {} or later", super::problems::GAPS_API),
+                    ));
+                }
+                if !blank {
+                    return Err(at(&blank_at, "is `true` or left out"));
+                }
+                if !case.text.is_empty()
+                    || case.value.is_some()
+                    || case.tone.is_some()
+                    || case.plural_by.is_some()
+                {
+                    return Err(at(
+                        &blank_at,
+                        "goes with an empty `text` and no `value`, `tone` or `pluralBy`: the cell shows nothing",
+                    ));
+                }
+            }
             // `{{value}}` (ADR-0169): the text the cell shows when no case holds, with this case's tone — a NodePool's
             // usage against every limit, red when one is reached.
             let (own, rest) = own_text_placeholders(&case.text);
@@ -637,6 +681,7 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 ));
             }
             // Field values in the text, as a problem message has them (#368), and in its tooltip (#380).
+            let rest = super::problems::strip_fact_placeholders(&rest, &facts, &text_at)?;
             check_message(
                 &rest,
                 &column.kind,
@@ -687,12 +732,10 @@ pub(crate) fn check_columns(manifest: &ExtensionManifest) -> Result<(), Manifest
                 }
             }
             if let Some(tooltip) = &case.tooltip {
-                check_message(
-                    tooltip,
-                    &column.kind,
-                    &here.key("cases").index(j).key("tooltip"),
-                    false,
-                )?;
+                let tooltip_at = here.key("cases").index(j).key("tooltip");
+                let tooltip =
+                    super::problems::strip_fact_placeholders(tooltip, &facts, &tooltip_at)?;
+                check_message(&tooltip, &column.kind, &tooltip_at, false)?;
             }
             if let Some(more) = &case.tooltip_or {
                 let place = here.key("cases").index(j).key("tooltipOr");
@@ -859,6 +902,22 @@ fn check_items(
             return Err(at(&at_case.key("text"), "is a text of 1 to 200 characters"));
         }
         super::problems::check_item_message(&case.text, &column.kind, &at_case.key("text"))?;
+        // What the item gives the column's value (ADR-0172): its sort, and its filter and search by `"value"`.
+        if let Some(value) = &case.value {
+            if manifest.sextant_api < super::problems::GAPS_API {
+                return Err(at(
+                    &at_case.key("value"),
+                    format!("needs sextantApi {} or later", super::problems::GAPS_API),
+                ));
+            }
+            if value.is_empty() || value.chars().count() > 200 {
+                return Err(at(
+                    &at_case.key("value"),
+                    "is a text of 1 to 200 characters",
+                ));
+            }
+            super::problems::check_item_message(value, &column.kind, &at_case.key("value"))?;
+        }
     }
     if let Some(separator) = &items.separator {
         check_separator(separator, &here.key("separator"))?;

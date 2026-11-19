@@ -33,4 +33,10 @@ pluralBy?: string,
 /**
  * The text by plural form besides `other`, which is `text` (#404): `{"one": "{{…}} import fails"}`.
  */
-textForms?: { [key in string]: string }, };
+textForms?: { [key in string]: string }, 
+/**
+ * `true`: while the case holds the cell has no value (ADR-0172) — it shows nothing, sorts last and filters as
+ * nothing, as a built-in number column left a cell blank (KServe's Canary % without a split). Its `text` is `""`.
+ * `sextantApi` 6.
+ */
+blank?: boolean, };

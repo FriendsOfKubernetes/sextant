@@ -52,6 +52,16 @@ export const factKey = (when: ProblemCondition): string => JSON.stringify(when);
  * (ADR-0167 amendment) `.` is the item itself and a path starting with `$` reads `root`, the object.
  */
 export function valueAt(obj: unknown, path: string, root?: unknown): unknown {
+  // A compared path's default (ADR-0172): `<path> ?? <literal>`, the literal where the path holds nothing or `null`.
+  const parts = path.includes("??") ? splitOutsideQuotes(path, "??") : [];
+  if (parts.length === 2) {
+    const raw = parts[1]!.trim();
+    const literal = placeholderLiteral(raw);
+    if (literal !== undefined) {
+      const value = valueAt(obj, parts[0]!, root);
+      return value === undefined || value === null ? (raw.startsWith('"') ? literal : Number(literal)) : value;
+    }
+  }
   // A compared path may end in `|sum` (a list's numbers added) or `|count` (a list's items, a map's entries; #407).
   const bar = path.lastIndexOf("|");
   if (bar >= 0) {
@@ -170,6 +180,13 @@ export interface Lookup {
   optional?: boolean;
   /** `related`/`relatedBy` `givesSince` (ADR-0169): the problem's time is the found object's. */
   givesSince?: boolean;
+  /**
+   * `related`/`relatedBy` `unless` (ADR-0172): the rule holds unless the named object is found with its fact holding —
+   * also while it is not there or its list cannot tell.
+   */
+  unless?: boolean;
+  /** `relatedBy` `each` (ADR-0172): one problem for each object it finds with its fact holding. */
+  each?: boolean;
   /** `served` (ADR-0169): the cluster serves the kind (`group`, `kind`), as discovery says. */
   served?: boolean;
   /**
@@ -299,6 +316,11 @@ export interface RuleContext {
    * stands, they cannot tell, they are still reading; `undefined` when none of these.
    */
   problemState?: (obj: KubeObject) => "found" | "unknown" | "checking" | undefined;
+  /**
+   * A judge's latest answer for the object (a computed column's `judged` case, ADR-0172): the fact's texts, or `null`
+   * when it gives none or cannot tell.
+   */
+  judged?: (obj: KubeObject, judge: string, fact: string) => Record<string, string> | null;
 }
 
 export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: RuleContext = {}): Verdict {
@@ -442,6 +464,9 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
     case "served":
       // Discovery tells (ADR-0169): `judgeAcross` keeps the problem only where the cluster serves the kind.
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", served: true }] };
+    case "isTime":
+      // A text that reads as a time (ADR-0172), as `olderThan` reads one.
+      return { holds: timeOf(valueAt(obj, condition.path)) !== undefined };
     case "fits": {
       // `*` any text, `#` digits (ADR-0169): no pattern language, so no backtracking.
       const value = valueAt(obj, condition.path);
@@ -455,7 +480,8 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       const by: [string, string][] = [];
       for (const { theirs, ours } of condition.pairs) {
         const value = valueAt(obj, ours);
-        if (!isScalar(value) || String(value) === "") return NO;
+        // Nothing named: nothing related — and so nothing that would keep an `unless` from holding (ADR-0172).
+        if (!isScalar(value) || String(value) === "") return condition.unless === true ? { holds: true } : NO;
         by.push([theirs, String(value)]);
       }
       // `newest` with `prefer` (ADR-0169): the first alternative whose `ours` reads a text names the found object
@@ -526,6 +552,9 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name: "", selectedBy }] };
     }
     case "judged":
+      // In a computed column's case (ADR-0172) the judge's latest answer for the row decides; cannot tell, it does not
+      // hold.
+      if (ctx.judged !== undefined) return ctx.judged(obj, condition.judge, condition.fact) === null ? NO : { holds: true };
       // The judge's latest answer tells (ADR-0168): `judgeAcross` keeps the problem only where it gives the fact.
       return { holds: true, lookups: [{ group: "", kind: "", name: "", judged: { judge: condition.judge, fact: condition.fact } }] };
     case "related": {
@@ -539,9 +568,10 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
           .map((name) => ({ group: condition.kind.group, kind: condition.kind.kind, name, fact, anyOf: key }));
         return lookups.length === 0 ? NO : { holds: true, lookups };
       }
-      // Nothing named, nothing related; the named object's own condition is judged on its row (#409).
+      // Nothing named, nothing related; the named object's own condition is judged on its row (#409). An `unless`
+      // (ADR-0172) then holds: nothing keeps it from holding.
       const name = valueAt(obj, condition.path);
-      if (typeof name !== "string" || name.trim() === "") return NO;
+      if (typeof name !== "string" || name.trim() === "") return condition.unless === true ? { holds: true } : NO;
       return { holds: true, lookups: [{ group: condition.kind.group, kind: condition.kind.kind, name, fact, ...relatedFlags(condition) }] };
     }
     case "all": {
@@ -602,9 +632,14 @@ export function evaluate(condition: ProblemCondition, obj: KubeObject, ctx: Rule
   }
 }
 
-/** A `related`'s or `relatedBy`'s `optional` and `givesSince` as a lookup carries them (ADR-0169). */
-function relatedFlags(condition: { optional?: boolean; givesSince?: boolean }): Pick<Lookup, "optional" | "givesSince"> {
-  return { ...(condition.optional === true ? { optional: true } : {}), ...(condition.givesSince === true ? { givesSince: true } : {}) };
+/** A `related`'s or `relatedBy`'s `optional`, `givesSince`, `unless` and `each` as a lookup carries them (ADR-0169, ADR-0172). */
+function relatedFlags(condition: { optional?: boolean; givesSince?: boolean; unless?: boolean; each?: boolean }): Pick<Lookup, "optional" | "givesSince" | "unless" | "each"> {
+  return {
+    ...(condition.optional === true ? { optional: true } : {}),
+    ...(condition.givesSince === true ? { givesSince: true } : {}),
+    ...(condition.unless === true ? { unless: true } : {}),
+    ...(condition.each === true ? { each: true } : {}),
+  };
 }
 
 /**
@@ -748,6 +783,36 @@ export function placeholderText(obj: unknown, inner: string, root?: unknown, sib
     const percent = total > 0 ? (own / total) * 100 : 0;
     return formatNumber(percent, percent > 0 && percent < 1 ? 1 : 0);
   }
+  // `|sumOf:` (ADR-0172): the list's items each adding the product of their factors, a factor its first alternative
+  // that reads a number (`.numOfHosts>0` a positive one); an item with a factor none of whose alternatives does adds
+  // nothing. Nothing without a list.
+  if (rest[0]?.startsWith("sumOf:")) {
+    const items = valueAtIn(obj, path.trim(), root);
+    const factors = sumOfFactors(rest[0].slice(6));
+    if (!Array.isArray(items) || factors === undefined) return undefined;
+    let total = 0;
+    for (const item of items) {
+      let product = 1;
+      for (const factor of factors) {
+        let n: number | undefined;
+        for (const alt of factor) {
+          if ("number" in alt) n = alt.number;
+          else {
+            const v = numberOf(valueAtIn(item, alt.path, root));
+            n = v !== undefined && (!alt.positive || v > 0) ? v : undefined;
+          }
+          if (n !== undefined) break;
+        }
+        if (n === undefined) {
+          product = 0;
+          break;
+        }
+        product *= n;
+      }
+      total += product;
+    }
+    return String(total);
+  }
   // `fqdn:<path>` (ADR-0167 amendment): a short name completed with the namespace at the path, after the other filter.
   const fqdn = rest.find((f) => f.startsWith("fqdn:"))?.slice(5);
   const filters = rest.filter((f) => !f.startsWith("fqdn:"));
@@ -796,6 +861,35 @@ export function placeholderText(obj: unknown, inner: string, root?: unknown, sib
         })()
       : filteredText(valueAt(obj, path), filter);
   return text === undefined ? undefined : clipped(text, filters);
+}
+
+/** One alternative of a `|sumOf:` factor (ADR-0172): an item path, or a number. */
+type SumAlternative = { path: string; positive: boolean } | { number: number };
+
+/**
+ * The factors of `|sumOf:<factor> * <factor>…` (Rust's `sum_of_factors`, ADR-0172): 1 to 4, each 1 to 4 alternatives
+ * joined by ` ?? `; `undefined` when it does not read so (Rust refused such a manifest).
+ */
+function sumOfFactors(arg: string): SumAlternative[][] | undefined {
+  const factors = splitOutsideQuotes(arg, " * ");
+  if (factors.length === 0 || factors.length > 4) return undefined;
+  const out: SumAlternative[][] = [];
+  for (const factor of factors) {
+    const alts: SumAlternative[] = [];
+    for (const raw of splitOutsideQuotes(factor, "??")) {
+      const alt = raw.trim();
+      if (!alt.startsWith(".")) {
+        const n = Number(alt);
+        if (alt.startsWith('"') || alt === "" || !Number.isFinite(n)) return undefined;
+        alts.push({ number: n });
+        continue;
+      }
+      const positive = alt.endsWith(">0");
+      alts.push({ path: positive ? alt.slice(0, -2).trimEnd() : alt, positive });
+    }
+    out.push(alts);
+  }
+  return out;
 }
 
 /**

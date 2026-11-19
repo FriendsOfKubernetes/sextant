@@ -201,6 +201,7 @@ export function registerExtensionProblems(
   narrowLookups: readonly { group: string; kind: string }[] = [],
   api = 4,
   lookupSources: readonly LookupSource[] = [],
+  columnJudges: readonly string[] = [],
 ): () => void {
   const category = categoryOfExtension(extensionId, own?.id);
   // Rules of kinds from definitions are one detector, applied to the sources of the kinds Rust says are defined.
@@ -209,7 +210,8 @@ export function registerExtensionProblems(
   const fromDetector = compileRules(rules.filter((rule) => rule.kindsFrom !== undefined).map((rule) => ({ ...rule, kind: FROM_KIND }))).get(FROM_KEY);
   if (fromDetector) detectors.set(FROM_KEY, fromDetector);
   // The judges of these rules (ADR-0168): every kind they read gets a source, its rows the declared paths.
-  const named = new Set(rules.flatMap((rule) => judgesOf(rule.when)));
+  // And the judges computed columns ask (ADR-0172), which run with the main category: their kinds get sources there.
+  const named = new Set([...rules.flatMap((rule) => judgesOf(rule.when)), ...(own === undefined ? columnJudges : [])]);
   const judges = manifestJudges.filter((judge) => named.has(judge.id));
   const judgedPaths = new Map<string, string[]>();
   for (const read of judges.flatMap((judge) => judge.reads)) {
@@ -226,6 +228,8 @@ export function registerExtensionProblems(
     if (judgesOf(rule.when).length > 0) for (const key of judgedPaths.keys()) across.add(key);
     if (rule.newestPer !== undefined) newestLabels.set(key, [...new Set([...(newestLabels.get(key) ?? []), rule.newestPer])]);
   }
+  // A judge only columns ask reads its kinds through the category's sources too (ADR-0172).
+  if (own === undefined && judges.some((judge) => columnJudges.includes(judge.id))) for (const key of judgedPaths.keys()) across.add(key);
   // The definitions get a source, their rows the names they define.
   if (kindsFrom) across.add(kindKeyOf(kindsFrom.kind));
   const sources = new Map<string, RuleSource>();

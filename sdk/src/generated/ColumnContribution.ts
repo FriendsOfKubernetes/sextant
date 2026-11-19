@@ -5,6 +5,7 @@ import type { ColumnFormat } from "./ColumnFormat";
 import type { ColumnItems } from "./ColumnItems";
 import type { ColumnJoin } from "./ColumnJoin";
 import type { ColumnLookup } from "./ColumnLookup";
+import type { ColumnSortAs } from "./ColumnSortAs";
 import type { ColumnTone } from "./ColumnTone";
 import type { KindPattern } from "./KindPattern";
 
@@ -97,4 +98,9 @@ lookup?: ColumnLookup,
 /**
  * How a `text` or `number` value is written: text with the one placeholder `{{value}}` (#387); `sextantApi` 4.
  */
-valueText?: string, };
+valueText?: string, 
+/**
+ * `"time"`: an `age` column sorts by the time itself, the oldest first, as a built-in column that sorted by its
+ * timestamp (ADR-0172); its age by default. `sextantApi` 6.
+ */
+sortAs?: ColumnSortAs, };

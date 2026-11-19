@@ -233,6 +233,74 @@ describe("relatedBy (#404)", () => {
   });
 });
 
+describe("relatedBy each and related unless (ADR-0172)", () => {
+  const HPA = { group: "autoscaling", kind: "HorizontalPodAutoscaler" };
+  const HPA_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "autoscaling", version: "v2", kind: "HorizontalPodAutoscaler" } };
+  const scales: ProblemCondition = { type: "exists", path: ".spec.metrics" };
+  const pairs = [{ theirs: ".spec.scaleTargetRef.name", ours: ".spec.targetRef.name" }];
+  const EACH = rule({
+    id: "fight",
+    kind: { group: "autoscaling.k8s.io", kind: "VerticalPodAutoscaler" },
+    when: { type: "relatedBy", kind: HPA, pairs, when: scales, each: true },
+    message: "HPA {{found}} fights",
+  });
+  const targets: AcrossTarget[] = [{ ...HPA, namespaced: true, def: HPA_DEF }];
+  const facts = factsOf([EACH], (k) => `${k.group}/${k.kind}`.toLowerCase()).get("autoscaling/horizontalpodautoscaler") ?? [];
+  const rows = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([], facts, false, [".spec.scaleTargetRef.name"])(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const hpa = (name: string, target: string) => obj(name, { metadata: { name, uid: `h-${name}` }, spec: { scaleTargetRef: { name: target }, metrics: [{}] } });
+  const vpa = obj("v", { spec: { targetRef: { name: "web" } } });
+  const judgeOf = (r: ProblemContribution, o: Obj, hpas: JudgedRows) =>
+    judgeAcross([problemOf(r, o)], { rows: undefined, target: (def) => (def === HPA_DEF ? hpas : undefined), problemUids: () => new Set() }, { rules: new Map([[r.id, r]]), targets });
+
+  it("tells one problem per object found, each named and keyed apart", () => {
+    const found = judgeOf(EACH, vpa, rows([hpa("a", "web"), hpa("b", "web"), hpa("c", "api")]));
+    expect(found.map((p) => p.message)).toEqual(["HPA a fights", "HPA b fights"]);
+    expect(new Set(found.map((p) => p.key)).size).toBe(2);
+    expect(new Set(found.map((p) => p.notifyKey)).size).toBe(2);
+    expect(judgeOf(EACH, vpa, rows([hpa("c", "api")]))).toEqual([]);
+    // Cannot tell: nothing.
+    expect(judgeOf(EACH, vpa, rows([hpa("a", "web")], { truncated: true }))).toEqual([]);
+  });
+
+  const CLUSTER = { group: "cluster.x-k8s.io", kind: "Cluster" };
+  const CLUSTER_DEF: SourceDef = { ...QUEUE_DEF, kind: { ...CLUSTER, version: "v1beta2" } };
+  const paused: ProblemCondition = { type: "equals", path: ".spec.paused", value: true };
+  const UNLESS = rule({
+    id: "failed",
+    kind: { group: "cluster.x-k8s.io", kind: "Machine" },
+    when: { type: "all", of: [{ type: "related", path: ".spec.clusterName", kind: CLUSTER, when: paused, unless: true }, { type: "equals", path: ".status.phase", value: "Failed" }] },
+  });
+  const clusterFacts = factsOf([UNLESS], (k) => `${k.group}/${k.kind}`.toLowerCase()).get("cluster.x-k8s.io/cluster") ?? [];
+  const clusters = (objects: Obj[], over: Partial<JudgedRows> = {}): JudgedRows => ({
+    status: "ready",
+    rows: new Map(objects.map((o) => [o.metadata.uid, rowOf([], clusterFacts, false, [])(o)])),
+    truncated: false,
+    namespaces: null,
+    ...over,
+  });
+  const machine = (cluster?: string) => obj("m", { spec: cluster === undefined ? {} : { clusterName: cluster }, status: { phase: "Failed" } });
+  const told = (o: Obj, list: JudgedRows) =>
+    judgeAcross([problemOf(UNLESS, o)], { rows: undefined, target: (def) => (def === CLUSTER_DEF ? list : undefined), problemUids: () => new Set() }, {
+      rules: new Map([[UNLESS.id, UNLESS]]),
+      targets: [{ ...CLUSTER, namespaced: true, def: CLUSTER_DEF }],
+    });
+
+  it("holds unless the named object is found with its condition, also while its list cannot tell", () => {
+    expect(told(machine("c1"), clusters([obj("c1", { spec: { paused: true } })]))).toEqual([]);
+    expect(told(machine("c1"), clusters([obj("c1", { spec: { paused: false } })]))).toHaveLength(1);
+    expect(told(machine("c1"), clusters([]))).toHaveLength(1);
+    expect(told(machine("c1"), clusters([obj("c1", { spec: { paused: true } })], { truncated: true }))).toHaveLength(1);
+    expect(told(machine("c1"), clusters([obj("c1", { spec: { paused: true } })], { status: "error" }))).toHaveLength(1);
+    expect(told(machine(), clusters([]))).toHaveLength(1);
+  });
+});
+
 describe("an any of missing and related, and related of a list (ADR-0167 amendment)", () => {
   const CLAIM = { group: "resource.k8s.io", kind: "ResourceClaim" };
   const CLAIM_DEF: SourceDef = { ...QUEUE_DEF, kind: { group: "resource.k8s.io", version: "v1", kind: "ResourceClaim" } };

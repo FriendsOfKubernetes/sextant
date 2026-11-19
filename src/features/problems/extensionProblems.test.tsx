@@ -3,7 +3,7 @@
 import { act, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { JudgedFact, JudgedObject, KubeObject, ProblemContribution, ProblemJudgeContribution, ProblemScope, ResourceKind } from "../../api";
-import { setJudgesClock } from "../../extensions/problemJudges";
+import { judgedFactAnywhere, setJudgesClock } from "../../extensions/problemJudges";
 import { resetAppStore } from "../../app/store";
 import "../../resources";
 import { resetClusterKinds } from "../../resources/useKinds";
@@ -428,6 +428,52 @@ describe("problems of extensions", () => {
     emitDelta(wb, services, [{ ...svc, metadata: { ...svc.metadata, labels: { app: "api2" } } }]);
     await waitFor(() => expect(sent).toHaveLength(2));
     await waitFor(() => expect(result.current).toBe(0));
+  });
+
+  it("run a judge only a computed column asks with the main category's sources (ADR-0172)", async () => {
+    const TRIGGER: ResourceKind = { ...CEPH_CLUSTER, kindRef: { group: "eventing.knative.dev", version: "v1", kind: "Trigger" }, plural: "triggers" };
+    wb.backend.on("cluster_kinds", () => [TRIGGER]);
+    wb.backend.on("extension_problem_scopes", () => [{ kind: { group: "eventing.knative.dev", kind: "Trigger" }, namespaces: { type: "all" } }]);
+    const judge: ProblemJudgeContribution = {
+      id: "filters",
+      reads: [{ kind: { group: "eventing.knative.dev", kind: "Trigger" }, paths: [".spec.filters"] }],
+      facts: [{ id: "filter", values: ["text"] }],
+    };
+    const sent: JudgedObject[][] = [];
+    wb.backend.on("extension_problem_judge", (args) => {
+      sent.push((args as { objects: JudgedObject[] }).objects);
+      return [{ uid: "u-t", fact: "filter", values: { text: "type=a" } }];
+    });
+    unregister = registerExtensionProblems(
+      "knative-ext",
+      "Knative",
+      [
+        {
+          id: "not-ready",
+          title: "Not ready",
+          kind: { group: "eventing.knative.dev", kind: "Trigger" },
+          when: { type: "condition", conditionType: "Ready", status: "False" },
+          graceMinutes: 0,
+          notify: true,
+          toldThroughOwner: false,
+          message: "m",
+        },
+      ],
+      undefined,
+      [judge],
+      [],
+      6,
+      [],
+      ["filters"],
+    );
+    renderHook(() => useProblemCount("c1"));
+    const trigger = { apiVersion: "eventing.knative.dev/v1", kind: "Trigger", metadata: { name: "t", namespace: "shop", uid: "u-t" }, spec: { filters: [{ exact: { type: "a" } }] } };
+    emitSnapshot(wb, await watchOf(wb, "Trigger"), [trigger]);
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0]).toEqual([
+      { apiVersion: "eventing.knative.dev/v1", kind: "Trigger", metadata: { name: "t", namespace: "shop", uid: "u-t" }, values: { ".spec.filters": [{ exact: { type: "a" } }] } },
+    ]);
+    await waitFor(() => expect(judgedFactAnywhere("knative-ext", "filters", "filter", "u-t")).toEqual({ text: "type=a" }));
   });
 
   it("list a looked-up kind of `narrowLookups` only in the namespaces the judged objects' lookups name", async () => {

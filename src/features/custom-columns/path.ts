@@ -10,6 +10,7 @@ import type { KubeObject } from "../../api";
 import type { ColumnSource } from "../../api/generated/ColumnSource";
 import type { CustomColumnSpec } from "../../api/generated/CustomColumnSpec";
 import { inlineSecretPaths } from "../../resources/inlineSecrets";
+import { currentLanguage } from "../../i18n/format";
 
 export type { ColumnSource, CustomColumnSpec };
 
@@ -35,7 +36,12 @@ export type PathStep =
       earliest?: string;
       /** `*`: every match, as a list; only a path's last step (#399). */
       all?: true;
+      /** `^` (ADR-0172): the first match of a map in the UI language's order of its keys, not by code point. */
+      byName?: true;
     };
+
+/** What joins a match's several values (`[field=("a","b")]`, ADR-0172) in its one value text (Rust's `ALTERNATIVES`). */
+export const ALTERNATIVES = '"';
 
 /** Pairs one `[field="value",…]` step takes at most (Rust `MAX_MATCH_PAIRS`). */
 export const MAX_MATCH_PAIRS = 12;
@@ -56,19 +62,21 @@ const MATCH_FIELD = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*~?!?$/;
 function pairsFit(item: unknown, pairs: readonly (readonly [string, string])[]): boolean {
   if (pairs.length === 0) return true;
   if (item === null || typeof item !== "object" || Array.isArray(item)) return false;
-  return pairs.every(([raw, want]) => {
+  return pairs.every(([raw, wanted]) => {
     const negated = raw.endsWith("!");
     const field = negated ? raw.slice(0, -1) : raw;
+    // Several values (ADR-0172): any of them; negated, none.
+    const wants = wanted.split(ALTERNATIVES);
     // `~` (ADR-0169): the text trimmed, a field that leads nowhere as "" (Rust's `trimmed_fits`).
-    if (field.endsWith("~")) return trimmedFits(item, field.slice(0, -1).split("."), want.trim()) !== negated;
+    if (field.endsWith("~")) return wants.some((want) => trimmedFits(item, field.slice(0, -1).split("."), want.trim())) !== negated;
     // Through a list on the way, any of its items will do (#404): `tasks.state` of a connector with a failed task.
-    const reaches = (at: unknown, parts: readonly string[]): boolean => {
-      if (Array.isArray(at)) return at.some((item) => reaches(item, parts));
+    const reaches = (at: unknown, parts: readonly string[], want: string): boolean => {
+      if (Array.isArray(at)) return at.some((item) => reaches(item, parts, want));
       if (parts.length === 0) return (typeof at === "string" || typeof at === "boolean" || typeof at === "number") && String(at) === want;
       if (at === null || typeof at !== "object") return false;
-      return reaches((at as Record<string, unknown>)[parts[0]!], parts.slice(1));
+      return reaches((at as Record<string, unknown>)[parts[0]!], parts.slice(1), want);
     };
-    return reaches(item, field.split(".")) !== negated;
+    return wants.some((want) => reaches(item, field.split("."), want)) !== negated;
   });
 }
 /**
@@ -138,16 +146,38 @@ export function parseFieldPath(path: string): PathStep[] | null {
           const pairs: [string, string][] = [];
           let earliest: string | undefined;
           let all = false;
+          let byName = false;
           let at = i + 1;
           for (;;) {
             const eq = path.indexOf("=", at);
             if (eq < 0) return null;
             const field = path.slice(at, eq);
             // Names joined by dots, optionally ending in `!` for "not this value" (#404).
-            if (!MATCH_FIELD.test(field) || path[eq + 1] !== '"') return null;
-            const close = path.indexOf('"', eq + 2);
-            if (close < 0) return null;
-            const value = path.slice(eq + 2, close);
+            if (!MATCH_FIELD.test(field)) return null;
+            let value: string;
+            let close: number;
+            if (path[eq + 1] === "(") {
+              // `("a","b",…)` (ADR-0172): one of several values, joined by a quote in the one value text.
+              const values: string[] = [];
+              let j = eq + 2;
+              for (;;) {
+                if (path[j] !== '"') return null;
+                const end = path.indexOf('"', j + 1);
+                if (end < 0) return null;
+                values.push(path.slice(j + 1, end));
+                if (values.length > MAX_MATCH_PAIRS) return null;
+                if (path[end + 1] === ",") j = end + 2;
+                else if (path[end + 1] === ")") {
+                  value = values.join(ALTERNATIVES);
+                  close = end + 1;
+                  break;
+                } else return null;
+              }
+            } else if (path[eq + 1] === '"') {
+              close = path.indexOf('"', eq + 2);
+              if (close < 0) return null;
+              value = path.slice(eq + 2, close);
+            } else return null;
             if (value.includes("\\") || CONTROL.test(value)) return null;
             pairs.push([field, value]);
             if (pairs.length > MAX_MATCH_PAIRS) return null;
@@ -157,7 +187,14 @@ export function parseFieldPath(path: string): PathStep[] | null {
             }
             if (path[close + 1] !== ",") return null;
             at = close + 2;
-            // A last part: `*` (every match) or `<field` (the earliest by it), then `]` (#399).
+            // A last part: `*` (every match), `<field` (the earliest by it) or `^` (the first by name, ADR-0172),
+            // then `]` (#399).
+            if (path[at] === "^") {
+              if (path[at + 1] !== "]") return null;
+              byName = true;
+              at += 2;
+              break;
+            }
             if (path[at] === "*") {
               if (path[at + 1] !== "]") return null;
               all = true;
@@ -173,7 +210,12 @@ export function parseFieldPath(path: string): PathStep[] | null {
               break;
             }
           }
-          steps.push({ match: pairs, ...(earliest !== undefined ? { earliest } : {}), ...(all ? { all: true as const } : {}) });
+          steps.push({
+            match: pairs,
+            ...(earliest !== undefined ? { earliest } : {}),
+            ...(all ? { all: true as const } : {}),
+            ...(byName ? { byName: true as const } : {}),
+          });
           i = at;
           expectName = false;
           continue;
@@ -208,7 +250,14 @@ export function formatFieldPath(steps: readonly PathStep[]): string {
       "index" in s
         ? `[${s.index}]`
         : "match" in s
-          ? `[${[...s.match.map(([field, value]) => `${field}="${value}"`), ...(s.earliest ? [`<${s.earliest}`] : []), ...(s.all ? ["*"] : [])].join(",")}]`
+          ? `[${[
+              ...s.match.map(([field, value]) =>
+                value.includes(ALTERNATIVES) ? `${field}=(${value.split(ALTERNATIVES).map((v) => `"${v}"`).join(",")})` : `${field}="${value}"`,
+              ),
+              ...(s.earliest ? [`<${s.earliest}`] : []),
+              ...(s.all ? ["*"] : []),
+              ...(s.byName ? ["^"] : []),
+            ].join(",")}]`
           : /^[A-Za-z0-9_-]+$/.test(s.key)
             ? `.${s.key}`
             : `["${s.key}"]`,
@@ -345,6 +394,15 @@ export function pickItem(holder: unknown, pairs: readonly (readonly [string, str
  * (numbers as numbers, else text; one without it last), or every match as a list (`all`).
  */
 export function pickStep(holder: unknown, step: Extract<PathStep, { match: unknown }>): unknown {
+  // `^` (ADR-0172): a map's values in the UI language's order of their keys, as a built-in view sorted them.
+  if (step.byName && holder !== null && typeof holder === "object" && !Array.isArray(holder)) {
+    const map = holder as Record<string, unknown>;
+    const collator = new Intl.Collator(currentLanguage());
+    return Object.keys(map)
+      .sort(collator.compare)
+      .map((k) => map[k])
+      .find((item) => pairsFit(item, step.match));
+  }
   const items = matchingItems(holder, step.match);
   if (step.all) return items;
   if (step.earliest === undefined) return items[0];

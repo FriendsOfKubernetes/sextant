@@ -569,3 +569,40 @@ describe("the ruleHosts filter", () => {
   });
 });
 
+
+describe("what API 6 reads (ADR-0172)", () => {
+  const o = {
+    metadata: { name: "a" },
+    spec: {
+      groups: [
+        { replicas: 2, numOfHosts: 2 },
+        { minReplicas: 3 },
+        { replicas: 0, minReplicas: 5, numOfHosts: 0 },
+        { replicas: 9, suspend: true },
+      ],
+    },
+    status: { autoRestart: { lastRestartTimestamp: "soon" }, when: "2026-11-19T10:00:00Z" },
+  } as unknown as KubeObject;
+
+  it("adds each item's product of its factors with |sumOf:", () => {
+    // 2×2 + 3×1 + 0×1 (a host count of 0 is not positive) = 7.
+    expect(placeholderText(o, '.spec.groups[suspend!="true",*]|sumOf:.replicas ?? .minReplicas ?? 0 * .numOfHosts>0 ?? 1')).toBe("7");
+    expect(placeholderText(o, ".spec.groups[*]|sumOf:.replicas")).toBe("11");
+    expect(placeholderText(o, ".spec.none[*]|sumOf:.replicas")).toBeUndefined();
+    expect(fillTemplate("{{.status.ready ?? 0}}/{{.spec.groups[*]|sumOf:.minReplicas ?? 0}}", o)).toBe("0/8");
+  });
+
+  it("reads a compared path's default where it holds nothing", () => {
+    expect(valueAt(o, ".status.autoRestart.count ?? 0")).toBe(0);
+    expect(valueAt(o, ".spec.groups[0].replicas ?? 7")).toBe(2);
+    expect(valueAt(o, '.status.phase ?? "Pending"')).toBe("Pending");
+    expect(evaluate({ type: "below", path: ".status.autoRestart.count ?? 0", value: 1 }, o).holds).toBe(true);
+    expect(evaluate({ type: "atLeast", path: ".spec.maxRestarts ?? 7", otherPath: ".status.autoRestart.count ?? 0" }, o).holds).toBe(true);
+  });
+
+  it("tells a time from a text that is none", () => {
+    expect(evaluate({ type: "isTime", path: ".status.when" }, o).holds).toBe(true);
+    expect(evaluate({ type: "isTime", path: ".status.autoRestart.lastRestartTimestamp" }, o).holds).toBe(false);
+    expect(evaluate({ type: "isTime", path: ".status.none" }, o).holds).toBe(false);
+  });
+});

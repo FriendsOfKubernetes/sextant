@@ -121,6 +121,10 @@ pub enum MatchPick {
     Earliest(String),
     /// `*`: every one, as a list; only in a path's last step.
     All,
+    /// `^` (ADR-0172): the first of a map's values in the order of their keys by name — in the UI language in the
+    /// window, here by their Unicode lower case, then as written — not by code point; a list keeps its order.
+    /// `sextantApi` 6 in a manifest.
+    ByName,
 }
 
 /// Pairs one `[field="value",…]` step takes at most.
@@ -144,6 +148,18 @@ pub fn list_steps(steps: &[PathStep]) -> usize {
         })
         .count()
 }
+
+/// Whether a path matches one of several values (`[field=("a","b")]`) or picks by name (`^`), ADR-0172.
+pub fn uses_gaps_syntax(steps: &[PathStep]) -> bool {
+    steps.iter().any(|s| {
+        matches!(s, PathStep::Match { pairs, pick }
+            if *pick == MatchPick::ByName || pairs.iter().any(|(_, v)| v.contains(ALTERNATIVES)))
+    })
+}
+
+/// What joins a match's several values (`[field=("a","b")]`, ADR-0172) inside its one value text: a value never holds
+/// a quote.
+pub const ALTERNATIVES: char = '"';
 
 /// Whether a path holds a match field compared trimmed (`[field~="…"]`, ADR-0169).
 pub fn compares_trimmed(steps: &[PathStep]) -> bool {
@@ -171,6 +187,23 @@ impl PathStep {
     /// The item of a list, or the value of a map (in key order), whose fields are all `pairs`.
     pub fn pick<'a>(pairs: &[(String, String)], value: &'a Value) -> Option<&'a Value> {
         Self::matching(pairs, value).into_iter().next()
+    }
+
+    /// `^` (ADR-0172): the first match, a map's values in the order of their keys by name (Unicode lower case, then
+    /// as written); a list's in its order.
+    pub fn by_name<'a>(pairs: &[(String, String)], value: &'a Value) -> Option<&'a Value> {
+        let Value::Object(map) = value else {
+            return Self::pick(pairs, value);
+        };
+        let mut keys: Vec<&String> = map.keys().collect();
+        keys.sort_by(|a, b| {
+            a.to_lowercase()
+                .cmp(&b.to_lowercase())
+                .then_with(|| a.cmp(b))
+        });
+        keys.into_iter()
+            .map(|k| &map[k])
+            .find(|item| pair_fits(pairs, item))
     }
 
     /// The matching entry with the smallest value of `field` (#399): numbers as numbers, strings as text (RFC 3339
@@ -230,8 +263,10 @@ fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
         if !item.is_object() {
             return false;
         }
+        // Several values (ADR-0172): any of them; negated, none.
+        let wants: Vec<&str> = want.split(ALTERNATIVES).collect();
         if let Some(field) = field.strip_suffix('~') {
-            return trimmed_fits(item, field, want) != negated;
+            return wants.iter().any(|want| trimmed_fits(item, field, want)) != negated;
         }
         // Through a list on the way, any of its items will do (#404): `tasks.state` of a connector with a failed task.
         fn reaches(at: &Value, parts: &[&str], want: &str) -> bool {
@@ -247,7 +282,7 @@ fn pair_fits(pairs: &[(String, String)], item: &Value) -> bool {
             }
         }
         let parts: Vec<&str> = field.split('.').collect();
-        reaches(item, &parts, want) != negated
+        wants.iter().any(|want| reaches(item, &parts, want)) != negated
     })
 }
 
@@ -350,11 +385,34 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                 loop {
                     let eq = (at..chars.len()).find(|&j| chars[j] == '=')?;
                     let field: String = chars[at..eq].iter().collect();
-                    if !is_match_field(&field) || chars.get(eq + 1) != Some(&'"') {
+                    if !is_match_field(&field) {
                         return None;
                     }
-                    let close = (eq + 2..chars.len()).find(|&j| chars[j] == '"')?;
-                    let value: String = chars[eq + 2..close].iter().collect();
+                    let (value, close) = if chars.get(eq + 1) == Some(&'(') {
+                        // `("a","b",…)` (ADR-0172): one of several values, joined by a quote in the one value text.
+                        let mut values = Vec::new();
+                        let mut j = eq + 2;
+                        loop {
+                            if chars.get(j) != Some(&'"') {
+                                return None;
+                            }
+                            let end = (j + 1..chars.len()).find(|&k| chars[k] == '"')?;
+                            values.push(chars[j + 1..end].iter().collect::<String>());
+                            if values.len() > MAX_MATCH_PAIRS {
+                                return None;
+                            }
+                            match chars.get(end + 1) {
+                                Some(',') => j = end + 2,
+                                Some(')') => break (values.join("\""), end + 1),
+                                _ => return None,
+                            }
+                        }
+                    } else if chars.get(eq + 1) == Some(&'"') {
+                        let close = (eq + 2..chars.len()).find(|&j| chars[j] == '"')?;
+                        (chars[eq + 2..close].iter().collect::<String>(), close)
+                    } else {
+                        return None;
+                    };
                     if value.chars().any(|c| c == '\\' || c.is_control()) {
                         return None;
                     }
@@ -370,7 +428,16 @@ pub fn parse_field_path(path: &str) -> Option<Vec<PathStep>> {
                         Some(',') => at = close + 2,
                         _ => return None,
                     }
-                    // A last part: `<field` (the earliest by it) or `*` (every match), then `]` (#399).
+                    // A last part: `<field` (the earliest by it), `*` (every match) or `^` (the first by name,
+                    // ADR-0172), then `]` (#399).
+                    if chars.get(at) == Some(&'^') {
+                        if chars.get(at + 1) != Some(&']') {
+                            return None;
+                        }
+                        pick = MatchPick::ByName;
+                        at += 2;
+                        break;
+                    }
                     if chars.get(at) == Some(&'*') {
                         if chars.get(at + 1) != Some(&']') {
                             return None;

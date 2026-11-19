@@ -470,6 +470,13 @@ export function judgeAcross(
     for (const lookup of p.lookups ?? []) {
       // An optional `related` (ADR-0169) decides nothing.
       if (lookup.optional) continue;
+      // `unless` (ADR-0172): only an object found with its fact holding keeps the rule from holding; one not there, or
+      // a list that cannot tell, does not.
+      if (lookup.unless) {
+        const found = lookup.by ? relatedRows(p, lookup).length > 0 : tell(p, lookup) === true;
+        if (found) return null;
+        continue;
+      }
       const told = tell(p, lookup);
       if (lookup.anyOf === undefined) {
         if (told === undefined) untold?.add(p.uid);
@@ -580,8 +587,10 @@ export function judgeAcross(
       const selects = (p.lookups ?? []).find((l) => l.selects)?.selects;
       out = { ...out, message: out.message.split(SELECTS_IN_MARK).join(formatList(selects ? (lookedIn(selects) ?? []) : [])) };
     }
+    // `each` (ADR-0172): one problem for each object a `relatedBy` found, told apart by it and named by `{{found}}`.
+    const each = (p.lookups ?? []).find((lookup) => lookup.each && lookup.by);
     // `{{found}}` (ADR-0167 amendment): the objects a `related` or `relatedBy` found, an HPA fighting a VPA.
-    if (out.message?.includes(FOUND_MARK)) out = { ...out, message: out.message.split(FOUND_MARK).join(formatList(foundNames(out))) };
+    if (!each && out.message?.includes(FOUND_MARK)) out = { ...out, message: out.message.split(FOUND_MARK).join(formatList(foundNames(out))) };
     if (facts.judged) out = { ...out, lookups: facts.lookups, ...(out.message !== undefined ? { message: withFacts(out.message, facts.values) } : {}) };
     // What the `related` lookups found (ADR-0169): their windows and since, and their fields in the message.
     const found = (p.lookups ?? []).flatMap((lookup) => {
@@ -592,6 +601,19 @@ export function judgeAcross(
     if (out.message !== undefined && out.message.includes("\uE000")) {
       const first = found[0]?.row;
       out = { ...out, message: withRelated(out.message, first) };
+    }
+    if (each) {
+      const one = out;
+      return relatedRows(p, each).map((row) => {
+        const name = row.namespace && row.namespace !== p.object.namespace ? `${row.namespace}/${row.name}` : row.name;
+        const id = entryId(`${row.namespace}/${row.name}`);
+        return {
+          ...one,
+          key: `${one.key}|${id}`,
+          notifyKey: `${one.notifyKey}|${id}`,
+          ...(one.message !== undefined ? { message: one.message.split(FOUND_MARK).join(name) } : {}),
+        };
+      });
     }
     return [out];
   });

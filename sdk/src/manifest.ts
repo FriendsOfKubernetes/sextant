@@ -197,6 +197,11 @@ export interface ManifestColumn {
     pluralBy?: string;
     /** The text by CLDR plural form besides `other`, which is `text` (since Sextant 0.30). */
     textForms?: { [form: string]: string };
+    /**
+     * `true`: while the case holds the cell has no value — it shows nothing, sorts last and filters as nothing; its
+     * `text` is `""` (`sextantApi` 6, Sextant 0.30.5).
+     */
+    blank?: boolean;
   }[];
   /** The id of the column this one goes after (`name`, `namespace`, `age`, or one of the extension's own ids). */
   afterColumn?: string;
@@ -216,7 +221,11 @@ export interface ManifestColumn {
    */
   /** What joins a `list` or `entries` column's texts instead of the UI language's list (since Sextant 0.30). */
   separator?: string;
-  items?: { cases: { when: ProblemCondition; text: string }[]; separator?: string; with?: Record<string, string> };
+  /**
+   * An item case's `value` is what the item gives the column's sort (and its filter and search by `"value"`) in place
+   * of its text, with the item's placeholders (`sextantApi` 6, Sextant 0.30.5).
+   */
+  items?: { cases: { when: ProblemCondition; text: string; value?: string }[]; separator?: string; with?: Record<string, string> };
   /** A `list` column's items in the UI language's order (since Sextant 0.30). */
   sorted?: boolean;
   /**
@@ -234,6 +243,8 @@ export interface ManifestColumn {
   lookup?: { list: string; index: string; field: string; nearestBefore?: boolean; orElse?: string | number | boolean };
   /** How a `text` or `number` value is written, with the one placeholder `{{value}}`: `{{value}}%` (since Sextant 0.30). */
   valueText?: string;
+  /** `"time"`: an `age` column sorts by the time itself, the oldest first (`sextantApi` 6, Sextant 0.30.5). */
+  sortAs?: "time";
 }
 
 /**
