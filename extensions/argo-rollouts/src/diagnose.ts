@@ -38,7 +38,7 @@ import {
   strategyOf,
   updating,
 } from "./model";
-import { rolloutFindings, safetyText, templateFindings } from "./safety";
+import { OWN_VERDICT, rolloutFindings, safetyText, templateFindings } from "./safety";
 import { canaryWeight, destinationRuleRef, trafficFindings, trafficText, virtualServiceRefs, type Found } from "./traffic";
 
 export const DEPLOYMENT = { group: "apps", kind: "Deployment" } as const;
@@ -223,6 +223,16 @@ export function diagnose(read: Reader, args: DiagnoseArgs): Record<string, unkno
     if (!obj) continue;
     const found = templateFindings(get(obj, "spec"));
     for (const f of found) findings.push({ level: "warning", code: f.code, text: `${t.cluster ? "ClusterAnalysisTemplate" : "AnalysisTemplate"} ${t.name}: ${safetyText(f)}` });
+    // A metric whose provider gives the verdict itself (#341): its conditions are not what decides, so whether it
+    // passes without data cannot be told from the template.
+    for (const m of arr(get(obj, "spec", "metrics"))) {
+      const provider = Object.keys(record(get(m, "provider")))[0];
+      if (!provider || !OWN_VERDICT.has(provider)) continue;
+      notChecked.push({
+        what: `whether metric ${str(get(m, "name")) ?? "?"} of ${t.cluster ? "ClusterAnalysisTemplate" : "AnalysisTemplate"} ${t.name} passes without data`,
+        why: `its provider (${provider}) decides each measurement itself — a Job by how it ends, Kayenta by its score, a plugin by its own rules — not successCondition/failureCondition; only its failureLimit, count and dry run are checked`,
+      });
+    }
     templateOut.push({
       kind: t.cluster ? "ClusterAnalysisTemplate" : "AnalysisTemplate",
       name: t.name,

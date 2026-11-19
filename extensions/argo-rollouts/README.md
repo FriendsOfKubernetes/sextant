@@ -21,7 +21,7 @@ notification groups, hidden details sections), ADR-0159 (tools for agents), ADR-
 | | |
 |---|---|
 | Id | `sextant.argo-rollouts` |
-| Version | 1.5.0 ([changes](CHANGELOG.md)) |
+| Version | 1.5.1 ([changes](CHANGELOG.md)) |
 | Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `argo-rollouts-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Argo Rollouts |
@@ -239,6 +239,10 @@ confirmed.
   and give no problem.
 - The canary-safety checks recognise the common forms of a condition that passes without data or on NaN; a condition
   written otherwise is not caught. They are hints about intent, which is why they are opt-in.
+- A metric whose provider decides each measurement itself (`job` by how the Job ends, `kayenta` by its score, a
+  plugin by its own rules) is not judged for passing without data: its conditions are not what decides. Its
+  `failureLimit`, `count` and dry run are judged as any metric's, and the agent tool names it in `notChecked`
+  (since 1.5.1).
 - `traffic-same-hash` is not judged during the short moment the controller waits for the new ReplicaSet before it
   switches the canary subset: it sets no weight before that, and the rule waits 5 minutes.
 

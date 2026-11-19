@@ -30,8 +30,12 @@ export type SafetyCode =
   | "first-step-full"
   | "all-pods-unavailable";
 
-/** Providers whose measurement is decided by the provider itself, not by the conditions. */
-const OWN_VERDICT = new Set(["job", "kayenta", "plugin"]);
+/**
+ * Providers whose measurement is decided by the provider itself, not by the conditions: a Job by how it ends, Kayenta
+ * by its score's thresholds, a plugin by its own rules. Whether such a metric passes without data is not judged here
+ * (the agent tool names them in `notChecked`); its failureLimit, count and dry run are.
+ */
+export const OWN_VERDICT: ReadonlySet<string> = new Set(["job", "kayenta", "plugin"]);
 
 const compact = (text: string): string => text.replace(/\s+/g, " ").trim();
 

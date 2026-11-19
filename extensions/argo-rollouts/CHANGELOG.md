@@ -1,5 +1,15 @@
 # Changes of Argo Rollouts
 
+## 1.5.1 — 2026-11-19
+
+Needs Sextant 0.30 (`sextantApi` 4).
+
+- **The agent tool** names in `notChecked` every metric of an analysis template whose provider decides each
+  measurement itself (`job`, `kayenta`, a plugin): whether it passes without data cannot be told from its conditions,
+  so the canary-safety checks leave that part out (#341). Their `failureLimit`, `count` and dry run are judged as
+  before.
+- No new permission or problem kind: updating asks for no consent again.
+
 ## 1.5.0 — 2026-11-12
 
 Needs Sextant 0.30 (`sextantApi` 4). For AI agents and canary analysis (#341, ADR-0171).

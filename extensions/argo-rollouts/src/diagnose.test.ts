@@ -286,6 +286,22 @@ describe("the agent tool", () => {
     expect(() => diagnose(reader([], ["Rollout"]), { cluster: "c", namespace: NS, name: "x" })).toThrow(/cannot read/);
   });
 
+  it("names a metric whose provider decides by itself as not checked (#341)", () => {
+    const ro = copy(canary) as unknown as { spec: Record<string, any> };
+    ro.spec.strategy.canary.analysis = { templates: [{ templateName: "smoke" }] };
+    const template = {
+      apiVersion: "argoproj.io/v1alpha1",
+      kind: "AnalysisTemplate",
+      metadata: { name: "smoke", namespace: NS, uid: "t-1" },
+      spec: { metrics: [{ name: "e2e", provider: { job: { spec: {} } } }, { name: "errors", successCondition: "result[0] < 1", provider: { prometheus: {} } }] },
+    } as unknown as KubeObject;
+    const out = diagnose(reader([ro as unknown as KubeObject, template]), { cluster: "c", namespace: NS, name: "rollout-canary" });
+    const notChecked = out.notChecked as { what: string; why: string }[];
+    expect(notChecked.map((n) => n.what)).toContain("whether metric e2e of AnalysisTemplate smoke passes without data");
+    expect(notChecked.find((n) => n.what.includes("e2e"))?.why).toMatch(/provider \(job\) decides each measurement itself/);
+    expect(notChecked.some((n) => n.what.includes("errors"))).toBe(false);
+  });
+
   it("names the templates a strategy uses, and a missing one", () => {
     const ro = copy(canary) as unknown as { spec: Record<string, any> };
     ro.spec.strategy.canary.analysis = { templates: [{ templateName: "success-rate" }, { templateName: "latency", clusterScope: true }] };

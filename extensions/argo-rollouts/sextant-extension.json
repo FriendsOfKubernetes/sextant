@@ -2,7 +2,7 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.argo-rollouts",
   "name": "Argo Rollouts",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Argo Rollouts: rollouts with their steps, weights, ReplicaSets and analysis runs; promote, abort, retry, pause and resume with the exact patches of kubectl argo rollouts, shown first; problems of degraded, aborted, long-paused and inconclusive rollouts, failed analyses and canary traffic that does not reach the canary; an opt-in check of how safe the canary is set up; the Rollout a Deployment serves; and a read-only diagnosis tool for AI agents.",
   "author": "Sextant",
   "sextantApi": 4,
