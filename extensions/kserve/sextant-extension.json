@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.kserve",
   "name": "KServe",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "KServe: InferenceServices with their state, URL, model format, runtime, deployment mode and canary share, what KServe made for them and the serving runtime KServe chooses; ServingRuntimes, ClusterServingRuntimes, InferenceGraphs and TrainedModels; problems of models that failed to load, specs KServe cannot serve and InferenceServices that are not ready. URIs are shown without credentials or a query. Read-only.",
   "author": "Sextant",
-  "sextantApi": 4,
+  "sextantApi": 6,
   "entry": "index.html",
   "icon": "kserve",
   "permissions": {
@@ -1383,27 +1383,33 @@
         "id": "isvc-canary",
         "title": "Canary %",
         "paths": [
-          ".status.components.predictor.traffic[1].percent"
+          ".status.components.predictor.traffic[latestRevision=\"true\",*].percent"
         ],
         "cases": [
           {
             "when": {
-              "type": "exists",
+              "type": "absent",
               "path": ".status.components.predictor.traffic[1]"
             },
-            "text": "{{.status.components.predictor.traffic[latestRevision=\"true\",*].percent|sum}}"
+            "text": "",
+            "blank": true
           },
           {
             "when": {
-              "type": "exists",
-              "path": ".status.components.predictor.traffic[1]"
+              "type": "not",
+              "of": {
+                "type": "above",
+                "path": ".status.components.predictor.traffic[latestRevision=\"true\",*].percent|sum",
+                "value": -1
+              }
             },
             "text": "0",
             "value": 0
           }
         ],
         "width": "80px",
-        "afterColumn": "isvc-mode"
+        "afterColumn": "isvc-mode",
+        "format": "sum"
       },
       {
         "kind": {

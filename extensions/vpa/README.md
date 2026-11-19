@@ -21,8 +21,8 @@ conditions, `relatedBy`, details sections without a heading or hidden until show
 | | |
 |---|---|
 | Id | `sextant.vpa` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `vpa-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Vertical Pod Autoscaler |
 | Checked against | The VPA's objects as kubernetes/autoscaler's vertical-pod-autoscaler writes and reads them (`autoscaling.k8s.io/v1`: `pkg/apis/autoscaling.k8s.io/v1/types.go`, `pkg/utils/vpa/api.go`, `pkg/utils/vpa/capping.go`, `pkg/utils/vpa/limit_and_request_scaling.go`, `pkg/admission-controller/resource/pod/recommendation`, `pkg/recommender/model/vpa.go`) and its install manifests and charts |
@@ -92,7 +92,7 @@ the same columns keep to one line, the others wrap between words.
 
 The rules are in the extension's own category, **"Vertical Pod Autoscaler"**, on by default, as the built-in category
 `vpa` was; it is never given to agents. A problem's reason is `ConfigUnsupported`, `NoPodsMatched` or `HpaConflict`,
-as the built-in problems named them, and each reason notifies once per VPA. A grace counts from the condition's
+as the built-in problems named them, and each reason notifies once per VPA (a fight once per VPA and HPA). A grace counts from the condition's
 `lastTransitionTime` (from when Sextant first saw it without one); a fight's from when Sextant first saw it.
 
 | Id | Kind | When it holds | Grace | Told by another object |
@@ -105,8 +105,9 @@ as the built-in problems named them, and each reason notifies once per VPA. A gr
 Whether the VPA controls a resource is read from its policies alone, as the built-in problems read it: no policies, or a
 policy not Off that controls it (its `controlledResources`, cpu and memory when unset). An HPA's resource is a `Resource`
 metric with a `Utilization` target (an HPA without metrics is the API's default CPU); an AverageValue or Value target
-does not fight. A fight is judged only while the HPAs of the VPA's namespace are read in full. The message names the HPAs
-the rule found (`{{found}}`), as the built-in problem named its HPA.
+does not fight. A fight is judged only while the HPAs of the VPA's namespace are read in full. Each HPA found is a
+problem of its own, its message naming it (`{{found}}`, the `relatedBy`'s `each`), as the built-in problem told each
+fighting HPA apart.
 
 ## Metrics
 
@@ -136,10 +137,6 @@ None: it only reads.
     zero and notified when it wanted pods. (A `related` lookup of the kind the object names — `apiVersionPath` and
     `kindPath`, as `about` reads it — read by name rather than through a watch of every workload, and a rule's
     notification decided by a condition, would close it.)
-  - **A fight with an HPA** is told once per VPA and outcome, naming the HPA as the built-in problem did ("HPA … scales
-    the same workload on …"); several HPAs on one target (which the HPA controller itself refuses as ambiguous) are
-    named together in one problem, where the built-in told each fighting HPA apart. (A problem per found object would
-    close it.)
   - The rules compare the target's whole `apiVersion` (an HPA on `apps/v1beta2` of an `apps/v1` VPA target is not
     found) and need both to name one; the built-in problem compared the group. (A placeholder filter for an
     apiVersion's group in `relatedBy` pairs would close it.)

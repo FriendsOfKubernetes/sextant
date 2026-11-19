@@ -20,8 +20,8 @@ rule sources' caps, the counter's own label).
 | | |
 |---|---|
 | Id | `sextant.strimzi` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `strimzi-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Strimzi |
 | Checked against | Strimzi's objects of `kafka.strimzi.io` (`v1beta2` and `v1`) as the cluster operator writes them; the automatic restarts follow `AbstractConnectOperator` of strimzi-kafka-operator |
@@ -146,15 +146,10 @@ None: it only reads.
 ## Requirements and limits
 
 - The Strimzi CRDs, and the cluster operator for the status to be there.
-- The table's columns and the problem rules are computed by Sextant from field paths (ADR-0153, ADR-0137); where that
-  cannot say exactly what the former built-in view computed, they differ as follows (the details always show the full
-  reading):
-  - A KafkaConnector's auto-restart status without a count (Strimzi always writes one) counts as before the first
-    restart, with its 2-minute grace, where the built-in view read 0 restarts and waited 2 minutes from
-    the last restart's time; with a count and a restart time that is no time, the failure is told at once, where the
-    built-in view waited 2 minutes. A path has no default value, and a rule's grace cannot depend on a value.
-  - The problem watches of Kafkas, node pools, Connect clusters, MirrorMaker 2s and connectors hold at most 20 000
-    objects of a kind (a rule source's most); the built-in view watched them uncapped.
+- The table's columns and the problem rules are computed by Sextant from field paths (ADR-0153, ADR-0137); the
+  details always show the full reading. Where they differ from the former built-in view: the problem watches of
+  Kafkas, node pools, Connect clusters, MirrorMaker 2s and connectors hold at most 20 000 objects of a kind (a rule
+  source's most); the built-in view watched them uncapped.
 - Checked by tests on fixtures of Strimzi's objects (a Kafka with warnings and listeners, a topic, a user, a
   connector with a failed task, a MirrorMaker 2) and variants of them, against the built-in view's readings, ported
   unchanged; not yet tried on a live cluster.

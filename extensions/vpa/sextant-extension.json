@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.vpa",
   "name": "Vertical Pod Autoscaler",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "VerticalPodAutoscalers with their state, update mode and recommendation against the target's template with what a new pod would get, their checkpoints and components, and the VPAs of every workload; problems of VPAs the recommender cannot use, that match no pod or that fight an HPA. Read-only.",
   "author": "Sextant",
-  "sextantApi": 4,
+  "sextantApi": 6,
   "entry": "index.html",
   "icon": "vpa",
   "permissions": {
@@ -738,7 +738,8 @@
                     ]
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -850,7 +851,8 @@
                     }
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -962,7 +964,8 @@
                     ]
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -1087,7 +1090,8 @@
                     "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -1215,7 +1219,8 @@
                     }
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -1343,7 +1348,8 @@
                     "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -1467,7 +1473,8 @@
                     ]
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },
@@ -1582,7 +1589,8 @@
                     "path": ".spec.metrics[type=\"Resource\",resource.name=\"memory\",resource.target.type=\"Utilization\"]"
                   }
                 ]
-              }
+              },
+              "each": true
             }
           ]
         },

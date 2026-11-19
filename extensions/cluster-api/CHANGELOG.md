@@ -1,5 +1,16 @@
 # Changes of Cluster API
 
+## 1.1.0 — 2026-11-19
+
+Needs Sextant 0.30.5 (`sextantApi` 6); Sextant 0.30.0 to 0.30.4 keep 1.0.0. What the built-in view did that extension
+API 5 could not say (ADR-0172):
+
+- **A paused Cluster leaves out its objects' problems only when Sextant read it paused**, as the built-in view did: a
+  Machine's or KubeadmControlPlane's problem with only old conditions stands while the Cluster list cannot be read
+  (`related` `unless`); before, it stayed out. One rule per problem now covers a Cluster there, not there and not
+  named: the rules `k-failed-o-x`, `k-failed-o-n`, `k-na-oa-x`, `k-na-oa-n`, `k-na-or-x`, `k-na-or-n`,
+  `m-failed-o-x`, `m-p-o-in-x`, `m-p-o-r-x`, `m-p-d-i-x`, `m-p-d-n-x` and `m-p-d-r-x` are gone (27 rules).
+
 ## 1.0.0 — 2026-11-10
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in Cluster API view (ADR-0113) as an

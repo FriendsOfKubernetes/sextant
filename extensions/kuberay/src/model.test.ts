@@ -182,6 +182,11 @@ function clusters(): KubeObject[] {
   delete st(noDesiredNoReady).readyWorkerReplicas;
   const noDesiredAllSuspended = copy(noDesired);
   for (const g of groups(noDesiredAllSuspended)) g.suspend = true;
+  // Multi-host groups and groups without `replicas` (1.1.0, ADR-0172): replicas, else minReplicas, times the hosts.
+  const multiHost = copy(noDesired);
+  groups(multiHost).push({ groupName: "tpu", replicas: 2, numOfHosts: 4 }, { groupName: "min", minReplicas: 3 }, { groupName: "zero", replicas: 1, numOfHosts: 0 });
+  const noGroups = copy(noDesired);
+  delete (noGroups.spec as Record<string, unknown>).workerGroupSpecs;
   return [
     ...ofKind("RayCluster"),
     headDown,
@@ -209,6 +214,8 @@ function clusters(): KubeObject[] {
     noDesired,
     noDesiredNoReady,
     noDesiredAllSuspended,
+    multiHost,
+    noGroups,
   ];
 }
 
@@ -356,8 +363,17 @@ function services(): KubeObject[] {
   setCond(suspendedWithApp, { type: "Suspended", status: "True" });
   const upgradingQuiet = copy(upgradingDown);
   conds(upgradingQuiet).find((c) => c.type === "Ready")!.message = "";
+  // An application without a status before the failed one, and names in mixed case (1.1.0, ADR-0172): the failed one
+  // first in the UI language's order of the names, as the built-in view sorted them.
+  const quietBeforeFailed = copy(failedDown);
+  (apps(quietBeforeFailed, "activeServiceStatus") as Record<string, unknown>).a_app = { message: "no status" };
+  const mixedCase = copy(failedDown);
+  apps(mixedCase, "activeServiceStatus").Zeta = { status: "UNHEALTHY", message: "upper Z" };
+  apps(mixedCase, "activeServiceStatus").beta = { status: "UNHEALTHY", message: "lower b" };
   return [
     ...ofKind("RayService"),
+    quietBeforeFailed,
+    mixedCase,
     bothFailed,
     bothFailedLater,
     bothFailedWhileReady,
@@ -536,8 +552,15 @@ describe("the problem rules, against the built-in detector", () => {
   });
 
   it("tell the first failed application by name, and an invalid RayService's failed application", () => {
-    const both = services().find((o) => (st(o).activeServiceStatus as { applicationStatuses?: Apps }).applicationStatuses?.a_app)!;
+    const both = services().find((o) => (st(o).activeServiceStatus as { applicationStatuses?: Apps }).applicationStatuses?.a_app?.status === "UNHEALTHY")!;
     expect(windowProblems(RAY_SERVICE, both)[0]?.message).toBe("a is down");
+    // An application without a status before the failed one gives no message (1.1.0, ADR-0172).
+    const quiet = services().find((o) => (st(o).activeServiceStatus as { applicationStatuses?: Apps }).applicationStatuses?.a_app?.message === "no status")!;
+    expect(windowProblems(RAY_SERVICE, quiet)[0]?.message).toBe("boom");
+    // Names in mixed case: the first in the UI language's order (`beta` before `fruit_app` and `Zeta`).
+    const mixed = services().find((o) => (st(o).activeServiceStatus as { applicationStatuses?: Apps }).applicationStatuses?.Zeta)!;
+    expect(windowProblems(RAY_SERVICE, mixed)[0]?.message).toBe("lower b");
+    expect(failedAppOf(mixed)?.name).toBe("beta");
     const invalid = find("RayService", "rayservice-sample");
     setCond(invalid, { type: "Ready", status: "False", reason: "InitializingTimeout", message: "timed out", lastTransitionTime: "2026-10-22T10:00:00Z" });
     expect(windowProblems(RAY_SERVICE, invalid).map((p) => [p.reason, p.graceMs])).toEqual([["InitializingTimeout", undefined]]);
@@ -700,7 +723,7 @@ describe("the columns, against the built-in ones", () => {
   it("of RayClusters before `desiredWorkerReplicas`: the replicas of the groups not suspended; words from the next condition", () => {
     const list = clusters();
     const named = (n: number) => list[list.length - n]!;
-    expect([3, 2, 1].map((n) => cell("cluster-workers", named(n)))).toEqual(["1/4", "0/4", "1/0"]);
+    expect([5, 4, 3, 2, 1].map((n) => cell("cluster-workers", named(n)))).toEqual(["1/4", "0/4", "1/0", "1/16", "1/0"]);
     expect(cell("cluster-workers", find("RayCluster", "raycluster-legacy"))).toBe("0/0");
     const quiet = list.find((o) => (st(o) as Record<string, unknown> | undefined)?.reason === "quota exceeded")!;
     expect(drawn("cluster-status", quiet)).toEqual({ title: "quota exceeded", tone: "danger" });

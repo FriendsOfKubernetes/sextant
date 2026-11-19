@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.external-secrets",
   "name": "External Secrets",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "External Secrets Operator: ExternalSecrets, ClusterExternalSecrets, SecretStores, ClusterSecretStores and PushSecrets with their Ready state, the store and its validation, the target Secret, refresh and last sync, and the remote keys by name; problems of failed syncs and invalid stores. It never reads a Secret.",
   "author": "Sextant",
-  "sextantApi": 4,
+  "sextantApi": 6,
   "entry": "index.html",
   "icon": "externalSecrets",
   "permissions": {
@@ -329,7 +329,8 @@
         ],
         "format": "age",
         "width": "100px",
-        "afterColumn": "es-refresh"
+        "afterColumn": "es-refresh",
+        "sortAs": "time"
       },
       {
         "kind": {
@@ -773,7 +774,8 @@
         ],
         "format": "age",
         "width": "100px",
-        "afterColumn": "ps-refresh"
+        "afterColumn": "ps-refresh",
+        "sortAs": "time"
       },
       {
         "kind": {

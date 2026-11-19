@@ -1,5 +1,13 @@
 # Changes of KServe
 
+## 1.1.0 — 2026-11-19
+
+Needs Sextant 0.30.5 (`sextantApi` 6); Sextant 0.30.0 to 0.30.4 keep 1.0.0. What the built-in view did that extension
+API 5 could not say (ADR-0172):
+
+- **Canary %** sorts and filters as a number, as the built-in column did, and is blank without a split, sorting last
+  (a `sum` column with a `blank` case); before, it filtered as text.
+
 ## 1.0.0 — 2026-11-09
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in KServe view (ADR-0115) as an

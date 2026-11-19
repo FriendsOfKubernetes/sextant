@@ -315,20 +315,14 @@ describe("the problem rules", () => {
           status(o).autoRestart = { count, connectorName: "c", lastRestartTimestamp: last };
           expect(fromRules(o), `${failure} ${maxRestarts} ${count}`).toEqual(builtIn(o));
         }
-        // A status without a count (Strimzi always writes one): the built-in view read 0 restarts and waited one
-        // reconciliation after its time; the rules wait one reconciliation as before the first restart.
+        // A status without a count (Strimzi always writes one): 0 restarts, waiting from its time (1.1.0: a default).
         const uncounted = copy(base);
         status(uncounted).autoRestart = { connectorName: "c", lastRestartTimestamp: last };
-        const told = builtIn(uncounted);
-        expect(fromRules(uncounted), `${failure} ${maxRestarts} uncounted`).toEqual(
-          told.map((d) => (d.activeFrom === undefined ? d : { ...d, activeFrom: undefined, graceMs: RECONCILIATION_MS })),
-        );
-        // A restart time that is no time: the built-in view waited one reconciliation; the rules tell it at once.
+        expect(fromRules(uncounted), `${failure} ${maxRestarts} uncounted`).toEqual(builtIn(uncounted));
+        // A restart time that is no time: one reconciliation's grace, as the built-in view (1.1.0: `isTime`).
         const unreadable = copy(base);
         status(unreadable).autoRestart = { count: 1, connectorName: "c", lastRestartTimestamp: "soon" };
-        expect(fromRules(unreadable), `${failure} ${maxRestarts} unreadable`).toEqual(
-          builtIn(unreadable).map((d) => (d.graceMs === RECONCILIATION_MS ? { ...d, graceMs: undefined } : d)),
-        );
+        expect(fromRules(unreadable), `${failure} ${maxRestarts} unreadable`).toEqual(builtIn(unreadable));
         status(unreadable).autoRestart = { connectorName: "c", lastRestartTimestamp: "soon" };
         expect(fromRules(unreadable), `${failure} ${maxRestarts} unreadable, uncounted`).toEqual(builtIn(unreadable));
       }

@@ -1,0 +1,166 @@
+{
+  "extensions": [
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "ray.io",
+                  "kind": "RayCluster"
+                },
+                {
+                  "group": "ray.io",
+                  "kind": "RayJob"
+                },
+                {
+                  "group": "ray.io",
+                  "kind": "RayService"
+                },
+                {
+                  "group": "",
+                  "kind": "Pod"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          },
+          {
+            "actions": [
+              "logs"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "",
+                  "kind": "Pod"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ]
+      },
+      "grantedProblems": [
+        {
+          "group": "ray.io",
+          "kind": "RayCluster"
+        },
+        {
+          "group": "ray.io",
+          "kind": "RayJob"
+        },
+        {
+          "group": "ray.io",
+          "kind": "RayService"
+        }
+      ],
+      "id": "sextant.kuberay",
+      "installedAt": 1763550000000,
+      "name": "KubeRay",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.1.0"
+    },
+    {
+      "enabled": true,
+      "granted": {
+        "clusters": {
+          "type": "all"
+        },
+        "rules": [
+          {
+            "actions": [
+              "read"
+            ],
+            "confirm": true,
+            "kinds": {
+              "kinds": [
+                {
+                  "group": "autoscaling.k8s.io",
+                  "kind": "VerticalPodAutoscaler"
+                },
+                {
+                  "group": "autoscaling.k8s.io",
+                  "kind": "VerticalPodAutoscalerCheckpoint"
+                },
+                {
+                  "group": "autoscaling",
+                  "kind": "HorizontalPodAutoscaler"
+                },
+                {
+                  "group": "apps",
+                  "kind": "Deployment"
+                },
+                {
+                  "group": "apps",
+                  "kind": "StatefulSet"
+                },
+                {
+                  "group": "apps",
+                  "kind": "DaemonSet"
+                },
+                {
+                  "group": "apps",
+                  "kind": "ReplicaSet"
+                },
+                {
+                  "group": "batch",
+                  "kind": "Job"
+                },
+                {
+                  "group": "batch",
+                  "kind": "CronJob"
+                }
+              ],
+              "type": "only"
+            },
+            "namespaces": {
+              "type": "all"
+            }
+          }
+        ]
+      },
+      "grantedProblems": [
+        {
+          "group": "autoscaling.k8s.io",
+          "kind": "VerticalPodAutoscaler"
+        },
+        {
+          "group": "autoscaling",
+          "kind": "HorizontalPodAutoscaler"
+        }
+      ],
+      "id": "sextant.vpa",
+      "installedAt": 1763550000001,
+      "name": "Vertical Pod Autoscaler",
+      "source": {
+        "keyId": "29A9710652478019",
+        "publicKey": "RWQZgEdSBnGpKZuglLOD+ktnSO64Fmp0EMfjuX451gWMpQglNZRh7aN0",
+        "repository": "FriendsOfKubernetes/sextant-extensions",
+        "type": "catalog"
+      },
+      "version": "1.1.0"
+    }
+  ]
+}

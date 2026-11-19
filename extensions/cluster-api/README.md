@@ -22,8 +22,8 @@ workload cluster).
 | | |
 |---|---|
 | Id | `sextant.cluster-api` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `cluster-api-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Cluster API |
 | Checked against | Cluster API's objects as kubernetes-sigs/cluster-api writes them (`api/core/v1beta2`, `api/core/v1beta1`, `controlplane/kubeadm/api`, `util/conditions`, `util/annotations`) |
@@ -127,18 +127,16 @@ Warning deciding nothing.
 | `c-na-oa`, `c-na-oa-p` | Cluster | The same by the old Available condition | 5 / 30 min | No |
 | `c-na-or`, `c-na-or-p` | Cluster | The same by the old Ready condition (no old Available) | 5 / 30 min | No |
 | `k-failed` | KubeadmControlPlane | A terminal failure in the v1beta1 status (new conditions; its own Paused condition not True) | None | No |
-| `k-failed-o`, `k-failed-o-x`, `k-failed-o-n` | KubeadmControlPlane | The same with only old conditions: its Cluster (the `cluster.x-k8s.io/cluster-name` label) there and not paused, not there, or not named | None | Yes: a paused Cluster leaves it out |
+| `k-failed-o` | KubeadmControlPlane | The same with only old conditions, unless its Cluster (the `cluster.x-k8s.io/cluster-name` label) is there and paused | None | Yes: a paused Cluster leaves it out |
 | `k-na-new` | KubeadmControlPlane | Available False (new conditions) | 5 min, 30 before it is initialized | No |
-| `k-na-oa`, `k-na-oa-x`, `k-na-oa-n` | KubeadmControlPlane | Old Available False, its Cluster there and not paused, not there, or not named | 5 min, 30 before it is initialized | Yes: a paused Cluster leaves it out |
-| `k-na-or`, `k-na-or-x`, `k-na-or-n` | KubeadmControlPlane | The same by the old Ready condition (no old Available) | 5 min, 30 before it is initialized | Yes: a paused Cluster leaves it out |
+| `k-na-oa` | KubeadmControlPlane | Old Available False, unless its Cluster is there and paused | 5 min, 30 before it is initialized | Yes: a paused Cluster leaves it out |
+| `k-na-or` | KubeadmControlPlane | The same by the old Ready condition (no old Available) | 5 min, 30 before it is initialized | Yes: a paused Cluster leaves it out |
 | `m-failed` | Machine | A terminal failure or the Failed phase (new conditions; its own Paused condition not True) | None | No |
-| `m-failed-o`, `m-failed-o-x` | Machine | The same with only old conditions, its Cluster not paused, or not there | None | Yes: a paused Cluster leaves it out |
+| `m-failed-o` | Machine | The same with only old conditions, unless its Cluster is there and paused | None | Yes: a paused Cluster leaves it out |
 | `m-p-v2-bi`, `m-p-v2-n`, `m-p-v2-r` | Machine | Pending, Provisioning or Provisioned (new conditions in `status.v1beta2`), the message of the first of BootstrapConfigReady, InfrastructureReady (`bi`), NodeReady, NodeHealthy (`n`), Ready (`r`) that is not True, else the phase | 30 min | No |
 | `m-p-c-bi`, `m-p-c-n`, `m-p-c-r` | Machine | The same of a v1beta2 Machine | 30 min | No |
-| `m-p-o-in`, `m-p-o-r` | Machine | The same by the old conditions of a v1beta1 Machine (InfrastructureReady, NodeHealthy; Ready), its Cluster not paused | 30 min | Yes: a paused Cluster leaves it out |
-| `m-p-o-in-x`, `m-p-o-r-x` | Machine | The same, its Cluster not there | 30 min | Yes |
-| `m-p-d-i`, `m-p-d-n`, `m-p-d-r` | Machine | The same by the deprecated conditions of a v1beta2 Machine without new ones (InfrastructureReady; NodeHealthy; Ready), its Cluster not paused | 30 min | Yes: a paused Cluster leaves it out |
-| `m-p-d-i-x`, `m-p-d-n-x`, `m-p-d-r-x` | Machine | The same, its Cluster not there | 30 min | Yes |
+| `m-p-o-in`, `m-p-o-r` | Machine | The same by the old conditions of a v1beta1 Machine (InfrastructureReady, NodeHealthy; Ready), unless its Cluster is there and paused | 30 min | Yes: a paused Cluster leaves it out |
+| `m-p-d-i`, `m-p-d-n`, `m-p-d-r` | Machine | The same by the deprecated conditions of a v1beta2 Machine without new ones (InfrastructureReady; NodeHealthy; Ready), unless its Cluster is there and paused | 30 min | Yes: a paused Cluster leaves it out |
 | `h-blocked` | MachineHealthCheck | RemediationAllowed False (new conditions): more Machines unhealthy than it allows | 2 min | No |
 | `h-blocked-o` | MachineHealthCheck | The same by the old condition | 2 min | No |
 
@@ -174,10 +172,8 @@ None: the extension is read-only and has no action of its own (ADR-0113).
     condition shows its first old one of severity Error (the built-in view showed none), as does a v1beta2
     MachineSet, KubeadmControlPlane or MachineHealthCheck with no failing new condition and a failing deprecated one;
     and a v1beta2 Cluster, Machine or MachineDeployment with only deprecated conditions shows its phase alone.
-  - **A paused Cluster's objects with only old conditions** (Cluster API before 1.9) are judged by that Cluster, which
-    Sextant must have read in full: while it cannot (a Cluster list the extension or you may not read), their problems
-    stay out, where the built-in view kept them. Their "Only problems" leaves them out while their Cluster is paused,
-    where the built-in filter, which knew no pause, listed them.
+  - **"Only problems" of a paused Cluster's objects with only old conditions** (Cluster API before 1.9) leaves them
+    out while their Cluster is paused, where the built-in filter, which knew no pause, listed them.
   - **The workload cluster's buttons** open Sextant's own dialog naming the matching clusters (`ui.openCluster`), where
     the built-in buttons opened the cluster at once; Sextant's clusters and served kinds are read when the details
     open, where the built-in view followed them while open.

@@ -1,5 +1,13 @@
 # Changes of Vertical Pod Autoscaler
 
+## 1.1.0 — 2026-11-19
+
+Needs Sextant 0.30.5 (`sextantApi` 6); Sextant 0.30.0 to 0.30.4 keep 1.0.0. What the built-in view did that extension
+API 5 could not say (ADR-0172):
+
+- **A fight with an HPA is told for each fighting HPA**, its message naming it and notifying once per VPA and HPA, as
+  the built-in problem did (`relatedBy` `each`); before, several HPAs on one target were named together in one problem.
+
 ## 1.0.0 — 2026-11-10
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in Vertical Pod Autoscaler view

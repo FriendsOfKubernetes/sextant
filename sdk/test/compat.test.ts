@@ -220,6 +220,8 @@ describe("frozen packages: their own SDK against today's Sextant", () => {
       "published/sextant.cert-manager-1.0.0.sextant-ext",
       "sdk-0.30.1/sextant.karpenter-1.1.0.sextant-ext",
       "sdk-0.30.1/sextant.k3s-1.1.0.sextant-ext",
+      "sdk-0.30.5/sextant.kuberay-1.1.0.sextant-ext",
+      "sdk-0.30.5/sextant.vpa-1.1.0.sextant-ext",
     ];
     const found = readdirSync(COMPAT, { withFileTypes: true })
       .filter((e) => e.isDirectory())
@@ -357,6 +359,38 @@ describe("extensions of API 5 (Sextant 0.30.1)", () => {
     const doc = open("sdk-0.30.1/sextant.k3s-1.1.0.sextant-ext", context("sextant.k3s", { contribution: "distribution" }));
     await vi.waitFor(() => expect(doc.body.textContent).toContain("k3s-server-1"), { timeout: 4000 });
     expect(calls()).toContain("resources.watch");
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
+});
+
+describe("extensions of API 6 (Sextant 0.30.5)", () => {
+  const refOf = (o: KubeObject) => ({
+    kind: { group: groupOf(o.apiVersion), version: o.apiVersion.split("/").pop()!, kind: o.kind },
+    namespace: o.metadata.namespace ?? null,
+    name: o.metadata.name,
+  });
+
+  it("sdk-0.30.5/sextant.kuberay-1.1.0.sextant-ext: a RayCluster's details section looks for its pods", async () => {
+    const objects = objectsIn(fixture("kuberay/fixtures/objects.json"));
+    serve(objects);
+    const cluster = objects.find((o) => o.kind === "RayCluster" && o.metadata.name === "raycluster-kuberay")!;
+    const doc = open(
+      "sdk-0.30.5/sextant.kuberay-1.1.0.sextant-ext",
+      context("sextant.kuberay", { view: "details", contribution: "ray-cluster", selection: [refOf(cluster)], resourceVersion: "1" }),
+    );
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("1 to 5"), { timeout: 4000 });
+    expect(onFrameError).not.toHaveBeenCalled();
+  });
+
+  it("sdk-0.30.5/sextant.vpa-1.1.0.sextant-ext: a VPA's details section explains its mode", async () => {
+    const objects = objectsIn(fixture("vpa/fixtures/objects.json"));
+    serve(objects);
+    const vpa = objects.find((o) => o.kind === "VerticalPodAutoscaler" && o.metadata.name === "hamster-vpa") ?? objects.find((o) => o.kind === "VerticalPodAutoscaler")!;
+    const doc = open(
+      "sdk-0.30.5/sextant.vpa-1.1.0.sextant-ext",
+      context("sextant.vpa", { view: "details", contribution: "vpa", selection: [refOf(vpa)], resourceVersion: "1" }),
+    );
+    await vi.waitFor(() => expect(doc.body.textContent).toContain("Recreate (default)"), { timeout: 4000 });
     expect(onFrameError).not.toHaveBeenCalled();
   });
 });

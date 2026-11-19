@@ -1,5 +1,15 @@
 # Changes of Strimzi
 
+## 1.1.0 — 2026-11-19
+
+Needs Sextant 0.30.5 (`sextantApi` 6); Sextant 0.30.0 to 0.30.4 keep 1.0.0. What the built-in view did that extension
+API 5 could not say (ADR-0172):
+
+- **A failed KafkaConnector waits for Strimzi's automatic restarts exactly as the built-in view did**: an
+  auto-restart status without a count is read as 0 restarts and waits from its restart time (a compared path's
+  default, `?? 0`, and `maxRestarts ?? 7`), and a restart time that is there but no time waits one reconciliation
+  (`isTime`); before, the first waited as before any restart and the second was told at once.
+
 ## 1.0.0 — 2026-11-09
 
 Needs Sextant 0.30 (`sextantApi` 4) with ADR-0167's additions. The first release: Sextant's former built-in Strimzi

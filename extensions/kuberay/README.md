@@ -18,8 +18,8 @@ conditions), ADR-0165 (paths picking a map's value) and ADR-0167 (every match of
 | | |
 |---|---|
 | Id | `sextant.kuberay` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `kuberay-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → KubeRay |
 | Checked against | KubeRay's `ray.io/v1` objects as ray-operator/apis/ray/v1 writes them: the conditions of 1.2 and later, the deprecated `status.state` and `serviceStatus` of older operators |
@@ -40,7 +40,8 @@ with the built-in widths:
 - Ray Clusters: **Status** (`cluster-status`: Ready, Provisioning, Head not ready, Suspending, Suspended or Failed,
   coloured, Suspending and Suspended muted; on hover why it failed or waits: the failing condition's message or
   reason, else `status.reason`), **Workers** (`cluster-workers`: ready worker pods of desired, "1/3"; without
-  `status.desiredWorkerReplicas` the replicas of the worker groups not suspended), **Head IP** (`cluster-head-ip`)
+  `status.desiredWorkerReplicas` the replicas, else `minReplicas`, times the hosts of the worker groups not
+  suspended), **Head IP** (`cluster-head-ip`)
   and **Ray version** (`cluster-ray-version`).
 - Ray Jobs: **Status** (`job-status`: Succeeded, Running, Pending, Retrying, Stopped, Suspended or Failed, coloured,
   Pending, Stopped and Suspended muted, KubeRay's message on hover), **Job status** (`job-job-status`, Ray's),
@@ -139,18 +140,8 @@ None: the extension is read-only. It has no action of its own.
 ## Requirements and limits
 
 - KubeRay's CRDs; the section shows only the kinds the cluster serves.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - The failed Serve application whose message counts is the first by name whose status is none of NOT_STARTED,
-    DEPLOYING, RUNNING and DELETING (a path step cannot match one of several values): an application without a status
-    sorting before the failed one would give its (empty) message — KubeRay always copies Ray Serve's status, and Ray
-    Serve has no other. Names sort by their characters (the built-in view compared them in the UI language), which
-    differs only for names in mixed case.
-  - The Workers column of a RayCluster without `status.desiredWorkerReplicas` (operators before it) is empty when a
-    worker group not suspended has `numOfHosts` other than 1 or no `replicas`: a sum cannot multiply an item's values
-    or fall back to its `minReplicas`, as the built-in one did (a list column's `items` writes items, it does not add
-    them up).
-  - The rules watch at most 20 000 RayClusters and 20 000 RayServices (the most a rule's source takes); the built-in
-    problems had no cap there.
+- Where it differs from the former built-in view: the rules watch at most 20 000 RayClusters and 20 000 RayServices
+  (the most a rule's source takes); the built-in problems had no cap there.
 - Checked by tests on fixtures of KubeRay's objects (copied from the built-in view) against the built-in readings,
   masking and rules; not yet tried on a live cluster.
 

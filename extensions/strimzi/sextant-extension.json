@@ -2,10 +2,10 @@
   "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
   "id": "sextant.strimzi",
   "name": "Strimzi",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Strimzi (Apache Kafka on Kubernetes): Kafkas with their listeners and node pools, topics, users, Kafka Connect, MirrorMaker 2 and connectors with their readiness, the connectors' and tasks' states and stack traces; problems of objects that are not ready and of failed connectors and tasks.",
   "author": "Sextant",
-  "sextantApi": 4,
+  "sextantApi": 6,
   "entry": "index.html",
   "icon": "strimzi",
   "permissions": {
@@ -1439,36 +1439,8 @@
                 },
                 {
                   "type": "atLeast",
-                  "path": ".status.autoRestart.count",
-                  "otherPath": ".spec.autoRestart.maxRestarts"
-                },
-                {
-                  "type": "all",
-                  "of": [
-                    {
-                      "type": "absent",
-                      "path": ".status.autoRestart.count"
-                    },
-                    {
-                      "type": "below",
-                      "path": ".spec.autoRestart.maxRestarts",
-                      "value": 1
-                    }
-                  ]
-                },
-                {
-                  "type": "all",
-                  "of": [
-                    {
-                      "type": "absent",
-                      "path": ".spec.autoRestart.maxRestarts"
-                    },
-                    {
-                      "type": "above",
-                      "path": ".status.autoRestart.count",
-                      "value": 6
-                    }
-                  ]
+                  "path": ".status.autoRestart.count ?? 0",
+                  "otherPath": ".spec.autoRestart.maxRestarts ?? 7"
                 }
               ]
             }
@@ -1510,57 +1482,18 @@
               "value": true
             },
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.autoRestart.lastRestartTimestamp"
-                },
-                {
-                  "type": "absent",
-                  "path": ".status.autoRestart.count"
-                }
-              ]
+              "type": "not",
+              "of": {
+                "type": "isTime",
+                "path": ".status.autoRestart.lastRestartTimestamp"
+              }
             },
             {
               "type": "not",
               "of": {
-                "type": "any",
-                "of": [
-                  {
-                    "type": "atLeast",
-                    "path": ".status.autoRestart.count",
-                    "otherPath": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".status.autoRestart.count"
-                      },
-                      {
-                        "type": "below",
-                        "path": ".spec.autoRestart.maxRestarts",
-                        "value": 1
-                      }
-                    ]
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".spec.autoRestart.maxRestarts"
-                      },
-                      {
-                        "type": "above",
-                        "path": ".status.autoRestart.count",
-                        "value": 6
-                      }
-                    ]
-                  }
-                ]
+                "type": "atLeast",
+                "path": ".status.autoRestart.count ?? 0",
+                "otherPath": ".spec.autoRestart.maxRestarts ?? 7"
               }
             }
           ]
@@ -1602,48 +1535,11 @@
               "value": true
             },
             {
-              "type": "exists",
-              "path": ".status.autoRestart.count"
-            },
-            {
               "type": "not",
               "of": {
-                "type": "any",
-                "of": [
-                  {
-                    "type": "atLeast",
-                    "path": ".status.autoRestart.count",
-                    "otherPath": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".status.autoRestart.count"
-                      },
-                      {
-                        "type": "below",
-                        "path": ".spec.autoRestart.maxRestarts",
-                        "value": 1
-                      }
-                    ]
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".spec.autoRestart.maxRestarts"
-                      },
-                      {
-                        "type": "above",
-                        "path": ".status.autoRestart.count",
-                        "value": 6
-                      }
-                    ]
-                  }
-                ]
+                "type": "atLeast",
+                "path": ".status.autoRestart.count ?? 0",
+                "otherPath": ".spec.autoRestart.maxRestarts ?? 7"
               }
             },
             {
@@ -1652,22 +1548,20 @@
                 {
                   "type": "olderThan",
                   "path": ".status.autoRestart.lastRestartTimestamp",
-                  "minutes": 2,
-                  "orUnreadable": true
+                  "minutes": 2
                 },
                 {
                   "type": "any",
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 1
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 4,
-                      "orUnreadable": true
+                      "minutes": 4
                     }
                   ]
                 },
@@ -1676,14 +1570,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 2
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 8,
-                      "orUnreadable": true
+                      "minutes": 8
                     }
                   ]
                 },
@@ -1692,14 +1585,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 3
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 14,
-                      "orUnreadable": true
+                      "minutes": 14
                     }
                   ]
                 },
@@ -1708,14 +1600,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 4
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 22,
-                      "orUnreadable": true
+                      "minutes": 22
                     }
                   ]
                 },
@@ -1724,14 +1615,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 5
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 32,
-                      "orUnreadable": true
+                      "minutes": 32
                     }
                   ]
                 },
@@ -1740,14 +1630,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 6
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 44,
-                      "orUnreadable": true
+                      "minutes": 44
                     }
                   ]
                 },
@@ -1756,14 +1645,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 7
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 58,
-                      "orUnreadable": true
+                      "minutes": 58
                     }
                   ]
                 },
@@ -1772,14 +1660,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 8
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 62,
-                      "orUnreadable": true
+                      "minutes": 62
                     }
                   ]
                 }
@@ -1829,36 +1716,8 @@
                 },
                 {
                   "type": "atLeast",
-                  "path": ".status.autoRestart.count",
-                  "otherPath": ".spec.autoRestart.maxRestarts"
-                },
-                {
-                  "type": "all",
-                  "of": [
-                    {
-                      "type": "absent",
-                      "path": ".status.autoRestart.count"
-                    },
-                    {
-                      "type": "below",
-                      "path": ".spec.autoRestart.maxRestarts",
-                      "value": 1
-                    }
-                  ]
-                },
-                {
-                  "type": "all",
-                  "of": [
-                    {
-                      "type": "absent",
-                      "path": ".spec.autoRestart.maxRestarts"
-                    },
-                    {
-                      "type": "above",
-                      "path": ".status.autoRestart.count",
-                      "value": 6
-                    }
-                  ]
+                  "path": ".status.autoRestart.count ?? 0",
+                  "otherPath": ".spec.autoRestart.maxRestarts ?? 7"
                 }
               ]
             }
@@ -1899,57 +1758,18 @@
               "value": true
             },
             {
-              "type": "any",
-              "of": [
-                {
-                  "type": "absent",
-                  "path": ".status.autoRestart.lastRestartTimestamp"
-                },
-                {
-                  "type": "absent",
-                  "path": ".status.autoRestart.count"
-                }
-              ]
+              "type": "not",
+              "of": {
+                "type": "isTime",
+                "path": ".status.autoRestart.lastRestartTimestamp"
+              }
             },
             {
               "type": "not",
               "of": {
-                "type": "any",
-                "of": [
-                  {
-                    "type": "atLeast",
-                    "path": ".status.autoRestart.count",
-                    "otherPath": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".status.autoRestart.count"
-                      },
-                      {
-                        "type": "below",
-                        "path": ".spec.autoRestart.maxRestarts",
-                        "value": 1
-                      }
-                    ]
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".spec.autoRestart.maxRestarts"
-                      },
-                      {
-                        "type": "above",
-                        "path": ".status.autoRestart.count",
-                        "value": 6
-                      }
-                    ]
-                  }
-                ]
+                "type": "atLeast",
+                "path": ".status.autoRestart.count ?? 0",
+                "otherPath": ".spec.autoRestart.maxRestarts ?? 7"
               }
             }
           ]
@@ -1990,48 +1810,11 @@
               "value": true
             },
             {
-              "type": "exists",
-              "path": ".status.autoRestart.count"
-            },
-            {
               "type": "not",
               "of": {
-                "type": "any",
-                "of": [
-                  {
-                    "type": "atLeast",
-                    "path": ".status.autoRestart.count",
-                    "otherPath": ".spec.autoRestart.maxRestarts"
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".status.autoRestart.count"
-                      },
-                      {
-                        "type": "below",
-                        "path": ".spec.autoRestart.maxRestarts",
-                        "value": 1
-                      }
-                    ]
-                  },
-                  {
-                    "type": "all",
-                    "of": [
-                      {
-                        "type": "absent",
-                        "path": ".spec.autoRestart.maxRestarts"
-                      },
-                      {
-                        "type": "above",
-                        "path": ".status.autoRestart.count",
-                        "value": 6
-                      }
-                    ]
-                  }
-                ]
+                "type": "atLeast",
+                "path": ".status.autoRestart.count ?? 0",
+                "otherPath": ".spec.autoRestart.maxRestarts ?? 7"
               }
             },
             {
@@ -2040,22 +1823,20 @@
                 {
                   "type": "olderThan",
                   "path": ".status.autoRestart.lastRestartTimestamp",
-                  "minutes": 2,
-                  "orUnreadable": true
+                  "minutes": 2
                 },
                 {
                   "type": "any",
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 1
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 4,
-                      "orUnreadable": true
+                      "minutes": 4
                     }
                   ]
                 },
@@ -2064,14 +1845,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 2
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 8,
-                      "orUnreadable": true
+                      "minutes": 8
                     }
                   ]
                 },
@@ -2080,14 +1860,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 3
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 14,
-                      "orUnreadable": true
+                      "minutes": 14
                     }
                   ]
                 },
@@ -2096,14 +1875,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 4
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 22,
-                      "orUnreadable": true
+                      "minutes": 22
                     }
                   ]
                 },
@@ -2112,14 +1890,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 5
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 32,
-                      "orUnreadable": true
+                      "minutes": 32
                     }
                   ]
                 },
@@ -2128,14 +1905,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 6
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 44,
-                      "orUnreadable": true
+                      "minutes": 44
                     }
                   ]
                 },
@@ -2144,14 +1920,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 7
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 58,
-                      "orUnreadable": true
+                      "minutes": 58
                     }
                   ]
                 },
@@ -2160,14 +1935,13 @@
                   "of": [
                     {
                       "type": "below",
-                      "path": ".status.autoRestart.count",
+                      "path": ".status.autoRestart.count ?? 0",
                       "value": 8
                     },
                     {
                       "type": "olderThan",
                       "path": ".status.autoRestart.lastRestartTimestamp",
-                      "minutes": 62,
-                      "orUnreadable": true
+                      "minutes": 62
                     }
                   ]
                 }

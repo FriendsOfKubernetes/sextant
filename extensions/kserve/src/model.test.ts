@@ -556,10 +556,15 @@ describe("the columns, against the built-in ones", () => {
       expect(sortOf("isvc-mode", o), label).toBe(deploymentModeOf(o)?.raw);
       const canary = canaryPercent(o);
       expect(cell("isvc-canary", o), label).toBe(canary === undefined ? undefined : String(canary));
-      // A number, or the same number as text (the table's collator compares text numerically).
-      const sorted = sortOf("isvc-canary", o);
-      expect(sorted === undefined ? undefined : Number(sorted), label).toBe(canary);
+      // A number (1.1.0: a sum with a blank case), filtered as one; nothing without a split, so it sorts last.
+      expect(sortOf("isvc-canary", o), label).toBe(canary);
+      expect(filterOf("isvc-canary", o), label).toEqual({ type: "number", value: canary });
     }
+    // A split with no latest revision in it: 0, as the built-in sum of none (1.1.0).
+    const noLatest = isvc("sklearn-iris");
+    ((st(noLatest).components as Record<string, Record<string, unknown>>).predictor!).traffic = [{ revisionName: "a", percent: 60 }, { revisionName: "b", percent: 40 }];
+    expect(canaryPercent(noLatest)).toBe(0);
+    expect([cell("isvc-canary", noLatest), sortOf("isvc-canary", noLatest)]).toEqual(["0", 0]);
     const leaky = isvc("sklearn-iris");
     st(leaky).url = "https://u:tok@sklearn-iris.default.example.com/?sig=1";
     expect(cell("isvc-url", leaky)).toBe("https://sklearn-iris.default.example.com/");

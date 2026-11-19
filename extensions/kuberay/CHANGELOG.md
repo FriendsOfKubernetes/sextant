@@ -1,5 +1,18 @@
 # Changes of KubeRay
 
+## 1.1.0 — 2026-11-19
+
+Needs Sextant 0.30.5 (`sextantApi` 6); Sextant 0.30.0 to 0.30.4 keep 1.0.0. What the built-in view did that extension
+API 5 could not say (ADR-0172):
+
+- **Workers** of a RayCluster without `status.desiredWorkerReplicas` (operators before it) adds, for each worker group
+  not suspended, its `replicas`, else `minReplicas`, times its `numOfHosts` (1 when not set or not positive), as the
+  built-in column did (`|sumOf:`); before, such a cell was empty for a multi-host group or one without `replicas`.
+- **The failed Serve application** whose message counts (Status's hover, the problem) is the first that failed to
+  deploy or is unhealthy (a match of several values), its name first in the UI language's order (`^`), as the built-in
+  view sorted them; before, an application without a status sorting first gave its empty message, and names sorted by
+  their characters.
+
 ## 1.0.0 — 2026-11-09
 
 Needs Sextant 0.30 (`sextantApi` 4). The first release: Sextant's former built-in KubeRay view (ADR-0115) as an

@@ -2,10 +2,10 @@
  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
  "id": "sextant.kuberay",
  "name": "KubeRay",
- "version": "1.0.0",
+ "version": "1.1.0",
  "description": "KubeRay: Ray clusters with their head, worker groups and pods, Ray jobs with their entrypoint and submitter, and Ray Serve services with their applications; problems of failed clusters and jobs and of services that are not ready. Read-only.",
  "author": "Sextant",
- "sextantApi": 4,
+ "sextantApi": 6,
  "entry": "index.html",
  "icon": "kuberay",
  "permissions": {
@@ -583,91 +583,17 @@
      },
      {
       "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "exists",
-         "path": ".status.readyWorkerReplicas"
-        },
-        {
-         "type": "all",
-         "of": [
-          {
-           "type": "same",
-           "path": ".spec.workerGroupSpecs[suspend!=\"true\",*].replicas|count",
-           "otherPath": ".spec.workerGroupSpecs[suspend!=\"true\",*]|count"
-          },
-          {
-           "type": "equals",
-           "path": ".spec.workerGroupSpecs[suspend!=\"true\",numOfHosts!=\"1\",*].numOfHosts|count",
-           "value": 0
-          }
-         ]
-        }
-       ]
+       "type": "absent",
+       "path": ".status.desiredWorkerReplicas"
       },
-      "text": "{{.status.readyWorkerReplicas}}/{{.spec.workerGroupSpecs[suspend!=\"true\",*].replicas|sum}}"
+      "text": "{{.status.readyWorkerReplicas ?? 0}}/{{.spec.workerGroupSpecs[suspend!=\"true\",*]|sumOf:.replicas ?? .minReplicas ?? 0 * .numOfHosts>0 ?? 1}}"
      },
      {
       "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "same",
-         "path": ".spec.workerGroupSpecs[suspend!=\"true\",*].replicas|count",
-         "otherPath": ".spec.workerGroupSpecs[suspend!=\"true\",*]|count"
-        },
-        {
-         "type": "equals",
-         "path": ".spec.workerGroupSpecs[suspend!=\"true\",numOfHosts!=\"1\",*].numOfHosts|count",
-         "value": 0
-        }
-       ]
+       "type": "absent",
+       "path": ".status.desiredWorkerReplicas"
       },
-      "text": "0/{{.spec.workerGroupSpecs[suspend!=\"true\",*].replicas|sum}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {
-         "type": "exists",
-         "path": ".status.readyWorkerReplicas"
-        },
-        {
-         "type": "any",
-         "of": [
-          {
-           "type": "absent",
-           "path": ".spec.workerGroupSpecs"
-          },
-          {
-           "type": "equals",
-           "path": ".spec.workerGroupSpecs[suspend!=\"true\",*]|count",
-           "value": 0
-          }
-         ]
-        }
-       ]
-      },
-      "text": "{{.status.readyWorkerReplicas}}/0"
-     },
-     {
-      "when": {
-       "type": "any",
-       "of": [
-        {
-         "type": "absent",
-         "path": ".spec.workerGroupSpecs"
-        },
-        {
-         "type": "equals",
-         "path": ".spec.workerGroupSpecs[suspend!=\"true\",*]|count",
-         "value": 0
-        }
-       ]
-      },
-      "text": "0/0"
+      "text": "{{.status.readyWorkerReplicas ?? 0}}/0"
      }
     ],
     "afterColumn": "cluster-status",
@@ -917,7 +843,7 @@
       },
       "text": "Suspended",
       "tone": "muted",
-      "tooltip": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+      "tooltip": "{{.status.activeServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message}}",
       "tooltipOr": [
        "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
        "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
@@ -942,7 +868,7 @@
       },
       "text": "Suspended",
       "tone": "muted",
-      "tooltip": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+      "tooltip": "{{.status.pendingServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message}}",
       "tooltipOr": [
        "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
        "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
@@ -1053,7 +979,7 @@
       },
       "text": "Failed",
       "tone": "error",
-      "tooltip": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+      "tooltip": "{{.status.activeServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message}}",
       "tooltipOr": [
        "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
        "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
@@ -1137,7 +1063,7 @@
       },
       "text": "Failed",
       "tone": "error",
-      "tooltip": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+      "tooltip": "{{.status.pendingServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message}}",
       "tooltipOr": [
        "{{.status.conditions[type=\"Ready\",status=\"False\"].message}}",
        "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}"
@@ -1909,7 +1835,7 @@
     },
     "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
     "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+    "message": "{{.status.activeServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2010,7 +1936,7 @@
     },
     "since": ".status.conditions[type=\"Ready\"].lastTransitionTime",
     "reason": "{{.status.conditions[type=\"Ready\"].reason}}",
-    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+    "message": "{{.status.pendingServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2099,7 +2025,7 @@
     "graceMinutes": 10,
     "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "reasonOr": "ServeApplicationFailed",
-    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+    "message": "{{.status.activeServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2213,7 +2139,7 @@
     "graceMinutes": 10,
     "reason": "{{.status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "reasonOr": "ServeApplicationFailed",
-    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
+    "message": "{{.status.pendingServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message ?? .status.conditions[type=\"Ready\",status=\"False\"].message ?? .status.conditions[type=\"Ready\",status=\"False\"].reason}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2276,7 +2202,7 @@
     },
     "graceMinutes": 5,
     "reason": "ServeApplicationFailed",
-    "message": "{{.status.activeServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+    "message": "{{.status.activeServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000
@@ -2364,7 +2290,7 @@
     },
     "graceMinutes": 5,
     "reason": "ServeApplicationFailed",
-    "message": "{{.status.pendingServiceStatus.applicationStatuses[status!=\"NOT_STARTED\",status!=\"DEPLOYING\",status!=\"RUNNING\",status!=\"DELETING\"].message}}",
+    "message": "{{.status.pendingServiceStatus.applicationStatuses[status=(\"DEPLOY_FAILED\",\"UNHEALTHY\"),^].message}}",
     "group": "not-ready",
     "source": {
      "maxObjects": 20000

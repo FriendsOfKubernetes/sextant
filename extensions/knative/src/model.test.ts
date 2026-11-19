@@ -11,6 +11,7 @@ import eventingJson from "../fixtures/eventing.json";
 import revisionsJson from "../fixtures/revisions.json";
 import serviceJson from "../fixtures/service.json";
 import en from "./locales/en.json";
+import { filterFacts } from "./judges";
 import {
   addressOf,
   brokerClassOf,
@@ -641,8 +642,12 @@ describe("the columns, against the built-in ones", () => {
     ];
     for (const o of variants) {
       const expected = trafficSummary(o, word("latest")!) || undefined;
-      expect(cell("route-traffic", o), JSON.stringify(st(o).traffic ?? o.spec)).toBe(expected);
-      expect(drawn("route-traffic", o).title).toBe(expected);
+      expect(drawn("route-traffic", o).title, JSON.stringify(st(o).traffic ?? o.spec)).toBe(expected);
+      // Sorted, filtered and searched as the built-in column's value: the latest revision without its word (1.2.0).
+      const value = trafficSummary(o, "") || undefined;
+      expect(cell("route-traffic", o), JSON.stringify(st(o).traffic ?? o.spec)).toBe(value);
+      expect(windowColumn("route-traffic").value(o) || undefined).toBe(value);
+      expect(windowColumn("route-traffic").filter?.value(o, { now: NOW, t: T }) || undefined).toBe(value);
     }
   });
 
@@ -725,16 +730,26 @@ describe("the columns, against the built-in ones", () => {
       withSpec({ filters: [{ exact: { type: "t" }, prefix: {}, all: [] }] }),
       withSpec({ filters: [{ exact: { type: "t" } }, { exact: { type: "t" } }] }),
     ];
-    for (const o of exact) {
-      const expected = filterText(triggerFilter(o).terms) || undefined;
-      expect(cell("trigger-filter", o), JSON.stringify(o.spec)).toBe(expected);
-      expect(drawn("trigger-filter", o).title).toBe(expected);
+    // Every filter, nested ones and several dialects included (1.2.0): the backend's judge writes the built-in text.
+    const nested = [
+      find("Trigger", "orders-trigger"),
+      withSpec({ filters: [{ any: [{ exact: { type: "a" } }] }] }),
+      withSpec({ filters: [{ exact: { type: "a" }, cesql: "x" }] }),
+      withSpec({ filter: { attributes: { source: "/a", subject: "x" } } }),
+      withSpec({ filters: [{ all: [{ exact: { a: "1", b: "2" } }, { not: { prefix: { type: "x." } } }] }, { any: [{ exact: { a: "1", b: "2" } }, { suffix: { s: ".json" } }] }] }),
+    ];
+    const judged = (o: KubeObject) =>
+      filterFacts([{ apiVersion: o.apiVersion!, kind: o.kind!, metadata: { name: o.metadata.name!, uid: o.metadata.uid ?? "u" }, values: { ".spec.filters": (o.spec as Record<string, unknown>).filters, ".spec.filter": (o.spec as Record<string, unknown>).filter } }])[0]?.values.text;
+    for (const o of [...exact, ...nested]) {
+      expect(judged(o), JSON.stringify(o.spec)).toBe(filterText(triggerFilter(o).terms) || undefined);
     }
-    // Beyond what the cases say: nested terms, or several dialects in one filter, are "…".
-    expect(cell("trigger-filter", find("Trigger", "orders-trigger"))).toBe("type=com.example.order, …");
-    expect(cell("trigger-filter", withSpec({ filters: [{ any: [{ exact: { type: "a" } }] }] }))).toBe("…");
-    expect(cell("trigger-filter", withSpec({ filters: [{ exact: { type: "a" }, cesql: "x" }] }))).toBe("…");
-    expect(cell("trigger-filter", withSpec({ filter: { attributes: { source: "/a", subject: "x" } } }))).toBe("…");
+    expect(judged(nested[4]!)).toBe("(a=1, b=2, !(type=x.*)), (a=1 | b=2 | s=*.json)");
+    // The column shows the judge's text, cell and hover; nothing while it gives none.
+    expect(columnOf("trigger-filter").cases).toEqual([{ when: { type: "judged", judge: "filters", fact: "filter" }, text: "{{fact:text}}", tooltip: "{{fact:text}}" }]);
+    expect(manifest.contributes.problemJudges).toEqual([
+      { id: "filters", reads: [{ kind: { group: "eventing.knative.dev", kind: "Trigger" }, paths: [".spec.filters", ".spec.filter"] }], facts: [{ id: "filter", values: ["text"] }] },
+    ]);
+    expect(cell("trigger-filter", trigger)).toBeUndefined();
   });
 });
 

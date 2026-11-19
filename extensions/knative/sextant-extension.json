@@ -2,11 +2,12 @@
  "$schema": "../../crates/sextant-core/src/extensions/manifest.schema.json",
  "id": "sextant.knative",
  "name": "Knative",
- "version": "1.1.0",
+ "version": "1.2.0",
  "description": "Knative Serving and Eventing: Services, Configurations, Revisions, Routes and DomainMappings with their state, URL, revisions and traffic split; Brokers, Triggers, Channels, Subscriptions, Sequences, Parallels and sources with where they send events and the event path; problems of objects that are not ready. Read-only.",
  "author": "Sextant",
- "sextantApi": 4,
+ "sextantApi": 6,
  "entry": "index.html",
+ "backend": {"module": "backend.wasm"},
  "icon": "knative",
  "permissions": {
   "clusters": {"type":"all"},
@@ -478,11 +479,13 @@
     "title": "Traffic",
     "paths": [".status.traffic",".spec.traffic"],
     "format": "list",
+    "filterBy": "value",
+    "searchBy": "value",
     "width": "minmax(160px, 2fr)",
     "items": {
      "cases": [
       {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"exists","path":".revisionName"}]},"text":"{{.revisionName}} {{.percent}}%"},
-      {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"equals","path":".latestRevision","value":true}]},"text":"latest {{.percent}}%"},
+      {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"equals","path":".latestRevision","value":true}]},"text":"latest {{.percent}}%","value":" {{.percent}}%"},
       {"when":{"type":"all","of":[{"type":"above","path":".percent","value":0},{"type":"exists","path":".configurationName"}]},"text":"{{.configurationName}} {{.percent}}%"},
       {"when":{"type":"above","path":".percent","value":0},"text":"? {{.percent}}%"}
      ],
@@ -651,229 +654,10 @@
     "id": "trigger-filter",
     "title": "Filter",
     "paths": [".spec.filters"],
-    "format": "list",
     "width": "minmax(140px, 2fr)",
     "cases": [
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":1},
-        {"type":"equals","path":".spec.filter.attributes.type","value":""}
-       ]
-      },
-      "text": "type=*",
-      "tooltip": "type=*"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":1},
-        {"type":"exists","path":".spec.filter.attributes.type"}
-       ]
-      },
-      "text": "type={{.spec.filter.attributes.type}}",
-      "tooltip": "type={{.spec.filter.attributes.type}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":1},
-        {"type":"equals","path":".spec.filter.attributes.source","value":""}
-       ]
-      },
-      "text": "source=*",
-      "tooltip": "source=*"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":1},
-        {"type":"exists","path":".spec.filter.attributes.source"}
-       ]
-      },
-      "text": "source={{.spec.filter.attributes.source}}",
-      "tooltip": "source={{.spec.filter.attributes.source}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":2},
-        {"type":"equals","path":".spec.filter.attributes.source","value":""},
-        {"type":"equals","path":".spec.filter.attributes.type","value":""}
-       ]
-      },
-      "text": "source=*, type=*",
-      "tooltip": "source=*, type=*"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":2},
-        {"type":"equals","path":".spec.filter.attributes.source","value":""},
-        {"type":"exists","path":".spec.filter.attributes.type"}
-       ]
-      },
-      "text": "source=*, type={{.spec.filter.attributes.type}}",
-      "tooltip": "source=*, type={{.spec.filter.attributes.type}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":2},
-        {"type":"exists","path":".spec.filter.attributes.source"},
-        {"type":"equals","path":".spec.filter.attributes.type","value":""}
-       ]
-      },
-      "text": "source={{.spec.filter.attributes.source}}, type=*",
-      "tooltip": "source={{.spec.filter.attributes.source}}, type=*"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":2},
-        {"type":"exists","path":".spec.filter.attributes.source"},
-        {"type":"exists","path":".spec.filter.attributes.type"}
-       ]
-      },
-      "text": "source={{.spec.filter.attributes.source}}, type={{.spec.filter.attributes.type}}",
-      "tooltip": "source={{.spec.filter.attributes.source}}, type={{.spec.filter.attributes.type}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"equals","path":".spec.filter.attributes|count","value":1}
-       ]
-      },
-      "text": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*] ?? \"*\"|join}}",
-      "tooltip": "{{.spec.filter.attributes|keys}}={{.spec.filter.attributes[*] ?? \"*\"|join}}"
-     },
-     {
-      "when": {
-       "type": "all",
-       "of": [
-        {"type":"all","of":[{"type":"absent","path":".spec.filters[0]"},{"type":"not","of":{"type":"above","path":".spec.filters|count","value":0}}]},
-        {"type":"above","path":".spec.filter.attributes|count","value":0}
-       ]
-      },
-      "text": "…",
-      "tooltip": "…"
-     }
+     {"when":{"type":"judged","judge":"filters","fact":"filter"},"text":"{{fact:text}}","tooltip":"{{fact:text}}"}
     ],
-    "items": {
-     "cases": [
-      {
-       "when": {
-        "type": "all",
-        "of": [
-         {"type":"equals","path":".exact|count","value":1},
-         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
-         {"type":"not","of":{"type":"exists","path":".not"}},
-         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
-        ]
-       },
-       "text": "{{.exact|keys}}={{.exact[*]|join}}"
-      },
-      {
-       "when": {
-        "type": "all",
-        "of": [
-         {"type":"equals","path":".prefix|count","value":1},
-         {"type":"not","of":{"type":"above","path":".exact|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
-         {"type":"not","of":{"type":"exists","path":".not"}},
-         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
-        ]
-       },
-       "text": "{{.prefix|keys}}={{.prefix[*]|join}}*"
-      },
-      {
-       "when": {
-        "type": "all",
-        "of": [
-         {"type":"equals","path":".suffix|count","value":1},
-         {"type":"not","of":{"type":"above","path":".exact|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
-         {"type":"not","of":{"type":"exists","path":".not"}},
-         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
-        ]
-       },
-       "text": "{{.suffix|keys}}=*{{.suffix[*]|join}}"
-      },
-      {
-       "when": {
-        "type": "all",
-        "of": [
-         {"type":"exists","path":".cesql","nonEmpty":true},
-         {"type":"not","of":{"type":"above","path":".exact|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
-         {"type":"not","of":{"type":"exists","path":".not"}}
-        ]
-       },
-       "text": "{{.cesql}}"
-      },
-      {
-       "when": {
-        "type": "all",
-        "of": [
-         {"type":"equals","path":".exact|count","value":2},
-         {"type":"exists","path":".exact.source"},
-         {"type":"exists","path":".exact.type"},
-         {"type":"not","of":{"type":"above","path":".prefix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".suffix|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".all|count","value":0}},
-         {"type":"not","of":{"type":"above","path":".any|count","value":0}},
-         {"type":"not","of":{"type":"exists","path":".not"}},
-         {"type":"not","of":{"type":"exists","path":".cesql","nonEmpty":true}}
-        ]
-       },
-       "text": "source={{.exact.source}}, type={{.exact.type}}"
-      },
-      {
-       "when": {
-        "type": "any",
-        "of": [
-         {"type":"above","path":".exact|count","value":0},
-         {"type":"above","path":".prefix|count","value":0},
-         {"type":"above","path":".suffix|count","value":0},
-         {"type":"above","path":".all|count","value":0},
-         {"type":"above","path":".any|count","value":0},
-         {"type":"exists","path":".not"},
-         {"type":"exists","path":".cesql","nonEmpty":true}
-        ]
-       },
-       "text": "…"
-      }
-     ],
-     "separator": ", "
-    },
     "afterColumn": "trigger-broker"
    },
    {
@@ -1560,6 +1344,13 @@
      }
     ],
     "afterColumn": "kafka-source-sink"
+   }
+  ],
+  "problemJudges": [
+   {
+    "id": "filters",
+    "reads": [{"kind":{"group":"eventing.knative.dev","kind":"Trigger"},"paths":[".spec.filters",".spec.filter"]}],
+    "facts": [{"id":"filter","values":["text"]}]
    }
   ],
   "problems": [

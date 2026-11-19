@@ -293,7 +293,8 @@ describe("the manifest's columns", () => {
             expect(cell("es-target", o), JSON.stringify(target)).toBe(targetSecretName(o));
             expect(cell("es-refresh", o)).toBe(refreshIntervalOf(o));
             const sync = lastSyncOf(o);
-            expect(windowColumn("es-last-sync").value(o)).toBe(sync ? -Date.parse(sync) : undefined);
+            // By the time, the oldest first, as the built-in column sorted its timestamp (`sortAs`, 1.1.0).
+            expect(windowColumn("es-last-sync").value(o)).toBe(sync ? Date.parse(sync) : undefined);
           }
         }
       }
@@ -365,7 +366,7 @@ describe("the manifest's columns", () => {
       expect(cell("ps-source", o)).toBe(pushSourceSecret(o));
     }
     expect(cell("ps-refresh", pushSecret)).toBe("10s");
-    expect(windowColumn("ps-last-sync").value(pushSecret)).toBe(-Date.parse("2026-10-10T09:30:00Z"));
+    expect(windowColumn("ps-last-sync").value(pushSecret)).toBe(Date.parse("2026-10-10T09:30:00Z"));
   });
 
   it("read the fixtures as the built-in tables did", () => {

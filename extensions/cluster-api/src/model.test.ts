@@ -58,7 +58,7 @@ interface WindowDetected {
   since?: string;
   activeFrom?: number;
   until?: number;
-  lookups?: { kind: string; name: string; fact?: string }[];
+  lookups?: { kind: string; name: string; fact?: string; unless?: boolean }[];
 }
 interface Engine {
   evaluate(condition: unknown, obj: KubeObject): Verdict;
@@ -437,7 +437,9 @@ function windowFound(kind: string, o: KubeObject, now: number, world: World) {
       (d.lookups ?? []).every((lookup) => {
         if (lookup.fact === undefined) return cluster === null || cluster.metadata.name !== lookup.name;
         const when = (rule.when as { of: { type: string; when?: unknown }[] }).of.find((c) => c.type === "related")!.when;
-        return cluster !== null && cluster.metadata.name === lookup.name && engine.evaluate(when, cluster).holds;
+        const found = cluster !== null && cluster.metadata.name === lookup.name && engine.evaluate(when as never, cluster).holds;
+        // `unless` (1.1.0, ADR-0172): it holds unless the Cluster is found paused — also while it is not there.
+        return lookup.unless === true ? !found : found;
       }),
     )
     .map(({ d }) => ({ reason: d.reason, group: d.group, message: d.message ?? "", since: d.since }));

@@ -1,5 +1,17 @@
 # Changes of Knative
 
+## 1.2.0 — 2026-11-19
+
+Needs Sextant 0.30.5 (`sextantApi` 6); Sextant 0.30.0 to 0.30.4 keep 1.1.0. What the built-in view did that extension
+API 5 could not say (ADR-0172):
+
+- **Filter** of a Trigger is the built-in text of every filter — several dialects in one filter, several attributes,
+  and the nested `all`, `any` and `not` — written by the extension's new backend (a judge a computed column asks);
+  before, those showed "…".
+- **Traffic** sorts, filters and searches as the built-in column's value, the latest revision's share without its word
+  (an item case's `value`).
+- Installing or updating asks for consent to the backend, which gets each Trigger's `spec.filters` and `spec.filter`.
+
 ## 1.1.0 — 2026-11-13
 
 Needs Sextant 0.30 (`sextantApi` 4).

@@ -22,8 +22,8 @@ heading, blocks in Sextant's own memory).
 | | |
 |---|---|
 | Id | `sextant.knative` |
-| Version | 1.1.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.2.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.1.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `knative-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → Knative |
 | Checked against | Knative Serving's and Eventing's objects as `serving.knative.dev/v1` (DomainMapping `v1beta1`), `eventing.knative.dev/v1`, `messaging.knative.dev/v1`, `flows.knative.dev/v1` and `sources.knative.dev/v1` write them (Eventing 1.23), and eventing-kafka-broker's KafkaSource (`v1beta1`) |
@@ -52,12 +52,15 @@ condition other than `Ready` — a Revision's `Active` left out — else of `Rea
   (`revision-generation`), **Replicas** (`revision-replicas`: actual/desired), `revision-reason` (a revision scaled to
   zero is ready, with no reason).
 - Routes: `route-status`, **URL** (`route-url`), **Traffic** (`route-traffic`: every target with a share, "name 80%
-  · latest 20%", or the split asked while none is in effect), `route-reason`.
+  · latest 20%", or the split asked while none is in effect; sorted, filtered and searched with the latest revision's
+  share and no word, as the built-in column's value), `route-reason`.
 - Domain Mappings: `domain-mapping-status`, **URL** (`domain-mapping-url`), **Target** (`domain-mapping-target`),
   `domain-mapping-reason`.
 - Brokers: `broker-status`, **Class** (`broker-class`), **Address** (`broker-address`), `broker-reason`.
 - Triggers: `trigger-status`, **Broker** (`trigger-broker`: `spec.brokerRef.name`, else `spec.broker`), **Filter**
-  (`trigger-filter`: each filter's attributes, `type=…`, `source=…*`, or a CESQL expression, joined with ", "), **Subscriber** (`trigger-subscriber`: `Kind/name`, with
+  (`trigger-filter`: the built-in text of `spec.filters` — every dialect, `type=…`, `source=…*`, `subject=*.json`, a
+  CESQL expression, the nested `all` as `(…)`, `any` as `(… | …)` and `not` as `!(…)`, joined with ", " — else of the
+  older `spec.filter.attributes`; written by the extension's backend, blank until it answered), **Subscriber** (`trigger-subscriber`: `Kind/name`, with
   its URI, or the URI), `trigger-reason`.
 - Channels and In-Memory Channels: `channel-status`, **Address** (`channel-address`), `channel-reason`;
   `in-memory-channel-status`, `in-memory-channel-address`, `in-memory-channel-reason`.
@@ -116,6 +119,9 @@ Every object named is a link to its details in Sextant's panel.
 - Nothing is changed or deleted by the extension; Edit and Delete are Sextant's own actions, under your own rules.
 - Its problem rules judge Services, Configurations and the twelve Eventing kinds; Sextant asks for that separately at
   install.
+- Its **backend** (1.2.0) gets each Trigger's `spec.filters` and `spec.filter` only (with its name, namespace and uid)
+  to write the Filter column's text; its code runs for them in Sextant's sandbox, which lets it reach neither the
+  cluster nor the network. Sextant asks for that at install, with the rules.
 - An update asks for consent again when it needs a new kind or action, or changes a grant.
 
 ## Problems
@@ -187,15 +193,9 @@ None: the extension is read-only and has no action of its own.
 ## Requirements and limits
 
 - Knative Serving's or Eventing's CRDs; each section shows only the kinds the cluster serves.
-- Where it differs from the former built-in view, because the extension API cannot say it yet:
-  - Traffic sorts by the text shown, the latest revision by its word; the built-in sorted it with no word there (an
-    item's own sort text would close it).
-  - Filter: each filter of `spec.filters` is exact when it has terms of one dialect only — one exact, prefix or suffix
-    attribute, a CESQL expression, or an exact `source` and `type` — and "…" otherwise: several dialects in one filter,
-    several attributes of one dialect, and the nested `all`, `any` and `not`, which a case cannot write out (a text
-    projection of the filter tree would close it, #404). The older `spec.filter.attributes` are exact for a `type`, a
-    `source`, both, or one attribute of another name (an empty value shows `name=*`, as the built-in wrote it); more
-    attributes show "…".
+- Where it differs from the former built-in view:
+  - Filter is blank until the backend has answered for the cluster (a few seconds after the Triggers are listed), and
+    a text past 1000 characters is cut, as every judge's.
   - Text cells and problem messages lose the credentials and query of any URI in them and are clipped (200 characters
     a cell, 1200 a message), as every extension text from the cluster is; the built-in ones showed them as written.
   - A problem whose reason Knative wrote as an empty text says "NotReady" (the built-in one said nothing); Knative
@@ -223,6 +223,8 @@ npm run sdk:build -- extensions/knative        # → extensions/knative/dist, lo
 npx vitest run --config sdk/vitest.config.ts ../extensions/knative
 ```
 
+- `backend/main.ts` is the backend (built by componentize-js into `backend.wasm`): only the judge the Filter column
+  asks (`src/judges.ts`, over the built-in `filterText` of `eventing.ts`, unchanged).
 - `src/main.ts` starts the details section of the selected object: `details.ts` draws the Serving and Eventing views
   and holds the event path's watches, with the SDK's `ui` kit.
 - `model.ts` (Serving), `eventing.ts` (Eventing) and `path.ts` (the event path) are the former built-in views' model,

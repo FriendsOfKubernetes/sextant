@@ -21,8 +21,8 @@ Sextant's own memory).
 | | |
 |---|---|
 | Id | `sextant.external-secrets` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `external-secrets-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → External Secrets |
 | Checked against | External Secrets Operator's `external-secrets.io/v1` objects (`v1alpha1` PushSecrets) as the operator writes them (`apis/externalsecrets/v1/*_types.go`, `apis/externalsecrets/v1alpha1/pushsecret_types.go`) |
@@ -43,7 +43,7 @@ reason:
 - External Secrets: **Status** (`es-status`), **Store** (`es-store`: `<kind>/<name>` of `spec.secretStoreRef`,
   `SecretStore` when no kind is set), **Secret** (`es-target`: `spec.target.name`, else the ExternalSecret's own
   name), **Refresh** (`es-refresh`: `spec.refreshInterval`), **Last sync** (`es-last-sync`: the age of
-  `status.refreshTime`) and **Reason** (`es-reason`).
+  `status.refreshTime`, sorted by the time, the oldest first, as the built-in column) and **Reason** (`es-reason`).
 - Cluster External Secrets: **Status** (`ces-status`), **Refresh** (`ces-refresh`: `spec.refreshTime`, how often it
   reconciles itself; the built-in column read `spec.refreshInterval`, which a ClusterExternalSecret does not have)
   and **Reason** (`ces-reason`).
@@ -129,8 +129,6 @@ None: it only reads. Edit and Delete are Sextant's own actions, asked and confir
   computed a value they read it as closely as fields allow; the details always show the full reading. Tests compare
   them with the built-in reading over every Ready condition, store and target reference, provider and store list.
   What still differs, and why:
-  - **Last sync** sorts as Sextant's Age column does (the newest first, ascending), where the built-in column sorted
-    by the time's text (the oldest first): a computed age sorts by its age only.
   - Cells are cut at 200 characters and cleaned of URI credentials, as every extension's.
   - A Ready condition's time that is not a time is not the problem's start; the reason is trimmed, cleaned and cut at
     100 characters, as every extension's.

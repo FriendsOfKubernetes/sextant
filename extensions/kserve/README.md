@@ -20,8 +20,8 @@ reason, untitled details sections, capped watches, details blocks in Sextant's o
 | | |
 |---|---|
 | Id | `sextant.kserve` |
-| Version | 1.0.0 ([changes](CHANGELOG.md)) |
-| Extension API | `sextantApi` 4: Sextant 0.30 or newer. Older Sextants show "needs a newer Sextant". |
+| Version | 1.1.0 ([changes](CHANGELOG.md)) |
+| Extension API | `sextantApi` 6: Sextant 0.30.5 or newer; Sextant 0.30.0 to 0.30.4 are offered 1.0.0 (`sextantApi` 4). Older Sextants show "needs a newer Sextant". |
 | Released from | [FriendsOfKubernetes/sextant-extensions](https://github.com/FriendsOfKubernetes/sextant-extensions/releases), tags `kserve-v<version>`, signed with that repository's key |
 | Install | Settings → Extensions → Catalog → KServe |
 | Checked against | KServe's objects as `pkg/apis/serving/v1beta1` and `v1alpha1` write them, with both deployment-mode names (`Serverless`/`Knative`, `RawDeployment`/`Standard`) and the old framework fields of a predictor |
@@ -46,7 +46,8 @@ numbers).
   **Model format** (`isvc-model-format`: the predictor's `modelFormat` with its version, or the old framework field's
   name), **Runtime** (`isvc-runtime`: named in the spec, else the one KServe recorded, namespaced first; an empty name
   goes on to the next), **Mode** (`isvc-mode`: the deployment mode as recorded, else as annotated) and **Canary %**
-  (`isvc-canary`: with two or more traffic entries of the predictor, the percent of those on the latest revision).
+  (`isvc-canary`: with two or more traffic entries of the predictor, the percent of those on the latest revision;
+  sorted and filtered as a number, blank and sorted last without a split).
 - Serving Runtimes and Cluster Serving Runtimes: **Model formats** (`sr-formats`, `csr-formats`: every name, joined
   with ", "), **Protocols** (`sr-protocols`, `csr-protocols`: every one), **Disabled** (`sr-disabled`, `csr-disabled`)
   and **Multi-model** (`sr-multi-model`, `csr-multi-model`).
@@ -158,8 +159,6 @@ None: the extension is read-only and has no action of its own.
   - The Status column's hover: a False condition with neither a reason nor a message gives way to the next one, else
     `Ready`'s (the built-in hover was empty): a placeholder's `??` skips empty values.
   - A cell holds 200 characters and a hover 1000, then "…" (the built-in URL and hover were not cut).
-  - Canary % filters as text (the built-in one as a number): a `sum` column would show the share of a single traffic
-    entry, which the built-in left blank, and a blank case there sorts first rather than last.
 - Checked by tests on fixtures of KServe's objects (copied from the built-in view) against the built-in readings and
   rules; not yet tried on a live cluster.
 
