@@ -2,6 +2,12 @@
   "title": "Nouveautés de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Compris",
+  "v0_30_5": {
+    "api6": {
+      "title": "API d'extensions 6",
+      "text": "Sept des extensions propres à Sextant correspondent désormais aux vues qu'elles ont remplacées : les workers et les applications Serve en échec de KubeRay, les filtres de Trigger et l'ordre du trafic de Knative, l'ordre de la dernière synchronisation d'External Secrets, la part canary de KServe, l'attente des redémarrages de Strimzi, chaque HPA en conflit avec un VPA et les problèmes d'un Cluster mis en pause de Cluster API. Mettez-les à jour dans Paramètres → Extensions."
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "Des watches plus stables derrière un proxy",

@@ -2,6 +2,12 @@
   "title": "Що нового в Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Зрозуміло",
+  "v0_30_5": {
+    "api6": {
+      "title": "API розширень 6",
+      "text": "Сім власних розширень Sextant тепер збігаються з виглядами, які вони замінили: worker-и та збійні застосунки Serve у KubeRay, фільтри Trigger і порядок трафіку в Knative, порядок останньої синхронізації в External Secrets, частка canary в KServe, очікування перезапусків у Strimzi, кожен HPA, що конфліктує з VPA, і проблеми призупиненого Cluster у Cluster API. Оновіть їх у «Налаштування → Розширення»."
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "Стабільніше за проксі",

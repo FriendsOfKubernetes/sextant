@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} sürümünde yenilikler",
   "version": "Sextant {{version}}",
   "close": "Anladım",
+  "v0_30_5": {
+    "api6": {
+      "title": "Uzantı API'si 6",
+      "text": "Sextant'ın kendi uzantılarından yedisi artık yerini aldıkları görünümlerle aynı: KubeRay'in worker'ları ve başarısız Serve uygulamaları, Knative'in Trigger filtreleri ve trafik sırası, External Secrets'ın son eşitleme sırası, KServe'ün canary payı, Strimzi'nin yeniden başlatma beklemeleri, bir VPA ile çatışan her HPA ve duraklatılmış bir Cluster API Cluster'ının sorunları. Bunları Ayarlar → Uzantılar'dan güncelleyin."
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "Proxy arkasında daha kararlı watch'lar",

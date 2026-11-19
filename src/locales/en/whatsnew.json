@@ -2,6 +2,12 @@
   "title": "What's new in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Got it",
+  "v0_30_5": {
+    "api6": {
+      "title": "Extension API 6",
+      "text": "Seven of Sextant's own extensions now match the views they replaced: KubeRay's workers and failed Serve applications, Knative's Trigger filters and traffic order, External Secrets' last sync order, KServe's canary share, Strimzi's restart waits, each HPA fighting a VPA, and the problems of a paused Cluster API Cluster. Update them in Settings → Extensions."
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "Steadier watches through proxies",

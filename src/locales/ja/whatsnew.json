@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} の新機能",
   "version": "Sextant {{version}}",
   "close": "閉じる",
+  "v0_30_5": {
+    "api6": {
+      "title": "拡張機能 API 6",
+      "text": "Sextant 独自の拡張機能のうち 7 つが、置き換えたビューと一致するようになりました。KubeRay の worker と失敗した Serve アプリケーション、Knative の Trigger フィルターとトラフィックの順序、External Secrets の最終同期の順序、KServe の canary の割合、Strimzi の再起動の待機、VPA と競合する各 HPA、そして一時停止した Cluster API の Cluster の問題です。設定 → 拡張機能で更新してください。"
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "プロキシ越しでも安定した watch",

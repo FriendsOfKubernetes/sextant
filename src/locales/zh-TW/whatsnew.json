@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_5": {
+    "api6": {
+      "title": "擴充功能 API 6",
+      "text": "Sextant 內建的七個擴充功能現在與它們取代的檢視一致：KubeRay 的 worker 與失敗的 Serve 應用程式、Knative 的 Trigger 篩選器與流量順序、External Secrets 的上次同步順序、KServe 的 canary 比例、Strimzi 的重新啟動等待、每個與 VPA 衝突的 HPA，以及 Cluster API 中已暫停 Cluster 的問題。請在「設定 → 擴充功能」中更新它們。"
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "代理後的 watch 更穩定",

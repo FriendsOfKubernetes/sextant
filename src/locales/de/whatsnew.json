@@ -2,6 +2,12 @@
   "title": "Neu in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Verstanden",
+  "v0_30_5": {
+    "api6": {
+      "title": "Erweiterungs-API 6",
+      "text": "Sieben von Sextants eigenen Erweiterungen entsprechen jetzt den Ansichten, die sie ersetzt haben: KubeRays Worker und fehlgeschlagene Serve-Anwendungen, Knatives Trigger-Filter und Traffic-Reihenfolge, die Reihenfolge der letzten Synchronisierung in External Secrets, KServes Canary-Anteil, Strimzis Warten auf Neustarts, jeder HPA im Konflikt mit einem VPA und die Probleme eines pausierten Cluster-API-Clusters. Aktualisieren Sie sie unter Einstellungen → Erweiterungen."
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "Stabilere Watches hinter Proxys",

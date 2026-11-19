@@ -2,6 +2,12 @@
   "title": "Sextant {{version}}의 새로운 기능",
   "version": "Sextant {{version}}",
   "close": "확인",
+  "v0_30_5": {
+    "api6": {
+      "title": "확장 API 6",
+      "text": "Sextant 자체 확장 중 일곱 개가 이제 대체한 보기와 같아졌습니다. KubeRay의 worker와 실패한 Serve 애플리케이션, Knative의 Trigger 필터와 트래픽 순서, External Secrets의 마지막 동기화 순서, KServe의 canary 비율, Strimzi의 재시작 대기, VPA와 충돌하는 각 HPA, 그리고 일시 중지된 Cluster API Cluster의 문제입니다. 설정 → 확장에서 업데이트하세요."
+    }
+  },
   "v0_30_4": {
     "watchResume": {
       "title": "프록시 뒤에서도 안정적인 watch",
