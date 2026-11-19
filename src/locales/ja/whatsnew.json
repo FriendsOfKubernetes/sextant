@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} の新機能",
   "version": "Sextant {{version}}",
   "close": "閉じる",
+  "v0_30_4": {
+    "watchResume": {
+      "title": "プロキシ越しでも安定した watch",
+      "text": "Sextant とクラスターの間のプロキシ（Teleport のものなど）が watch を切断したとき、Sextant はリスト全体を読み直すのではなく、途切れたところから再開するようになりました。こうしたプロキシ越しでは、ウィンドウに送るデータも使うメモリも大きく減ります。メモリが異常に増えたときはログにも記録されます。"
+    }
+  },
   "v0_30_3": {
     "folderWorkspaces": {
       "title": "kubeconfig フォルダーのワークスペース",

@@ -2,6 +2,12 @@
   "title": "What's new in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Got it",
+  "v0_30_4": {
+    "watchResume": {
+      "title": "Steadier watches through proxies",
+      "text": "When a proxy between Sextant and the cluster (such as Teleport's) cuts a watch, Sextant now resumes it where it stopped instead of reading the whole list again. Through such proxies Sextant sends far less to the window and uses far less memory. Its log also says when memory grows unusually high."
+    }
+  },
   "v0_30_3": {
     "folderWorkspaces": {
       "title": "Workspaces of kubeconfig folders",

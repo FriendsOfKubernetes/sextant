@@ -2,6 +2,12 @@
   "title": "Nouveautés de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Compris",
+  "v0_30_4": {
+    "watchResume": {
+      "title": "Des watches plus stables derrière un proxy",
+      "text": "Quand un proxy entre Sextant et le cluster (comme celui de Teleport) coupe un watch, Sextant le reprend désormais là où il s'est arrêté au lieu de relire toute la liste. Derrière ces proxys, Sextant envoie bien moins de données à la fenêtre et consomme bien moins de mémoire. Son journal signale aussi quand la mémoire augmente anormalement."
+    }
+  },
   "v0_30_3": {
     "folderWorkspaces": {
       "title": "Espaces de travail des dossiers kubeconfig",

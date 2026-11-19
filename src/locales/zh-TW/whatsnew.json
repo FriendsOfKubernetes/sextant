@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_4": {
+    "watchResume": {
+      "title": "代理後的 watch 更穩定",
+      "text": "當 Sextant 與叢集之間的代理（例如 Teleport 的代理）中斷一個 watch 時，Sextant 現在會從中斷處繼續，而不是重新讀取整個清單。在這類代理之後，Sextant 傳送到視窗的資料和占用的記憶體都大幅減少。它的記錄檔也會在記憶體異常增長時說明。"
+    }
+  },
   "v0_30_3": {
     "folderWorkspaces": {
       "title": "kubeconfig 資料夾的工作區",

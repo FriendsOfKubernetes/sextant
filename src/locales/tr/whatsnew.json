@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} sürümünde yenilikler",
   "version": "Sextant {{version}}",
   "close": "Anladım",
+  "v0_30_4": {
+    "watchResume": {
+      "title": "Proxy arkasında daha kararlı watch'lar",
+      "text": "Sextant ile küme arasındaki bir proxy (Teleport'unki gibi) bir watch'ı kestiğinde, Sextant artık tüm listeyi yeniden okumak yerine kaldığı yerden devam ediyor. Böyle proxy'lerin arkasında Sextant pencereye çok daha az veri gönderir ve çok daha az bellek kullanır. Günlüğü ayrıca bellek olağandışı büyüdüğünde bunu bildirir."
+    }
+  },
   "v0_30_3": {
     "folderWorkspaces": {
       "title": "kubeconfig klasörlerinin çalışma alanları",
