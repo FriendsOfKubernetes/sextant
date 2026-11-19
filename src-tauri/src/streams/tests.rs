@@ -269,16 +269,32 @@ fn the_counters_line_has_counts_only() {
             messages: 1300,
             bytes: 11 * 1024 * 1024 + 512 * 1024,
             acknowledged: 1250,
+            sent_by_kind: [
+                (StreamKind::Watch, (1250, 11 * 1024 * 1024)),
+                (StreamKind::Terminal, (50, 512 * 1024)),
+            ]
+            .into(),
         },
         api_requests: 552,
         clusters_connected: 1,
         window: Some(WindowShown::Minimized),
+        watches: sextant_core::resources::WatchStats {
+            relists: 3,
+            reconnects: 1,
+            gone: 2,
+            resumed_broken: 40,
+            resumed_start: 5,
+            ..Default::default()
+        },
     };
+    before.flows.sent_by_kind = [(StreamKind::Watch, (100, 1024 * 1024))].into();
+    before.watches.resumed_broken = 10;
     assert_eq!(
         line(&now, &before, Duration::from_secs(600)),
         "counters (10 min): memory workingSet=300.0MiB private=512.0MiB; streams open=10 (watch=9 terminal=1) \
-         waiting=2; to the window messages=1200 bytes=10.5MiB acknowledged=1160; API requests=512; clusters \
-         connected=1; window=minimized"
+         waiting=2; to the window messages=1200 bytes=10.5MiB (watch=1150/10.0MiB terminal=50/0.5MiB) \
+         acknowledged=1160; API requests=512; watches relists=3 reconnects=1 gone=2 resumed broken=30 start=5 \
+         event=0 list=0 other=0; clusters connected=1; window=minimized"
     );
     let empty = line(
         &Sample::default(),
@@ -288,7 +304,42 @@ fn the_counters_line_has_counts_only() {
     assert_eq!(
         empty,
         "counters (2 min): memory unknown; streams open=0 waiting=0; to the window messages=0 bytes=0.0MiB \
-         acknowledged=0; API requests=0; clusters connected=0; window=none"
+         acknowledged=0; API requests=0; watches relists=0 reconnects=0 gone=0 resumed broken=0 start=0 event=0 \
+         list=0 other=0; clusters connected=0; window=none"
+    );
+}
+
+#[test]
+fn unusually_high_memory_is_told_once_per_doubling() {
+    use super::counters::{HIGH_MEMORY, high_memory};
+    let gib = 1024 * 1024 * 1024;
+    let mut next = HIGH_MEMORY;
+    assert_eq!(high_memory(&[("private", 3 * gib)], &mut next), None);
+    assert_eq!(
+        high_memory(&[("workingSet", 2 * gib), ("private", 5 * gib)], &mut next).as_deref(),
+        Some(
+            "memory is unusually high: private=5120.0MiB (over 4096.0MiB); the counters lines say what Sextant was doing"
+        )
+    );
+    // Told again only past the next doubling (8 GiB), and a jump past several tells it once.
+    assert_eq!(high_memory(&[("private", 7 * gib)], &mut next), None);
+    assert!(
+        high_memory(&[("private", 20 * gib)], &mut next)
+            .unwrap()
+            .contains("over 8192.0MiB")
+    );
+    assert_eq!(high_memory(&[("private", 30 * gib)], &mut next), None);
+    assert_eq!(high_memory(&[], &mut next), None);
+    // Linux: the resident set, never `data` (address space only reserved).
+    let mut next = HIGH_MEMORY;
+    assert_eq!(
+        high_memory(&[("rss", gib), ("data", 60 * gib)], &mut next),
+        None
+    );
+    assert!(
+        high_memory(&[("rss", 5 * gib), ("data", 60 * gib)], &mut next)
+            .unwrap()
+            .contains("rss=5120.0MiB")
     );
 }
 

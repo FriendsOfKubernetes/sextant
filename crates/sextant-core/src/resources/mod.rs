@@ -45,7 +45,7 @@ pub use mutate::{DeletePreconditions, delete_with};
 pub use mutate::{IMMUTABLE_SECRET, SecretWrites, apply_planned_with, patch_with};
 pub use sample::{KindSample, MAX_SAMPLE, MAX_SAMPLED_KINDS, SampledObject, sample_namespace};
 pub use status_patch::{no_status, patch_custom_status};
-pub use watch::{watch, watch_with_options};
+pub use watch::{WatchStats, watch, watch_stats, watch_with_options};
 
 /// Group/version/kind. `group` is `""` for the core API group.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]

@@ -6,7 +6,12 @@
 //!   expired `resourceVersion`);
 //! - `Delta` — objects added/changed and uids deleted since the previous batch;
 //! - `Reconnecting` — the connection was lost; the data on screen stays, a new list follows with growing pauses
-//!   (1 s, 2 s, 4 s, 8 s, then every 15 s) until the API server answers, and then a fresh `Snapshot`;
+//!   (1 s, 2 s, 4 s, 8 s, then every 15 s) until the API server answers, and then a fresh `Snapshot`. Once data was
+//!   shown, a watch that breaks now and then (a proxy such as Teleport's ending long requests) is not a lost
+//!   connection: kube's watcher resumes it from its last `resourceVersion` after a growing pause (800 ms up to 30 s),
+//!   with no list and no snapshot (#342). A stream that worked and broke is always resumed so; only a source whose
+//!   watches cannot start or are refused ([`TRANSIENT_LIMIT`] in a row over at least [`TRANSIENT_WINDOW`]) counts as a
+//!   lost connection;
 //! - `Forbidden` — some of the selected namespaces cannot be listed or watched (no permission), at the start or at
 //!   any later moment (e.g. the right was revoked); they are left out and a new `Snapshot` without their objects
 //!   follows, the others keep streaming. A left-out namespace is checked again after 30 s, then after pauses that
@@ -49,7 +54,7 @@ use futures::{FutureExt, Stream, StreamExt, TryStreamExt};
 use kube::Api;
 use kube::api::{ApiResource, DynamicObject, ListParams, PartialObjectMeta, WatchParams};
 use kube::core::ObjectList;
-use kube::runtime::watcher;
+use kube::runtime::{WatchStreamExt, watcher};
 use serde_json::Value;
 use tokio::time::{Instant, Interval, MissedTickBehavior};
 
@@ -64,6 +69,96 @@ pub const BATCH_INTERVAL: Duration = Duration::from_millis(250);
 /// First pause before a reconnect; it doubles up to [`MAX_RETRY_DELAY`].
 const FIRST_RETRY_DELAY: Duration = Duration::from_secs(1);
 const MAX_RETRY_DELAY: Duration = Duration::from_secs(15);
+/// A source's errors once data was shown are left to kube's watcher, which resumes it from its `resourceVersion`
+/// after a growing pause, until there are this many in a row ...
+const TRANSIENT_LIMIT: u32 = 4;
+/// ... over at least this long: then the connection counts as lost, and everything is listed again.
+#[cfg(not(test))]
+const TRANSIENT_WINDOW: Duration = Duration::from_secs(15);
+#[cfg(test)]
+const TRANSIENT_WINDOW: Duration = Duration::from_secs(4);
+/// An error this long after the previous one starts a new run.
+const TRANSIENT_FORGET: Duration = Duration::from_secs(60);
+
+/// What the watches did since the start, for the counters line of Sextant's log (#342): counts only.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct WatchStats {
+    /// Lists of a source after the watch's first snapshot (an expired `resourceVersion`, a reconnect).
+    pub relists: u64,
+    /// Lost connections after the first snapshot: every source listed again.
+    pub reconnects: u64,
+    /// Expired `resourceVersion`s (410).
+    pub gone: u64,
+    /// Errors left to the watcher to resume, by kind: the stream broke, a watch could not start, the API server
+    /// sent an error event, a list failed, anything else.
+    pub resumed_broken: u64,
+    pub resumed_start: u64,
+    pub resumed_event: u64,
+    pub resumed_list: u64,
+    pub resumed_other: u64,
+}
+
+mod stats {
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    pub(super) static RELISTS: AtomicU64 = AtomicU64::new(0);
+    pub(super) static RECONNECTS: AtomicU64 = AtomicU64::new(0);
+    pub(super) static GONE: AtomicU64 = AtomicU64::new(0);
+    /// broken, start, event, list, other.
+    pub(super) static RESUMED: [AtomicU64; 5] = [const { AtomicU64::new(0) }; 5];
+
+    pub(super) fn add(counter: &AtomicU64) {
+        counter.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub(super) fn get(counter: &AtomicU64) -> u64 {
+        counter.load(Ordering::Relaxed)
+    }
+}
+
+/// [`WatchStats`] since the start of the process.
+pub fn watch_stats() -> WatchStats {
+    WatchStats {
+        relists: stats::get(&stats::RELISTS),
+        reconnects: stats::get(&stats::RECONNECTS),
+        gone: stats::get(&stats::GONE),
+        resumed_broken: stats::get(&stats::RESUMED[0]),
+        resumed_start: stats::get(&stats::RESUMED[1]),
+        resumed_event: stats::get(&stats::RESUMED[2]),
+        resumed_list: stats::get(&stats::RESUMED[3]),
+        resumed_other: stats::get(&stats::RESUMED[4]),
+    }
+}
+
+/// Whether an error says the API server could not be reached or refused (a watch that could not start, a failed
+/// list, an error status), as opposed to a stream that worked and broke (its connection cut by a proxy, a broken
+/// line): only the first kind counts toward a lost connection, since a break is followed by a resumed watch.
+fn unreachable_or_refused(err: &watcher::Error) -> bool {
+    match err {
+        watcher::Error::WatchFailed(kube::Error::Api(_)) => true,
+        watcher::Error::WatchFailed(_) => false,
+        _ => true,
+    }
+}
+
+/// The index in `stats::RESUMED` of an error left to the watcher.
+fn resumed_class(err: &watcher::Error) -> usize {
+    match err {
+        watcher::Error::WatchFailed(_) => 0,
+        watcher::Error::WatchStartFailed(_) => 1,
+        watcher::Error::WatchError(_) => 2,
+        watcher::Error::InitialListFailed(_) => 3,
+        _ => 4,
+    }
+}
+
+/// A source's errors in a row once data was shown.
+#[derive(Debug, Clone, Copy, Default)]
+struct TransientRun {
+    count: u32,
+    first: Option<Instant>,
+    last: Option<Instant>,
+}
 
 /// Pauses before a namespace that answered 403 is listed again: `first`, doubling up to `max`.
 #[derive(Debug, Clone, Copy)]
@@ -238,7 +333,9 @@ impl SourceApi {
         config: watcher::Config,
     ) -> BoxStream<'static, watcher::Result<watcher::Event<DynamicObject>>> {
         match self {
-            Self::Whole(api) => watcher(api.clone(), config).boxed(),
+            // A growing pause after an error (800 ms up to 30 s), so a watch that keeps failing is not retried in a
+            // tight loop while the batcher leaves its errors to the watcher (#342).
+            Self::Whole(api) => watcher(api.clone(), config).default_backoff().boxed(),
             Self::Metadata { api, helm_release } => {
                 let helm_release = *helm_release;
                 let refused = Arc::new((
@@ -247,6 +344,7 @@ impl SourceApi {
                     config.field_selector.clone(),
                 ));
                 watcher(api.clone(), config)
+                    .default_backoff()
                     .then(move |event| {
                         let refused = Arc::clone(&refused);
                         async move {
@@ -440,6 +538,8 @@ struct Batcher {
     init_old: Vec<usize>,
     /// The `total` of the last `Capped` sent.
     capped_sent: Option<u64>,
+    /// Each source's errors in a row once data was shown, left to its watcher until they go on.
+    runs: Vec<TransientRun>,
     /// A `Capped` waits to be sent after the batch just returned.
     capped_pending: Option<u64>,
 }
@@ -497,6 +597,7 @@ impl Batcher {
             init_old: vec![0; count],
             capped_sent: None,
             capped_pending: None,
+            runs: vec![TransientRun::default(); count],
         };
         batcher.start_streams();
         batcher
@@ -512,6 +613,9 @@ impl Batcher {
             }
         }
         self.listed.iter_mut().for_each(|l| *l = false);
+        self.runs
+            .iter_mut()
+            .for_each(|r| *r = TransientRun::default());
         self.init_buffers.iter_mut().for_each(|b| *b = None);
         self.init_dropped.iter_mut().for_each(Vec::clear);
         self.retry_at = None;
@@ -645,6 +749,8 @@ impl Batcher {
     }
 
     fn apply(&mut self, index: usize, event: watcher::Event<DynamicObject>) {
+        // The source answers again: its errors in a row are over.
+        self.runs[index] = TransientRun::default();
         match event {
             watcher::Event::Init => {
                 self.init_buffers[index] = Some(Vec::new());
@@ -669,6 +775,9 @@ impl Batcher {
                 }
             }
             watcher::Event::InitDone => {
+                if self.snapshot_sent {
+                    stats::add(&stats::RELISTS);
+                }
                 let items = self.init_buffers[index].take().unwrap_or_default();
                 let left_out = std::mem::take(&mut self.init_dropped[index]);
                 self.store.retain(|_, (source, _)| *source != index);
@@ -768,6 +877,7 @@ impl Batcher {
     fn fail(&mut self, index: usize, err: watcher::Error) {
         // An expired resourceVersion: the watcher relists by itself, the relist ends in a new snapshot.
         if matches!(&err, watcher::Error::WatchError(status) if status.code == 410) {
+            stats::add(&stats::GONE);
             return;
         }
         // A retry of a forbidden namespace failed (403 again, or anything else): it stays out and is tried later;
@@ -777,6 +887,8 @@ impl Batcher {
             self.schedule_forbidden_retry(index);
             return;
         }
+        let class = resumed_class(&err);
+        let counts = unreachable_or_refused(&err);
         let err = CoreError::from(err);
         if err.code == ErrorCode::Forbidden && self.forbid(index) {
             return;
@@ -790,6 +902,13 @@ impl Batcher {
                 | ErrorCode::AuthPlugin
                 | ErrorCode::Kubeconfig
         );
+        // Once data was shown, an error that is not about the request itself (a broken stream, a watch that could
+        // not start, a failed relist) is left to the watcher, which resumes from its `resourceVersion` after a pause,
+        // unless the errors go on (#342).
+        if self.snapshot_sent && !fatal && (!counts || self.tolerate(index)) {
+            stats::add(&stats::RESUMED[class]);
+            return;
+        }
         // Once data was shown, any other error is treated as a lost connection: an API server that is starting up
         // answers 401/403 for a moment.
         if fatal && !self.snapshot_sent {
@@ -880,7 +999,24 @@ impl Batcher {
     }
 
     /// Drops the watchers and schedules a fresh list after a growing pause.
+    /// Whether another error of `index` in a row is still left to its watcher: no, once there were
+    /// [`TRANSIENT_LIMIT`] over at least [`TRANSIENT_WINDOW`] (an error long after the previous one starts anew).
+    fn tolerate(&mut self, index: usize) -> bool {
+        let now = Instant::now();
+        let run = &mut self.runs[index];
+        if run.last.is_some_and(|last| now - last > TRANSIENT_FORGET) {
+            *run = TransientRun::default();
+        }
+        run.count += 1;
+        let first = *run.first.get_or_insert(now);
+        run.last = Some(now);
+        !(run.count >= TRANSIENT_LIMIT && now - first >= TRANSIENT_WINDOW)
+    }
+
     fn lose_connection(&mut self) {
+        if self.snapshot_sent {
+            stats::add(&stats::RECONNECTS);
+        }
         self.streams = SelectAll::new();
         // A retry of a forbidden namespace that was running is tried again as soon as the others are back.
         for index in 0..self.sources.len() {
@@ -1056,6 +1192,10 @@ fn uid_of(obj: &Value) -> String {
 #[cfg(test)]
 #[path = "watch_scale_tests.rs"]
 mod scale_tests;
+
+#[cfg(test)]
+#[path = "watch_resume_tests.rs"]
+mod resume_tests;
 
 #[cfg(test)]
 mod tests {

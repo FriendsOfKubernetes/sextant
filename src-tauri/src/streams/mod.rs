@@ -53,6 +53,23 @@ pub enum StreamKind {
 }
 
 impl StreamKind {
+    /// Every kind, in the order of the counters' arrays.
+    pub const ALL: [StreamKind; 8] = [
+        Self::Watch,
+        Self::Logs,
+        Self::Loki,
+        Self::Terminal,
+        Self::Transfer,
+        Self::Install,
+        Self::Image,
+        Self::ExtensionWatch,
+    ];
+
+    /// The place of this kind in [`StreamKind::ALL`].
+    fn index(self) -> usize {
+        self as usize
+    }
+
     /// The name in the log.
     pub fn name(self) -> &'static str {
         match self {
@@ -74,6 +91,9 @@ struct Totals {
     messages: AtomicU64,
     bytes: AtomicU64,
     acknowledged: AtomicU64,
+    /// Messages and bytes by [`StreamKind::index`].
+    kind_messages: [AtomicU64; 8],
+    kind_bytes: [AtomicU64; 8],
 }
 
 /// What [`Flows::counts`] reports.
@@ -89,6 +109,8 @@ pub struct FlowCounts {
     pub bytes: u64,
     /// Messages the window acknowledged since the start.
     pub acknowledged: u64,
+    /// Messages and bytes sent since the start, by the kind of stream that sent them (kinds that sent anything).
+    pub sent_by_kind: BTreeMap<StreamKind, (u64, u64)>,
 }
 
 /// One stream's delivery: what it sent and what the window acknowledged.
@@ -141,11 +163,13 @@ impl Flow {
 
     /// One message of `bytes` was sent to the window.
     pub fn sent(&self, bytes: usize) {
+        let bytes = u64::try_from(bytes).unwrap_or(u64::MAX);
         self.sent.fetch_add(1, Ordering::SeqCst);
         self.totals.messages.fetch_add(1, Ordering::Relaxed);
-        self.totals
-            .bytes
-            .fetch_add(u64::try_from(bytes).unwrap_or(u64::MAX), Ordering::Relaxed);
+        self.totals.bytes.fetch_add(bytes, Ordering::Relaxed);
+        let kind = self.kind.index();
+        self.totals.kind_messages[kind].fetch_add(1, Ordering::Relaxed);
+        self.totals.kind_bytes[kind].fetch_add(bytes, Ordering::Relaxed);
     }
 
     /// The window received `count` messages of this stream in all (a count, not an increment, so a late or repeated
@@ -245,6 +269,13 @@ impl Flows {
             acknowledged: self.totals.acknowledged.load(Ordering::Relaxed),
             ..FlowCounts::default()
         };
+        for kind in StreamKind::ALL {
+            let messages = self.totals.kind_messages[kind.index()].load(Ordering::Relaxed);
+            if messages > 0 {
+                let bytes = self.totals.kind_bytes[kind.index()].load(Ordering::Relaxed);
+                counts.sent_by_kind.insert(kind, (messages, bytes));
+            }
+        }
         for flow in self.lock().values() {
             *counts.open.entry(flow.kind).or_default() += 1;
             if !flow.has_room() {

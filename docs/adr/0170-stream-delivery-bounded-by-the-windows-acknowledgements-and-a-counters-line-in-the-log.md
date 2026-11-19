@@ -109,3 +109,62 @@ bounds what can pile up whatever the cause, and counts in the log that tell next
   stall every stream after 32 payloads; the module tests and `src/api/stream.test.ts` check both sides.
 - Module tests that drive a stream past 32 payloads acknowledge them (`state.flows.ack`, the terminal tests'
   `receives_messages`).
+
+## Amendment: a watch that breaks is resumed, not listed again (0.30.4)
+
+The reporter of #342 sent the counters of 0.30.3 from two machines with the same Sextant, Teleport `tsh` and
+extensions:
+- **Memory.** On the one that leaks, `private` grew about 174 MB a minute from the first minute.
+- **Delivery to the window was bounded,** as this ADR wants (`waiting=0`).
+- **Both machines sent the window about 1 MB a second, in about one message a second, and made about two API requests
+  a second.** With 20–37 quiet watches that is not changes but full snapshots, one after another.
+
+The cause is in `resources/watch.rs`. Once data was shown, every watch error but 410 was a lost connection:
+- every source of the watch was dropped;
+- everything was listed again a second later;
+- a full `Snapshot` went to the window;
+- the retry pause was reset by that relist.
+
+A proxy that ends long requests (Teleport's, between the user and the API server) thus made a full list and snapshot
+of a kind every time it cut one of its watches.
+
+The leaking machine kept about twice what went to the window: plausibly a copy of each payload in the webview's
+UTF-16. That is not proven; a dump would tell. With the snapshots gone, it has almost nothing left to keep.
+
+Decision:
+- **Every watcher stream gets kube's default backoff:** 800 ms doubling to 30 s, reset after 120 s without an error.
+  So a watch that keeps failing is never retried in a tight loop.
+- **Once data was shown, a stream that worked and broke is left to the watcher.** That is a transport error of a
+  running watch, `WatchFailed` with anything but an API status. The watcher resumes it from its last
+  `resourceVersion` with no list and no snapshot. The API server replays what changed meanwhile, or answers 410, and
+  then that source alone is listed again, as before.
+- **Errors that say the API server cannot be reached or refuses are left to the watcher too, up to a point.** These
+  are a watch that cannot start, a failed list, and an error status. Only after `TRANSIENT_LIMIT` (4) of them in a row
+  for one source, over at least `TRANSIENT_WINDOW` (15 s), is the connection lost: `Reconnecting` and a full list, as
+  before. Any event of the source ends the run, and an error 60 s after the previous one starts a new one.
+- **The counters line also tells, per interval:**
+  - the messages and bytes sent by kind of stream;
+  - what the watches did (`watch_stats`): relists after their first snapshot, lost connections, 410s, and errors
+    resumed by kind (`broken`, `start`, `event`, `list`, `other`);
+  - Windows' private bytes, which is the process's commit charge.
+- **A line also says at once when the memory the process holds passes 4 GiB, and each time it doubles.** That is
+  `private` on Windows and the resident set on Linux, never Linux's reserved `data`. A process that runs out of memory
+  can end without a word (the reporter's 0.30.3 left no Windows error report).
+
+Measured on the kind test cluster, with every connection of the app cut 5 s after it opened by a TCP proxy, and the
+Pods, Deployments and Events tables open (39 watches, three minutes):
+| First minute | 0.30.3's reading | Resumed watches |
+|---|---|---|
+| Messages to the window | 760 | 53 |
+| Bytes to the window | 29.0 MiB | 4.0 MiB, almost all of it the first snapshots |
+| API requests | 868 | 300 |
+| Relists | 351 | 0 |
+| Lost connections | 378 | 0 |
+| Broken streams resumed | — | 198 |
+
+Over the three minutes, 25.7 MiB came from the API server with 0.30.3's reading, and 0.5 MiB with the new one.
+
+Tests: `resources/watch_resume_tests.rs`.
+- A refused watch is retried without a list.
+- A broken stream resumes from its `resourceVersion`.
+- Refusals that go on become a lost connection after all.
