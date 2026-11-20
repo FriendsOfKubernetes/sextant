@@ -20,5 +20,5 @@ afterEach(() => backend.restore());
 
 it("opens over the window after an update", async () => {
   render(<AppShell />);
-  expect(await screen.findByRole("dialog", { name: "What's new in Sextant 0.30.5" })).toBeInTheDocument();
+  expect(await screen.findByRole("dialog", { name: "What's new in Sextant 0.30.6" })).toBeInTheDocument();
 });
