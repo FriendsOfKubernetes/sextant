@@ -168,3 +168,48 @@ Tests: `resources/watch_resume_tests.rs`.
 - A refused watch is retried without a list.
 - A broken stream resumes from its `resourceVersion`.
 - Refusals that go on become a lost connection after all.
+
+## Amendment (0.30.6): lists that are not watches, relists as changes, and why a connection was lost
+
+0.30.5's log from the reporter of #342 still showed about 36 relists a minute on both machines, as many lost
+connections, and not one resumed error: 0.30.4's resume never ran there. That shape (relists = reconnects,
+`resumed=0`) is what a watch refused with 403 right after its list gives. A user who may list a kind but not watch it
+had every refused watch counted as a lost connection, since 403 is an error about the request: `Reconnecting`, the
+kind listed again after a second, a full snapshot, and the same again. A fake API server that lists Pods and refuses
+their watch reproduced it: a full snapshot every second. Their full dump held 635 copies of one 10.65 MB snapshot of
+254 CRDs: the window's metadata-only CRD list (`watchCrdChanges`). Metadata-only lists kept the
+`kubectl.kubernetes.io/last-applied-configuration` annotation, the whole object as `kubectl apply` sent it, which for
+a CRD includes its OpenAPI schema.
+
+- **A source whose watch is refused after its list is listed instead of watched.** A refusal is 403, or 405 where
+  watching is not served, as the watch's start, a broken stream's error or an error event (`watch_refused`). The
+  source's watcher stops, and the source is listed every `POLL_INTERVAL` (30 s) by `SourceApi::poll` in pages of 500.
+  Each list is told like a relist of the watcher. A failed list is an `InitialListFailed` that takes the usual path,
+  and the next list follows after the same pause. A lost connection tries watching it again.
+  - A namespace the user may not list is still left out, and its access check is now a one-item list only
+    (`may_list`): once it may be listed, it comes back and is listed or watched as its rights allow.
+  - Before, a namespace that could be listed but not watched was left out with "no access" while other namespaces
+    remained, or, when it was the only one, caused reconnects every second.
+- **A relist with the connection up sends what it changed, as a `Delta`.** That covers an expired `resourceVersion`,
+  each of those lists, and a namespace leaving or coming back. Objects that are new, or whose text is not the stored
+  one, are upserted; objects gone, or now left out for the cap, are deleted (`Batcher::note_changes`). Only a lost
+  connection still ends in a full `Snapshot`, which ends `Reconnecting`. Every consumer understands a delta: the
+  window, the problems store, the timeline (whose relist changes now count as changes) and extension frames.
+- **Metadata-only lists leave out `last-applied-configuration`** (`metadata_object`). No metadata-only consumer
+  reads it, and the window's CRD list shrinks from megabytes to its names and versions. Whole-object watches keep it.
+- **The counters line says why connections were lost** (`ended`, `refused`, `repeated`), and how many sources were
+  `listed instead` of watched, with those `lists`.
+
+The memory itself is still unexplained. Both machines sent the window about the same; only the VDI kept it. Large
+channel messages go to the window through the IPC fetch, which on Windows copies each body into an `IStream`
+(`SHCreateMemStream`) that WebView2 holds. The dump's copies look like such bodies, so the WebView2 runtime of each
+machine was asked for. Sending far less removes most of what could be kept.
+
+Tests:
+- In `resources/watch_resume_tests.rs`: a kind that can be listed but not watched is listed again and sends only
+  changes, and a relist with the connection up sends only what changed.
+- In `resources/watch.rs`:
+  - a metadata-only watch leaves out the last-applied configuration;
+  - a namespace that can be listed but not watched is listed again instead and keeps the others streaming;
+  - a metadata watch refused with an indented status is read as refused;
+  - a namespace refused both ways stays out.

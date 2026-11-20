@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} 的新功能",
   "version": "Sextant {{version}}",
   "close": "知道了",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "可以列出但不能監看的類型",
+      "text": "如果你可以列出某個類型但不能監看（watch）它，Sextant 現在每 30 秒列出一次，並且只把變化傳送給視窗，而不再每秒重新連線並傳送整個清單。重新讀取的清單也只傳送變化，中繼資料清單也不再帶有 kubectl 為每個物件保存的副本，因此 Sextant 使用的記憶體少得多。"
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "擴充功能 API 6",

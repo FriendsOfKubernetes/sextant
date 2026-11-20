@@ -2,9 +2,10 @@
 //! seen, and batches every 250 ms.
 //!
 //! What the stream yields (see [`WatchUpdate`]):
-//! - `Snapshot` — the full list, first after the initial list and again after every relist (reconnect,
-//!   expired `resourceVersion`);
-//! - `Delta` — objects added/changed and uids deleted since the previous batch;
+//! - `Snapshot` — the full list, first after the initial list and again after a lost connection;
+//! - `Delta` — objects added/changed and uids deleted since the previous batch. A relist with the connection up
+//!   (an expired `resourceVersion`, a source listed again because its watch was refused, a forbidden namespace
+//!   leaving or coming back) is told as one too: what it changed, not the whole list again (#342);
 //! - `Reconnecting` — the connection was lost; the data on screen stays, a new list follows with growing pauses
 //!   (1 s, 2 s, 4 s, 8 s, then every 15 s) until the API server answers, and then a fresh `Snapshot`. Once data was
 //!   shown, a watch that breaks now and then (a proxy such as Teleport's ending long requests) is not a lost
@@ -12,18 +13,24 @@
 //!   with no list and no snapshot (#342). A stream that worked and broke is always resumed so; only a source whose
 //!   watches cannot start or are refused ([`TRANSIENT_LIMIT`] in a row over at least [`TRANSIENT_WINDOW`]) counts as a
 //!   lost connection;
-//! - `Forbidden` — some of the selected namespaces cannot be listed or watched (no permission), at the start or at
-//!   any later moment (e.g. the right was revoked); they are left out and a new `Snapshot` without their objects
-//!   follows, the others keep streaming. A left-out namespace is checked again after 30 s, then after pauses that
-//!   double up to 5 min: a one-item list and a watch request. Only when both are accepted is it watched again, and
-//!   once its list is in, a `Forbidden` naming the namespaces still left out (maybe none) and a `Snapshot` with its
+//! - `Forbidden` — some of the selected namespaces cannot be listed (no permission), at the start or at any later
+//!   moment (e.g. the right was revoked); they are left out and a delta removing their objects follows, the others
+//!   keep streaming. A left-out namespace is checked again after 30 s, then after pauses that
+//!   double up to 5 min: a one-item list. Only when it is accepted is it watched again, and
+//!   once its list is in, a `Forbidden` naming the namespaces still left out (maybe none) and a delta with its
 //!   objects follow; a refused check changes nothing on screen. Every `Forbidden` names all namespaces left out at
 //!   that moment;
 //! - `Error` — the watch cannot start (no permission to list the kind in any of the namespaces, unknown kind,
 //!   rejected credentials); the stream ends after it.
 //!
+//! A source the API server lets list but whose watch it refuses (403/405 after the list; the right to list a kind
+//! but not to watch it) is listed every [`POLL_INTERVAL`] instead, and each list sends only what it changed (#342):
+//! before, every refused watch was a lost connection, so the kind was listed again and a full snapshot sent every
+//! second. A lost connection tries watching it again.
+//!
 //! With `WatchSpec::metadata_only`, the lists and watches ask the API server for metadata only
-//! (`PartialObjectMetadata`): every object is `apiVersion`, `kind` and `metadata`.
+//! (`PartialObjectMetadata`): every object is `apiVersion`, `kind` and `metadata`, without the annotation
+//! `kubectl.kubernetes.io/last-applied-configuration` (a copy of the whole object; a CRD's holds its schema).
 //!
 //! A whole-object watch of core/v1 Secrets has two sources per namespace: `type!=helm.sh/release.v1` as whole
 //! objects, and `type=helm.sh/release.v1` as metadata only, so the release payloads (often megabytes each) are never
@@ -58,7 +65,7 @@ use kube::runtime::{WatchStreamExt, watcher};
 use serde_json::Value;
 use tokio::time::{Instant, Interval, MissedTickBehavior};
 
-use super::get::{ResolvedKind, resolve_kind, to_watch_object};
+use super::get::{LAST_APPLIED_ANNOTATION, ResolvedKind, resolve_kind, to_watch_object};
 use super::{WatchObject, WatchOptions, WatchSpec, WatchUpdate};
 use crate::cluster::ClusterManager;
 use crate::error::{CoreError, CoreResult, ErrorCode};
@@ -77,6 +84,14 @@ const TRANSIENT_LIMIT: u32 = 4;
 const TRANSIENT_WINDOW: Duration = Duration::from_secs(15);
 #[cfg(test)]
 const TRANSIENT_WINDOW: Duration = Duration::from_secs(4);
+/// How often a source whose watch the API server refused after its list (the right to list but not to watch) is
+/// listed again instead (#342).
+#[cfg(not(test))]
+const POLL_INTERVAL: Duration = Duration::from_secs(30);
+#[cfg(test)]
+const POLL_INTERVAL: Duration = Duration::from_millis(500);
+/// Objects per page of such a list (kube's watcher lists 500 at a time too).
+const POLL_PAGE: u32 = 500;
 /// An error this long after the previous one starts a new run.
 const TRANSIENT_FORGET: Duration = Duration::from_secs(60);
 
@@ -87,6 +102,15 @@ pub struct WatchStats {
     pub relists: u64,
     /// Lost connections after the first snapshot: every source listed again.
     pub reconnects: u64,
+    /// Why, of `reconnects`: every watch stream ended; an error that is about the request (401, 403, 404, an
+    /// invalid request, the credentials); errors that went on ([`TRANSIENT_LIMIT`] in a row).
+    pub reconnects_ended: u64,
+    pub reconnects_refused: u64,
+    pub reconnects_repeated: u64,
+    /// Sources whose watch the API server refused after their list, from then on listed every [`POLL_INTERVAL`],
+    /// and those lists.
+    pub polled: u64,
+    pub polls: u64,
     /// Expired `resourceVersion`s (410).
     pub gone: u64,
     /// Errors left to the watcher to resume, by kind: the stream broke, a watch could not start, the API server
@@ -103,6 +127,10 @@ mod stats {
 
     pub(super) static RELISTS: AtomicU64 = AtomicU64::new(0);
     pub(super) static RECONNECTS: AtomicU64 = AtomicU64::new(0);
+    /// ended, refused, repeated.
+    pub(super) static RECONNECT_CAUSES: [AtomicU64; 3] = [const { AtomicU64::new(0) }; 3];
+    pub(super) static POLLED: AtomicU64 = AtomicU64::new(0);
+    pub(super) static POLLS: AtomicU64 = AtomicU64::new(0);
     pub(super) static GONE: AtomicU64 = AtomicU64::new(0);
     /// broken, start, event, list, other.
     pub(super) static RESUMED: [AtomicU64; 5] = [const { AtomicU64::new(0) }; 5];
@@ -121,6 +149,11 @@ pub fn watch_stats() -> WatchStats {
     WatchStats {
         relists: stats::get(&stats::RELISTS),
         reconnects: stats::get(&stats::RECONNECTS),
+        reconnects_ended: stats::get(&stats::RECONNECT_CAUSES[0]),
+        reconnects_refused: stats::get(&stats::RECONNECT_CAUSES[1]),
+        reconnects_repeated: stats::get(&stats::RECONNECT_CAUSES[2]),
+        polled: stats::get(&stats::POLLED),
+        polls: stats::get(&stats::POLLS),
         gone: stats::get(&stats::GONE),
         resumed_broken: stats::get(&stats::RESUMED[0]),
         resumed_start: stats::get(&stats::RESUMED[1]),
@@ -138,6 +171,18 @@ fn unreachable_or_refused(err: &watcher::Error) -> bool {
         watcher::Error::WatchFailed(kube::Error::Api(_)) => true,
         watcher::Error::WatchFailed(_) => false,
         _ => true,
+    }
+}
+
+/// Whether an error is the API server refusing a watch (403, or 405 where watching is not served), as it does where
+/// the user may list a kind but not watch it.
+fn watch_refused(err: &watcher::Error) -> bool {
+    let refused = |code: u16| code == 403 || code == 405;
+    match err {
+        watcher::Error::WatchStartFailed(kube::Error::Api(status))
+        | watcher::Error::WatchFailed(kube::Error::Api(status)) => refused(status.code),
+        watcher::Error::WatchError(status) => refused(status.code),
+        _ => false,
     }
 }
 
@@ -372,8 +417,76 @@ impl SourceApi {
     }
 }
 
+impl SourceApi {
+    /// Instead of a watcher, for a source whose watch was refused after its list: the source listed again every
+    /// [`POLL_INTERVAL`], told as a watcher tells a relist (`Init`, `InitApply` …, `InitDone`); a failed list is an
+    /// `InitialListFailed`, and the next one follows after the same pause.
+    fn poll(
+        &self,
+        config: watcher::Config,
+    ) -> BoxStream<'static, watcher::Result<watcher::Event<DynamicObject>>> {
+        let api = self.clone();
+        let mut params = ListParams::default().limit(POLL_PAGE);
+        if let Some(labels) = &config.label_selector {
+            params = params.labels(labels);
+        }
+        if let Some(fields) = &config.field_selector {
+            params = params.fields(fields);
+        }
+        futures::stream::unfold((api, params), |(api, params)| async move {
+            tokio::time::sleep(POLL_INTERVAL).await;
+            let events = match api.list_all(&params).await {
+                Ok(objects) => {
+                    stats::add(&stats::POLLS);
+                    let mut events = Vec::with_capacity(objects.len() + 2);
+                    events.push(Ok(watcher::Event::Init));
+                    events.extend(
+                        objects
+                            .into_iter()
+                            .map(|o| Ok(watcher::Event::InitApply(o))),
+                    );
+                    events.push(Ok(watcher::Event::InitDone));
+                    events
+                }
+                Err(err) => vec![Err(watcher::Error::InitialListFailed(err))],
+            };
+            Some((futures::stream::iter(events), (api, params)))
+        })
+        .flatten()
+        .boxed()
+    }
+
+    /// Every object of one list, page by page; metadata-only objects as [`metadata_event`] makes them.
+    async fn list_all(&self, params: &ListParams) -> kube::Result<Vec<DynamicObject>> {
+        let mut params = params.clone();
+        let mut objects = Vec::new();
+        loop {
+            let next = match self {
+                Self::Whole(api) => {
+                    let page = api.list(&params).await?;
+                    objects.extend(page.items);
+                    page.metadata.continue_
+                }
+                Self::Metadata { api, helm_release } => {
+                    let page = api.list(&params).await?;
+                    objects.extend(
+                        page.items
+                            .into_iter()
+                            .map(|meta| metadata_object(meta, *helm_release)),
+                    );
+                    page.metadata.continue_
+                }
+            };
+            match next.filter(|token| !token.is_empty()) {
+                Some(token) => params.continue_token = Some(token),
+                None => return Ok(objects),
+            }
+        }
+    }
+}
+
 impl Source {
-    /// Whether this source may now be listed and watched (see [`may_list_and_watch`]).
+    /// Whether this source may now be listed (see [`may_list`]).
     fn access_check(&self, index: usize) -> BoxFuture<'static, (usize, bool)> {
         let (url, client) = match &self.api {
             SourceApi::Whole(api) => (api.resource_url().to_owned(), api.clone().into_client()),
@@ -384,51 +497,32 @@ impl Source {
         let labels = self.config.label_selector.clone();
         let fields = self.config.field_selector.clone();
         Box::pin(async move {
-            let allowed =
-                may_list_and_watch(client, url, labels.as_deref(), fields.as_deref()).await;
+            let allowed = may_list(client, url, labels.as_deref(), fields.as_deref()).await;
             (index, allowed)
         })
     }
 }
 
-/// Whether the objects at `url` may be listed and watched: a one-item metadata list for a `resourceVersion`, then
-/// a metadata watch from it, of which only the answer's status is read. Any failure counts as "not yet".
-async fn may_list_and_watch(
+/// Whether the objects at `url` may be listed: a one-item metadata list. Any failure counts as "not yet". Its watch
+/// is not asked: a source the API server lets list but not watch is listed again instead (#342).
+async fn may_list(
     client: kube::Client,
     url: String,
     labels: Option<&str>,
     fields: Option<&str>,
 ) -> bool {
     let request = kube::core::Request::new(url);
-    let (mut list, mut watch) = (
-        ListParams::default().limit(1),
-        WatchParams::default().timeout(1),
-    );
+    let mut list = ListParams::default().limit(1);
     if let Some(labels) = labels {
         list = list.labels(labels);
-        watch = watch.labels(labels);
     }
     if let Some(fields) = fields {
         list = list.fields(fields);
-        watch = watch.fields(fields);
     }
     let check = async {
-        let listed: ObjectList<PartialObjectMeta<DynamicObject>> = client
-            .request(request.list_metadata(&list).ok()?)
-            .await
-            .ok()?;
-        let version = listed.metadata.resource_version.unwrap_or_default();
-        let mut watch = request.watch_metadata(&watch, &version).ok()?;
-        watch.headers_mut().insert(
-            http::header::ACCEPT,
-            http::HeaderValue::from_static(METADATA_WATCH_ACCEPT),
-        );
-        // The answer is dropped right after its status: no events are read.
-        let answer = client
-            .send(watch.map(kube::client::Body::from))
-            .await
-            .ok()?;
-        Some(answer.status().is_success())
+        let listed: kube::Result<ObjectList<PartialObjectMeta<DynamicObject>>> =
+            client.request(request.list_metadata(&list).ok()?).await;
+        Some(listed.is_ok())
     };
     tokio::time::timeout(REFUSAL_CHECK_TIMEOUT, check)
         .await
@@ -482,7 +576,7 @@ async fn refused_metadata_watch(
 /// At most this many events already received are taken in at once during a progressive first list (a page is 500).
 const PAGE_DRAIN: usize = 2000;
 
-/// How long [`refused_metadata_watch`] and [`may_list_and_watch`] wait for the API server.
+/// How long [`refused_metadata_watch`] and [`may_list`] wait for the API server.
 const REFUSAL_CHECK_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Watcher streams + store + pending batch.
@@ -501,7 +595,7 @@ struct Batcher {
     forbidden_attempt: Vec<u32>,
     /// When a retry brought a forbidden source back.
     restored_at: Vec<Option<Instant>>,
-    /// Running checks whether a forbidden source may be listed and watched again: (source, allowed).
+    /// Running checks whether a forbidden source may be listed again: (source, allowed).
     access_checks: FuturesUnordered<BoxFuture<'static, (usize, bool)>>,
     forbidden_retry: ForbiddenRetry,
     /// A `Forbidden` update waits to be sent.
@@ -540,6 +634,8 @@ struct Batcher {
     capped_sent: Option<u64>,
     /// Each source's errors in a row once data was shown, left to its watcher until they go on.
     runs: Vec<TransientRun>,
+    /// Sources listed every [`POLL_INTERVAL`] since their watch was refused (a fresh start tries watching again).
+    polling: Vec<bool>,
     /// A `Capped` waits to be sent after the batch just returned.
     capped_pending: Option<u64>,
 }
@@ -598,6 +694,7 @@ impl Batcher {
             capped_sent: None,
             capped_pending: None,
             runs: vec![TransientRun::default(); count],
+            polling: vec![false; count],
         };
         batcher.start_streams();
         batcher
@@ -613,6 +710,7 @@ impl Batcher {
             }
         }
         self.listed.iter_mut().for_each(|l| *l = false);
+        self.polling.iter_mut().for_each(|p| *p = false);
         self.runs
             .iter_mut()
             .for_each(|r| *r = TransientRun::default());
@@ -627,6 +725,23 @@ impl Batcher {
         let events = source
             .api
             .watch(source.config.clone())
+            .map(move |event| (index, event));
+        let (events, abort) = futures::stream::abortable(events);
+        self.aborts[index] = Some(abort);
+        self.streams.push(events.boxed());
+    }
+
+    /// Replaces the refused watcher of one source by its list every [`POLL_INTERVAL`]; its objects stay.
+    fn start_polling(&mut self, index: usize) {
+        if let Some(abort) = self.aborts[index].take() {
+            abort.abort();
+        }
+        self.polling[index] = true;
+        stats::add(&stats::POLLED);
+        let source = &self.sources[index];
+        let events = source
+            .api
+            .poll(source.config.clone())
             .map(move |event| (index, event));
         let (events, abort) = futures::stream::abortable(events);
         self.aborts[index] = Some(abort);
@@ -744,7 +859,12 @@ impl Batcher {
             Some((index, Ok(event))) => self.apply(index, event),
             Some((index, Err(err))) => self.fail(index, err),
             // Watcher streams do not end by themselves; treat it like a lost connection.
-            None => self.lose_connection(),
+            None => {
+                if self.snapshot_sent {
+                    stats::add(&stats::RECONNECT_CAUSES[0]);
+                }
+                self.lose_connection();
+            }
         }
     }
 
@@ -775,11 +895,25 @@ impl Batcher {
                 }
             }
             watcher::Event::InitDone => {
-                if self.snapshot_sent {
+                if self.snapshot_sent && !self.polling[index] {
                     stats::add(&stats::RELISTS);
                 }
+                // A relist once data was shown, with the connection up (an expired `resourceVersion`, a source
+                // listed again for its refused watch, a forbidden namespace back): the window gets what changed
+                // since, not the whole list again (#342). After a lost connection a full snapshot ends
+                // `Reconnecting`.
+                let changes_only = self.snapshot_sent && !self.reconnecting;
                 let items = self.init_buffers[index].take().unwrap_or_default();
                 let left_out = std::mem::take(&mut self.init_dropped[index]);
+                let before: HashMap<String, WatchObject> = if changes_only {
+                    self.store
+                        .iter()
+                        .filter(|(_, (source, _))| *source == index)
+                        .map(|(uid, (_, value))| (uid.clone(), value.clone()))
+                        .collect()
+                } else {
+                    HashMap::new()
+                };
                 self.store.retain(|_, (source, _)| *source != index);
                 self.dropped.retain(|_, source| *source != index);
                 for (uid, value) in items {
@@ -794,6 +928,9 @@ impl Batcher {
                         self.dropped.insert(uid, index);
                     }
                 }
+                if changes_only {
+                    self.note_changes(index, before);
+                }
                 if self.forbidden[index] {
                     // A retry listed the forbidden namespace: it is back, and a snapshot with its objects follows.
                     self.forbidden[index] = false;
@@ -802,7 +939,7 @@ impl Batcher {
                 }
                 self.listed[index] = true;
                 if self.all_listed() {
-                    self.snapshot_pending = true;
+                    self.snapshot_pending = !changes_only;
                     self.attempt = 0;
                 }
             }
@@ -830,6 +967,23 @@ impl Batcher {
                 if self.store.remove(&uid).is_some() || self.snapshot_sent {
                     self.deleted.insert(uid);
                 }
+            }
+        }
+    }
+
+    /// What a relist of `index` changed against `before` (its objects in the store before it), as the next delta:
+    /// objects new or with another text upserted, objects gone (or now left out for the cap) deleted.
+    fn note_changes(&mut self, index: usize, before: HashMap<String, WatchObject>) {
+        for (uid, (source, value)) in &self.store {
+            if *source == index && before.get(uid) != Some(value) {
+                self.deleted.remove(uid);
+                self.upserted.insert(uid.clone(), value.clone());
+            }
+        }
+        for uid in before.into_keys() {
+            if !self.store.contains_key(&uid) {
+                self.upserted.remove(&uid);
+                self.deleted.insert(uid);
             }
         }
     }
@@ -887,6 +1041,12 @@ impl Batcher {
             self.schedule_forbidden_retry(index);
             return;
         }
+        // Listed, but its watch refused: the user may list the kind and not watch it. Watching again only lists
+        // it again and again (a full snapshot each time, every second); it is listed every `POLL_INTERVAL` instead.
+        if self.listed[index] && !self.polling[index] && watch_refused(&err) {
+            self.start_polling(index);
+            return;
+        }
         let class = resumed_class(&err);
         let counts = unreachable_or_refused(&err);
         let err = CoreError::from(err);
@@ -915,12 +1075,15 @@ impl Batcher {
             self.streams = SelectAll::new();
             self.fatal = Some(err);
         } else {
+            if self.snapshot_sent {
+                stats::add(&stats::RECONNECT_CAUSES[if fatal { 1 } else { 2 }]);
+            }
             self.lose_connection();
         }
     }
 
     /// Leaves out a namespace that cannot be listed or watched, if other namespaces remain: the watchers of its
-    /// sources stop, the others go on, and its objects leave the store (a new snapshot without them follows once
+    /// sources stop, the others go on, and its objects leave the store (a delta without them follows once
     /// everything left is listed). It is tried again after [`ForbiddenRetry`] pauses. `false` when it is not such
     /// a namespace (all namespaces, or the last one).
     fn forbid(&mut self, index: usize) -> bool {
@@ -937,12 +1100,22 @@ impl Batcher {
             return false;
         }
         let now = Instant::now();
+        // Once data was shown, the window is told which objects left with it, not sent the rest again.
+        let changes_only = self.snapshot_sent && !self.reconnecting;
         for i in 0..self.sources.len() {
             if !same(&self.sources[i]) || self.forbidden[i] {
                 continue;
             }
+            if changes_only {
+                for (uid, (source, _)) in &self.store {
+                    if *source == i {
+                        self.upserted.remove(uid);
+                        self.deleted.insert(uid.clone());
+                    }
+                }
+            }
             self.forbidden[i] = true;
-            // Lost again soon after a retry brought it back (e.g. it may be listed but not watched): the pauses
+            // Lost again soon after a retry brought it back (its list allowed and refused by turns): the pauses
             // keep growing instead of starting over.
             if self.restored_at[i].is_none_or(|at| now - at >= self.forbidden_retry.max) {
                 self.forbidden_attempt[i] = 0;
@@ -952,7 +1125,7 @@ impl Batcher {
         }
         self.forbidden_pending = true;
         if self.all_listed() {
-            self.snapshot_pending = true;
+            self.snapshot_pending = !changes_only;
             self.attempt = 0;
         }
         true
@@ -970,7 +1143,7 @@ impl Batcher {
         self.retry_forbidden_at[index] = Some(Instant::now() + delay);
     }
 
-    /// Checks every forbidden source whose pause is over: may it be listed and watched again?
+    /// Checks every forbidden source whose pause is over: may it be listed again?
     fn retry_forbidden(&mut self) {
         let now = Instant::now();
         for index in 0..self.sources.len() {
@@ -1137,21 +1310,32 @@ fn metadata_event(
     event: watcher::Event<PartialObjectMeta<DynamicObject>>,
     helm_release: bool,
 ) -> watcher::Event<DynamicObject> {
-    let object = |meta: PartialObjectMeta<DynamicObject>| DynamicObject {
-        types: None,
-        metadata: meta.metadata,
-        data: if helm_release {
-            serde_json::json!({ "type": HELM_RELEASE_TYPE, "data": { "release": "" } })
-        } else {
-            Value::Object(serde_json::Map::new())
-        },
-    };
+    let object = |meta| metadata_object(meta, helm_release);
     match event {
         watcher::Event::Apply(meta) => watcher::Event::Apply(object(meta)),
         watcher::Event::Delete(meta) => watcher::Event::Delete(object(meta)),
         watcher::Event::Init => watcher::Event::Init,
         watcher::Event::InitApply(meta) => watcher::Event::InitApply(object(meta)),
         watcher::Event::InitDone => watcher::Event::InitDone,
+    }
+}
+
+/// A metadata-only object as a `DynamicObject` (see [`metadata_event`]), without `last-applied-configuration`: that
+/// annotation is a copy of the whole object as `kubectl apply` sent it (a CRD's with its OpenAPI schema), which no
+/// metadata-only list needs and which made the window's list of CRDs megabytes (#342).
+fn metadata_object(meta: PartialObjectMeta<DynamicObject>, helm_release: bool) -> DynamicObject {
+    let mut metadata = meta.metadata;
+    if let Some(annotations) = metadata.annotations.as_mut() {
+        annotations.remove(LAST_APPLIED_ANNOTATION);
+    }
+    DynamicObject {
+        types: None,
+        metadata,
+        data: if helm_release {
+            serde_json::json!({ "type": HELM_RELEASE_TYPE, "data": { "release": "" } })
+        } else {
+            Value::Object(serde_json::Map::new())
+        },
     }
 }
 
@@ -1652,6 +1836,36 @@ mod tests {
         );
     }
 
+    #[tokio::test]
+    async fn a_metadata_only_watch_leaves_out_the_last_applied_configuration() {
+        // `kubectl apply` keeps a copy of the whole object in this annotation (a CRD's with its OpenAPI schema): a
+        // metadata-only list of CRDs carried megabytes of it (#342). Other annotations stay.
+        let api = FakeApi::start(|req: &Request| match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/api/v1/namespaces/apps/configmaps" if req.query.contains("watch=") => {
+                Reply::stream("")
+            }
+            "/api/v1/namespaces/apps/configmaps" => Reply::json(
+                200,
+                r#"{"apiVersion":"v1","kind":"ConfigMapList","metadata":{"resourceVersion":"1"},"items":[{"metadata":{"name":"cm","namespace":"apps","uid":"uid-cm","resourceVersion":"1","annotations":{"kubectl.kubernetes.io/last-applied-configuration":"{\"apiVersion\":\"v1\",\"kind\":\"ConfigMap\"}","owner":"team-a"}}}]}"#,
+            ),
+            _ => Reply::not_found(),
+        })
+        .await;
+        let (_tmp, mgr, id) = connected_to(api.url()).await;
+        let spec = WatchSpec {
+            metadata_only: true,
+            ..spec("", "ConfigMap", Some(&["apps"]))
+        };
+        let items = first_snapshot(&mgr, &id, spec).await;
+        let cm = by_name(&items, "cm");
+        assert_eq!(
+            cm["metadata"]["annotations"],
+            serde_json::json!({ "owner": "team-a" }),
+            "{cm}"
+        );
+    }
+
     fn by_name(items: &[WatchObject], name: &str) -> Value {
         items
             .iter()
@@ -1741,9 +1955,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_metadata_watch_refused_with_an_indented_status_leaves_the_namespace_out() {
+    async fn a_metadata_watch_refused_with_an_indented_status_is_read_as_refused() {
         // Like a real API server: a refused watch with kube's metadata `Accept` (no fallback) gets an indented
-        // `Status`, which kube cannot read as watch events.
+        // `Status`, which kube cannot read as watch events. Read as the 403 it is, the namespace (which may be
+        // listed) is listed again instead of watched; read as a broken stream, it would only be resumed.
         let indented: String =
             serde_json::to_string_pretty(&serde_json::from_str::<Value>(FORBIDDEN).unwrap())
                 .unwrap();
@@ -1777,21 +1992,17 @@ mod tests {
             metadata_only: true,
             ..spec("", "Secret", Some(&["a", "b"]))
         };
-        let mut updates = Box::pin(watch(&mgr, &id, spec).await.unwrap());
-        let (mut forbidden, mut last_items) = (None, Vec::new());
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while forbidden.is_none() || names(&last_items) != ["s-a"] {
-            let left = deadline.saturating_duration_since(Instant::now());
-            match tokio::time::timeout(left, updates.next()).await {
-                Ok(Some(WatchUpdate::Snapshot { items })) => last_items = items,
-                Ok(Some(WatchUpdate::Forbidden { namespaces })) => forbidden = Some(namespaces),
-                Ok(Some(WatchUpdate::Delta { .. })) => {}
-                other => panic!(
-                    "expected forbidden and a snapshot, got {other:?} (forbidden {forbidden:?}, items {last_items:?})"
-                ),
-            }
-        }
-        assert_eq!(forbidden.unwrap(), ["b"]);
+        let updates = watch(&mgr, &id, spec).await.unwrap();
+        let (forbidden, states) =
+            shown_states(updates, Duration::from_millis(1500), |_, _| false).await;
+        assert!(forbidden.is_empty(), "{forbidden:?}");
+        assert_eq!(names(states.last().unwrap()), ["s-a", "s-b"]);
+        let lists_in_b = api
+            .requests()
+            .iter()
+            .filter(|r| r.path == "/api/v1/namespaces/b/secrets" && !r.query.contains("watch="))
+            .count();
+        assert!(lists_in_b >= 2, "listed again: {lists_in_b}");
     }
 
     /// ConfigMaps in `a` and `b`; in `b` the first `refused_lists` lists and the first `refused_watches` watches
@@ -1841,39 +2052,65 @@ mod tests {
         max: Duration::from_millis(200),
     };
 
-    /// Every `Forbidden` and the last `Snapshot` of a ConfigMap watch of `a` and `b`, until `done(forbidden, items)`
-    /// or `wait` is over (then `done` must accept what came, else it panics).
+    /// Every `Forbidden` and every state the window shows (snapshots and deltas applied, each state its objects)
+    /// of `updates`, until `done(forbidden, shown)` or `wait` is over.
+    async fn shown_states(
+        updates: impl futures::Stream<Item = WatchUpdate>,
+        wait: Duration,
+        done: impl Fn(&[Vec<String>], &[WatchObject]) -> bool,
+    ) -> (Vec<Vec<String>>, Vec<Vec<WatchObject>>) {
+        let mut updates = Box::pin(updates);
+        let mut shown: std::collections::BTreeMap<String, WatchObject> = Default::default();
+        let (mut forbidden, mut states): (Vec<Vec<String>>, Vec<Vec<WatchObject>>) =
+            (Vec::new(), Vec::new());
+        let uid = |o: &WatchObject| {
+            let v: Value = serde_json::from_str(o.json()).unwrap();
+            v["metadata"]["uid"].as_str().unwrap().to_owned()
+        };
+        let deadline = Instant::now() + wait;
+        while !done(&forbidden, states.last().map_or(&[], |s| s.as_slice())) {
+            let left = deadline.saturating_duration_since(Instant::now());
+            match tokio::time::timeout(left, updates.next()).await {
+                Ok(Some(WatchUpdate::Snapshot { items })) => {
+                    shown = items.into_iter().map(|o| (uid(&o), o)).collect();
+                }
+                Ok(Some(WatchUpdate::Delta { upserted, deleted })) => {
+                    for o in upserted {
+                        shown.insert(uid(&o), o);
+                    }
+                    for gone in deleted {
+                        shown.remove(&gone);
+                    }
+                }
+                Ok(Some(WatchUpdate::Forbidden { namespaces })) => {
+                    forbidden.push(namespaces);
+                    continue;
+                }
+                Err(_) => break,
+                other => panic!("unexpected {other:?} (forbidden {forbidden:?})"),
+            }
+            states.push(shown.values().cloned().collect());
+        }
+        (forbidden, states)
+    }
+
+    /// [`shown_states`] of a ConfigMap watch of `a` and `b`.
     async fn watch_flaky_namespace(
         api: &FakeApi,
         wait: Duration,
         done: impl Fn(&[Vec<String>], &[WatchObject]) -> bool,
     ) -> (Vec<Vec<String>>, Vec<Vec<WatchObject>>) {
         let (_tmp, mgr, id) = connected_to(api.url()).await;
-        let mut updates = Box::pin(
-            watch_with(
-                &mgr,
-                &id,
-                spec("", "ConfigMap", Some(&["a", "b"])),
-                WatchOptions::default(),
-                SHORT_RETRY,
-            )
-            .await
-            .unwrap(),
-        );
-        let (mut forbidden, mut snapshots): (Vec<Vec<String>>, Vec<Vec<WatchObject>>) =
-            (Vec::new(), Vec::new());
-        let deadline = Instant::now() + wait;
-        while !done(&forbidden, snapshots.last().map_or(&[], |s| s.as_slice())) {
-            let left = deadline.saturating_duration_since(Instant::now());
-            match tokio::time::timeout(left, updates.next()).await {
-                Ok(Some(WatchUpdate::Snapshot { items })) => snapshots.push(items),
-                Ok(Some(WatchUpdate::Forbidden { namespaces })) => forbidden.push(namespaces),
-                Ok(Some(WatchUpdate::Delta { .. })) => {}
-                Err(_) => break,
-                other => panic!("unexpected {other:?} (forbidden {forbidden:?})"),
-            }
-        }
-        (forbidden, snapshots)
+        let updates = watch_with(
+            &mgr,
+            &id,
+            spec("", "ConfigMap", Some(&["a", "b"])),
+            WatchOptions::default(),
+            SHORT_RETRY,
+        )
+        .await
+        .unwrap();
+        shown_states(updates, wait, done).await
     }
 
     fn requests_in_b(api: &FakeApi, watches: bool) -> usize {
@@ -1900,82 +2137,55 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn a_namespace_still_refused_on_its_watch_stays_out_without_flicker() {
+    async fn a_namespace_that_can_be_listed_but_not_watched_is_listed_again_instead() {
+        // The right to list ConfigMaps in `b` but not to watch them: before #342 the namespace was left out (or,
+        // as the only one, its watch reconnected and sent a full snapshot every second).
         let api = FakeApi::start(flaky_namespace_server(0, usize::MAX)).await;
-        let (forbidden, snapshots) =
-            watch_flaky_namespace(&api, Duration::from_millis(1500), |_, _| false).await;
-        assert_eq!(forbidden, [vec!["b".to_owned()]], "{snapshots:?}");
+        let (forbidden, states) =
+            watch_flaky_namespace(&api, Duration::from_millis(1800), |_, _| false).await;
+        assert!(forbidden.is_empty(), "{forbidden:?}");
+        // Only the first list was a snapshot: the lists of `b` that followed changed nothing, so nothing was sent.
+        assert_eq!(states.len(), 1, "{states:?}");
+        assert_eq!(names(&states[0]), ["cm-a", "cm-b"]);
         assert_eq!(
-            names(snapshots.last().unwrap()),
-            ["cm-a"],
-            "the namespace stays out"
-        );
-        // After the namespace was left out, no snapshot brings its objects back even for a moment.
-        let left_out_at = snapshots
-            .iter()
-            .position(|items| names(items) == ["cm-a"])
-            .unwrap();
-        assert!(
-            snapshots[left_out_at..]
-                .iter()
-                .all(|items| names(items) == ["cm-a"]),
-            "{snapshots:?}"
+            requests_in_b(&api, true),
+            1,
+            "the refused watch is not tried again"
         );
         assert!(
-            requests_in_b(&api, true) >= 4,
-            "it is checked again and again: {} watches",
-            requests_in_b(&api, true)
+            requests_in_b(&api, false) >= 3,
+            "listed every POLL_INTERVAL: {} lists",
+            requests_in_b(&api, false)
         );
     }
 
     #[tokio::test]
-    async fn a_namespace_whose_watch_is_accepted_again_comes_back() {
-        let api = FakeApi::start(flaky_namespace_server(0, 2)).await;
-        let (forbidden, snapshots) =
-            watch_flaky_namespace(&api, Duration::from_secs(5), |forbidden, items| {
-                forbidden.last().is_some_and(Vec::is_empty) && names(items) == ["cm-a", "cm-b"]
-            })
-            .await;
-        assert_eq!(forbidden, [vec!["b".to_owned()], vec![]], "{snapshots:?}");
-        assert_eq!(names(snapshots.last().unwrap()), ["cm-a", "cm-b"]);
+    async fn a_namespace_whose_list_is_refused_and_its_watch_too_stays_out() {
+        // Neither listed nor watched: left out and checked again, as before; its access check never lets it in.
+        let api = FakeApi::start(flaky_namespace_server(usize::MAX, usize::MAX)).await;
+        let (forbidden, states) =
+            watch_flaky_namespace(&api, Duration::from_millis(1500), |_, _| false).await;
+        assert_eq!(forbidden, [vec!["b".to_owned()]], "{states:?}");
+        assert!(
+            states.iter().all(|items| names(items) == ["cm-a"]),
+            "{states:?}"
+        );
     }
 
     #[tokio::test]
-    async fn a_namespace_that_can_be_listed_but_not_watched_is_left_out_and_the_others_stay() {
+    async fn a_namespace_that_can_be_listed_but_not_watched_keeps_the_others_streaming() {
         let api = fake_api(Behaviour {
             no_watch_in: Some("b"),
             ..Behaviour::default()
         })
         .await;
         let (_tmp, mgr, id) = connected_to(api.url()).await;
-        let mut updates = Box::pin(
-            watch(&mgr, &id, spec("", "Secret", Some(&["a", "b"])))
-                .await
-                .unwrap(),
-        );
-        let mut forbidden = None;
-        let mut last_items = None;
-        let deadline = Instant::now() + Duration::from_secs(5);
-        while forbidden.is_none()
-            || last_items
-                .as_ref()
-                .is_none_or(|items: &Vec<WatchObject>| items.len() != 1)
-        {
-            let left = deadline.saturating_duration_since(Instant::now());
-            match tokio::time::timeout(left, updates.next()).await {
-                Ok(Some(WatchUpdate::Snapshot { items })) => last_items = Some(items),
-                Ok(Some(WatchUpdate::Forbidden { namespaces })) => forbidden = Some(namespaces),
-                Ok(Some(WatchUpdate::Delta { .. })) => {}
-                other => panic!(
-                    "expected snapshots and forbidden, got {other:?} (forbidden {forbidden:?}, items {last_items:?})"
-                ),
-            }
-        }
-        assert_eq!(forbidden.unwrap(), ["b"]);
-        assert_eq!(
-            names(&last_items.unwrap()),
-            ["s-a"],
-            "the other namespace's data stays"
-        );
+        let updates = watch(&mgr, &id, spec("", "Secret", Some(&["a", "b"])))
+            .await
+            .unwrap();
+        let (forbidden, states) =
+            shown_states(updates, Duration::from_millis(1500), |_, _| false).await;
+        assert!(forbidden.is_empty(), "{forbidden:?}");
+        assert_eq!(names(states.last().unwrap()), ["s-a", "s-b"]);
     }
 }

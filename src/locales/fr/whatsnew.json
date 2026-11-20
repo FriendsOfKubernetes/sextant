@@ -2,6 +2,12 @@
   "title": "Nouveautés de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Compris",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Types que vous pouvez lister sans les surveiller",
+      "text": "Lorsque vous pouvez lister un type sans le surveiller (watch), Sextant le liste désormais toutes les 30 secondes et n'envoie à la fenêtre que ce qui a changé, au lieu de se reconnecter et d'envoyer toute la liste chaque seconde. Les listes relues n'envoient elles aussi que leurs changements, et les listes de métadonnées ne portent plus la copie de chaque objet faite par kubectl : Sextant utilise beaucoup moins de mémoire."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "API d'extensions 6",

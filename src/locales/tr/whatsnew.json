@@ -2,6 +2,12 @@
   "title": "Sextant {{version}} sürümünde yenilikler",
   "version": "Sextant {{version}}",
   "close": "Anladım",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Listeleyebildiğiniz ama izleyemediğiniz türler",
+      "text": "Bir türü listeleyebildiğiniz ama izleyemediğiniz (watch) yerlerde Sextant artık onu her 30 saniyede bir listeler ve pencereye yalnızca değişenleri gönderir; her saniye yeniden bağlanıp listenin tamamını göndermez. Yeniden okunan listeler de yalnızca değişikliklerini gönderir ve meta veri listeleri artık kubectl'in her nesneden tuttuğu kopyayı taşımaz; böylece Sextant çok daha az bellek kullanır."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "Uzantı API'si 6",

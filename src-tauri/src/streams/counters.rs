@@ -3,7 +3,9 @@
 //! streams by kind and how many wait for the window, the messages and bytes sent to the window and acknowledged, the
 //! Kubernetes API requests, the connected clusters and whether the window is shown; since 0.30.4 also what was sent
 //! by kind of stream and how the watches fared — lists after their first snapshot, lost connections, expired
-//! `resourceVersion`s and the errors the watcher resumed from (#342). Counts only — never a name, a namespace, a
+//! `resourceVersion`s and the errors the watcher resumed from (#342); since 0.30.6 why connections were lost (every
+//! stream ended, a refusal such as 401/403, errors that went on) and the watches the API server refused after their
+//! list, listed every 30 s instead ("listed instead") with those lists. Counts only — never a name, a namespace, a
 //! URL, a cluster's content or a credential. Memory is also looked at every minute: when it passes 4 GiB, and then
 //! each time it doubles, a line says so at once (a process that runs out of memory may end without a word).
 //!
@@ -112,8 +114,9 @@ pub fn line(now: &Sample, before: &Sample, elapsed: Duration) -> String {
     let (w, w0) = (now.watches, before.watches);
     format!(
         "counters ({} min): memory {memory}; streams open={open}{kinds} waiting={}; to the window messages={} \
-         bytes={}{by_kind} acknowledged={}; API requests={}; watches relists={} reconnects={} gone={} resumed \
-         broken={} start={} event={} list={} other={}; clusters connected={}; window={}",
+         bytes={}{by_kind} acknowledged={}; API requests={}; watches relists={} reconnects={} (ended={} refused={} \
+         repeated={}) gone={} resumed broken={} start={} event={} list={} other={} listed instead={} lists={}; \
+         clusters connected={}; window={}",
         elapsed.as_secs().div_ceil(60),
         now.flows.waiting,
         delta(now.flows.messages, before.flows.messages),
@@ -122,12 +125,17 @@ pub fn line(now: &Sample, before: &Sample, elapsed: Duration) -> String {
         delta(now.api_requests, before.api_requests),
         delta(w.relists, w0.relists),
         delta(w.reconnects, w0.reconnects),
+        delta(w.reconnects_ended, w0.reconnects_ended),
+        delta(w.reconnects_refused, w0.reconnects_refused),
+        delta(w.reconnects_repeated, w0.reconnects_repeated),
         delta(w.gone, w0.gone),
         delta(w.resumed_broken, w0.resumed_broken),
         delta(w.resumed_start, w0.resumed_start),
         delta(w.resumed_event, w0.resumed_event),
         delta(w.resumed_list, w0.resumed_list),
         delta(w.resumed_other, w0.resumed_other),
+        delta(w.polled, w0.polled),
+        delta(w.polls, w0.polls),
         now.clusters_connected,
         now.window.unwrap_or(WindowShown::None).name(),
     )

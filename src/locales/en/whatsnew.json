@@ -2,6 +2,12 @@
   "title": "What's new in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Got it",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Kinds you may list but not watch",
+      "text": "Where you may list a kind but not watch it, Sextant now lists it every 30 seconds and sends the window only what changed, instead of reconnecting and sending the whole list every second. Lists read again also send only their changes, and lists of metadata no longer carry kubectl's copy of each object, so Sextant uses far less memory."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "Extension API 6",

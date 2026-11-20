@@ -2,6 +2,12 @@
   "title": "Novità di Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Ho capito",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Tipi che puoi elencare ma non osservare",
+      "text": "Dove puoi elencare un tipo ma non osservarlo (watch), Sextant ora lo elenca ogni 30 secondi e invia alla finestra solo ciò che è cambiato, invece di riconnettersi e inviare l'intero elenco ogni secondo. Anche gli elenchi riletti inviano solo le modifiche, e gli elenchi di metadati non portano più la copia di ogni oggetto fatta da kubectl, quindi Sextant usa molta meno memoria."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "API delle estensioni 6",

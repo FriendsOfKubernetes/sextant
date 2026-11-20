@@ -2,6 +2,12 @@
   "title": "Novedades de Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Entendido",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Tipos que puede listar pero no observar",
+      "text": "Cuando puede listar un tipo pero no observarlo (watch), Sextant ahora lo lista cada 30 segundos y envía a la ventana solo lo que cambió, en lugar de reconectarse y enviar la lista completa cada segundo. Las listas que se vuelven a leer también envían solo sus cambios, y las listas de metadatos ya no llevan la copia de cada objeto que guarda kubectl, así que Sextant usa mucha menos memoria."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "API de extensiones 6",

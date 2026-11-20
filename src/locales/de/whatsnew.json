@@ -2,6 +2,12 @@
   "title": "Neu in Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Verstanden",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Arten, die Sie auflisten, aber nicht beobachten dürfen",
+      "text": "Wo Sie eine Art auflisten, aber nicht beobachten (watch) dürfen, listet Sextant sie jetzt alle 30 Sekunden auf und schickt dem Fenster nur die Änderungen, statt sich neu zu verbinden und jede Sekunde die ganze Liste zu senden. Erneut gelesene Listen senden ebenfalls nur ihre Änderungen, und Metadatenlisten enthalten nicht mehr die Kopie jedes Objekts von kubectl, sodass Sextant weit weniger Speicher braucht."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "Erweiterungs-API 6",

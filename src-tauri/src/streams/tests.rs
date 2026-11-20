@@ -281,9 +281,12 @@ fn the_counters_line_has_counts_only() {
         watches: sextant_core::resources::WatchStats {
             relists: 3,
             reconnects: 1,
+            reconnects_refused: 1,
             gone: 2,
             resumed_broken: 40,
             resumed_start: 5,
+            polled: 2,
+            polls: 40,
             ..Default::default()
         },
     };
@@ -293,8 +296,9 @@ fn the_counters_line_has_counts_only() {
         line(&now, &before, Duration::from_secs(600)),
         "counters (10 min): memory workingSet=300.0MiB private=512.0MiB; streams open=10 (watch=9 terminal=1) \
          waiting=2; to the window messages=1200 bytes=10.5MiB (watch=1150/10.0MiB terminal=50/0.5MiB) \
-         acknowledged=1160; API requests=512; watches relists=3 reconnects=1 gone=2 resumed broken=30 start=5 \
-         event=0 list=0 other=0; clusters connected=1; window=minimized"
+         acknowledged=1160; API requests=512; watches relists=3 reconnects=1 (ended=0 refused=1 repeated=0) gone=2 \
+         resumed broken=30 start=5 event=0 list=0 other=0 listed instead=2 lists=40; clusters connected=1; \
+         window=minimized"
     );
     let empty = line(
         &Sample::default(),
@@ -304,8 +308,8 @@ fn the_counters_line_has_counts_only() {
     assert_eq!(
         empty,
         "counters (2 min): memory unknown; streams open=0 waiting=0; to the window messages=0 bytes=0.0MiB \
-         acknowledged=0; API requests=0; watches relists=0 reconnects=0 gone=0 resumed broken=0 start=0 event=0 \
-         list=0 other=0; clusters connected=0; window=none"
+         acknowledged=0; API requests=0; watches relists=0 reconnects=0 (ended=0 refused=0 repeated=0) gone=0 \
+         resumed broken=0 start=0 event=0 list=0 other=0 listed instead=0 lists=0; clusters connected=0; window=none"
     );
 }
 

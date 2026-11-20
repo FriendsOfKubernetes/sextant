@@ -166,3 +166,112 @@ async fn errors_that_go_on_are_a_lost_connection_after_all() {
     assert!(kinds.contains(&"snapshot"), "{kinds:?}");
     assert!(lists.load(Ordering::SeqCst) >= 2);
 }
+
+const WATCH_FORBIDDEN: &str = r#"{"kind":"Status","apiVersion":"v1","status":"Failure","message":"cannot watch pods","reason":"Forbidden","code":403}"#;
+
+/// A fake API server whose `n`-th pod list (from 0) has `pods(n)` pods; watches answer `watch`.
+async fn changing_api(
+    lists: Arc<AtomicUsize>,
+    pods: impl Fn(usize) -> usize + Send + Sync + 'static,
+    watch: impl Fn(&Request) -> Reply + Send + Sync + 'static,
+) -> FakeApi {
+    FakeApi::start(move |req: &Request| {
+        if req.query.contains("watch=") {
+            return watch(req);
+        }
+        match req.path.as_str() {
+            "/api" => Reply::json(200, API_VERSIONS),
+            "/api/v1" => Reply::json(200, CORE_RESOURCES),
+            "/apis" => Reply::json(200, API_GROUPS),
+            "/api/v1/pods" => pod_page(pods(lists.fetch_add(1, Ordering::SeqCst)), &req.query),
+            _ => Reply::not_found(),
+        }
+    })
+    .await
+}
+
+/// (upserted, deleted) of each delta.
+fn deltas(updates: &[WatchUpdate]) -> Vec<(usize, usize)> {
+    updates
+        .iter()
+        .filter_map(|u| match u {
+            WatchUpdate::Delta { upserted, deleted } => Some((upserted.len(), deleted.len())),
+            _ => None,
+        })
+        .collect()
+}
+
+#[tokio::test]
+async fn a_kind_that_can_be_listed_but_not_watched_is_listed_again_and_only_changes_are_sent() {
+    // The right to list pods but not to watch them (#342): before, every refused watch was a lost connection, so
+    // the pods were listed again and a full snapshot went to the window every second, and nothing counted as
+    // resumed.
+    let lists = Arc::new(AtomicUsize::new(0));
+    let watches = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&watches);
+    // 3 pods, then a 4th comes, then two go.
+    let api = changing_api(
+        Arc::clone(&lists),
+        |n| match n {
+            0 | 1 => 3,
+            2 | 3 => 4,
+            _ => 2,
+        },
+        move |_| {
+            counted.fetch_add(1, Ordering::SeqCst);
+            Reply::json(403, WATCH_FORBIDDEN)
+        },
+    )
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    mgr.kinds(&id).await.unwrap();
+    let before = watch_stats();
+    let watch = watch(&mgr, &id, pods_spec()).await.unwrap();
+    let seen = updates_for(watch, POLL_INTERVAL * 5 + POLL_INTERVAL / 2).await;
+    assert!(
+        !kinds(&seen).contains(&"reconnecting") && !kinds(&seen).contains(&"snapshot"),
+        "{seen:?}"
+    );
+    assert_eq!(deltas(&seen), [(1, 0), (0, 2)], "{seen:?}");
+    assert_eq!(
+        watches.load(Ordering::SeqCst),
+        1,
+        "the refused watch is not tried again"
+    );
+    assert!(lists.load(Ordering::SeqCst) >= 5);
+    let after = watch_stats();
+    assert!(after.polled > before.polled);
+    assert!(after.polls >= before.polls + 4);
+}
+
+#[tokio::test]
+async fn a_relist_with_the_connection_up_sends_only_what_changed() {
+    // An expired resourceVersion: kube's watcher lists again by itself. The window gets the one new pod, not the
+    // whole list again.
+    let lists = Arc::new(AtomicUsize::new(0));
+    let watches = Arc::new(AtomicUsize::new(0));
+    let counted = Arc::clone(&watches);
+    let api = changing_api(
+        Arc::clone(&lists),
+        |n| if n == 0 { 3 } else { 4 },
+        move |_| {
+            if counted.fetch_add(1, Ordering::SeqCst) == 0 {
+                Reply::stream(
+                    r#"{"type":"ERROR","object":{"kind":"Status","apiVersion":"v1","status":"Failure","reason":"Expired","message":"too old resource version","code":410}}"#
+                        .to_owned()
+                        + "\n",
+                )
+            } else {
+                Reply::stream(String::new())
+            }
+        },
+    )
+    .await;
+    let (_tmp, mgr, id) = connected_to(api.url()).await;
+    mgr.kinds(&id).await.unwrap();
+    let watch = watch(&mgr, &id, pods_spec()).await.unwrap();
+    let seen = updates_for(watch, Duration::from_secs(3)).await;
+    assert_eq!(kinds(&seen), vec!["delta"], "{seen:?}");
+    assert_eq!(deltas(&seen), [(1, 0)]);
+    assert_eq!(lists.load(Ordering::SeqCst), 2, "listed again once");
+}

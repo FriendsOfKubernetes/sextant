@@ -2,6 +2,12 @@
   "title": "Co nowego w Sextant {{version}}",
   "version": "Sextant {{version}}",
   "close": "Rozumiem",
+  "v0_30_6": {
+    "listedInstead": {
+      "title": "Rodzaje, które możesz listować, ale nie obserwować",
+      "text": "Jeśli możesz listować rodzaj, ale nie obserwować go (watch), Sextant listuje go teraz co 30 sekund i wysyła do okna tylko zmiany, zamiast łączyć się ponownie i co sekundę wysyłać całą listę. Ponownie odczytane listy także wysyłają tylko zmiany, a listy metadanych nie zawierają już kopii każdego obiektu zapisanej przez kubectl, więc Sextant zużywa znacznie mniej pamięci."
+    }
+  },
   "v0_30_5": {
     "api6": {
       "title": "API rozszerzeń 6",
